@@ -1,0 +1,67 @@
+{
+  "key": "tilepaint",
+  "en": "Tilepaint",
+  "zh": "数瓦",
+  "category": "涂黑II",
+  "subcategory": "见Aquarium",
+  "rule": "涂黑一些空格，使得每个区域要么全部涂黑要么全部留白。盘面外的数字表示此行或此列内涂黑格的个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "outside",
+      "label": "行/列黑格数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "top": [],
+      "left": []
+    }
+  },
+  "notes": ""
+}

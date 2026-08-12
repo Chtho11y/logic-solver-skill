@@ -1,0 +1,57 @@
+{
+  "key": "lits",
+  "en": "LITS",
+  "zh": "四格骨墙",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "在每个区域内涂黑一个四格骨牌，使得所有涂黑的格子连通成一个整体，且没有全部涂黑的2×2结构。不同区域中全等的四格骨牌不能相邻。",
+  "defaultRows": 10,
+  "defaultCols": 10,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "t",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        3
+      ],
+      "doc": "骨牌形状 0=I 1=L 2=S 3=T"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "t 为每个区域四格骨牌的形状编号，用于判定相邻区域是否全等。"
+}

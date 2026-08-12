@@ -1,0 +1,59 @@
+{
+  "key": "detour",
+  "en": "Detour",
+  "zh": "绕道",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有格子中心且不和自身交叉的回路。数字表示回路在此区域内转弯的次数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "区域内转弯数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

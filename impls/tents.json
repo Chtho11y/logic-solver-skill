@@ -1,0 +1,79 @@
+{
+  "key": "tents",
+  "en": "Tents",
+  "zh": "帐篷",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在盘面中的每颗树相邻的格子之一放置一顶帐篷。任意两顶帐篷不能放在同一格或者互相接触的格子内。盘面外的数字表示此行或此列内帐篷的个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 帐篷"
+    },
+    {
+      "name": "a",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        4
+      ],
+      "doc": "帐篷配对的树方向 0=无 1=上 2=下 3=左 4=右"
+    },
+    {
+      "name": "t",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "树 (值 1)"
+    }
+  ],
+  "layers": [
+    {
+      "id": "tree",
+      "label": "树",
+      "element": "tree",
+      "target": "cell",
+      "role": "input",
+      "var": "t"
+    },
+    {
+      "id": "outside",
+      "label": "行/列帐篷数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "tent",
+      "label": "帐篷",
+      "element": "tent",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {
+    "defaults": {
+      "top": [],
+      "left": []
+    }
+  },
+  "notes": ""
+}

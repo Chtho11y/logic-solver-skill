@@ -1,0 +1,47 @@
+{
+  "key": "norinori",
+  "en": "Norinori",
+  "zh": "海苔",
+  "category": "涂黑II",
+  "subcategory": "色块是海苔",
+  "rule": "在每个区域内涂黑恰好两格，使得每一组涂黑的连通组恰好有两格。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "shade",
+      "label": "海苔",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

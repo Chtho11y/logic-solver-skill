@@ -1,0 +1,11 @@
+{
+  "puzzle": "masyu",
+  "rows": 5,
+  "cols": 5,
+  "title": "单白珠",
+  "clues": {
+    "o": {
+      "2,2": 1
+    }
+  }
+}

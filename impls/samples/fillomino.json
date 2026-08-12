@@ -1,0 +1,11 @@
+{
+  "puzzle": "fillomino",
+  "rows": 3,
+  "cols": 3,
+  "title": "单区域码牌",
+  "clues": {
+    "n": {
+      "1,1": 9
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "key": "yajilin",
+  "en": "Yajilin",
+  "zh": "仙人指路",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些空格中心且不和自身交叉的回路，并把未经过的空格涂黑。涂黑的格子不能相邻。带箭头的数字表示从此格开始在这个方向中的黑格数。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 涂黑"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向 0-3"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "该方向黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "提示格既要写方向 d（0=上 1=下 2=左 3=右）也要写数字 n。"
+}

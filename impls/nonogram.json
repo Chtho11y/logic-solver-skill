@@ -1,0 +1,59 @@
+{
+  "key": "nonogram",
+  "en": "Nonogram",
+  "zh": "数织",
+  "category": "涂黑III",
+  "subcategory": "见Minesweeper",
+  "rule": "涂黑一些空格，使得盘面外的数字依次表示此行或此列中每一段连续涂黑格的长度。",
+  "defaultRows": 10,
+  "defaultCols": 10,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "行列段长",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "list"
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "top": [],
+      "left": []
+    }
+  },
+  "notes": ""
+}

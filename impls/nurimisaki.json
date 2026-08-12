@@ -1,0 +1,56 @@
+{
+  "key": "nurimisaki",
+  "en": "Nurimisaki",
+  "zh": "数岬",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些空格，使得所有留白的格子连通成一个整体，且没有全部涂黑或者全部留白的2×2结构。圆圈标记了所有恰好只和另一个留白格相邻的留白格。圆圈里的数字表示此格横竖能够直接连接到且不被涂黑格阻挡的留白格个数，包括此格本身。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "岬圆圈 (0 = 无数字)",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "每个提示格都是一个圆圈；数字 0 表示圆圈内没有写数。"
+}

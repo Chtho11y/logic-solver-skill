@@ -1,0 +1,67 @@
+{
+  "key": "nanro",
+  "en": "Nanro",
+  "zh": "物以类聚",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些格子里填入一个数，使得所有填有数的格子连通成一个整体，且没有2×2结构都有数字填入。填入的数表示这一区域内有多少填数的格子。每个区域都至少要填入一个数。不同区域中相邻的格字不能有相同数。",
+  "defaultRows": 7,
+  "defaultCols": 7,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        12
+      ],
+      "doc": "0 = 不填数"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 该格填了数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

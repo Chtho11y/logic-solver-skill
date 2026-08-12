@@ -1,0 +1,57 @@
+{
+  "key": "suguru",
+  "en": "Suguru/Capsules",
+  "zh": "数组/胶囊",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格里填一个数，使得每个区域里包含数字1~N，其中N是这个区域的总格数。接触的格子里不能有相同的数字。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        9
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1,
+        "max": 9
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

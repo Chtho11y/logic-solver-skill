@@ -1,0 +1,57 @@
+{
+  "key": "yinyang",
+  "en": "Yin-Yang",
+  "zh": "阴阳",
+  "category": "涂黑II",
+  "subcategory": "黑白规则交替",
+  "rule": "在盘面内每个格子放入一个黑色圆圈或者白色圆圈，使得黑色圆圈和白色圆圈分别横竖连通为一个整体。黑色圆圈和白色圆圈均不形成2×2的区域。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 白圈, 1 = 黑圈"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "已给出的圆圈 (0 = 白, 1 = 黑)"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given",
+      "label": "已给圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "0": "#ffffff",
+        "1": "#232733"
+      }
+    },
+    {
+      "id": "answer",
+      "label": "阴阳",
+      "element": "circle",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "0": "#ffffff",
+        "1": "#232733"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

@@ -1,0 +1,56 @@
+{
+  "key": "kurotto",
+  "en": "Kurotto",
+  "zh": "凝块",
+  "category": "涂黑III",
+  "subcategory": "黑块间求和",
+  "rule": "涂黑一些空格。数字表示与此格相邻的所有涂黑的连通组的总面积。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "相邻黑块总面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "数字 -1 表示圆圈内没有写数（不提供信息）。"
+}

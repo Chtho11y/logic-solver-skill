@@ -1,0 +1,56 @@
+{
+  "key": "meander",
+  "en": "Meandering Numbers",
+  "zh": "蜿蜒",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格里填一个数，使得每个区域包含一条从1到N的横竖相连的链，其中N是这个区域的总格数。互相接触的格子里的数不能相同。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        25
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

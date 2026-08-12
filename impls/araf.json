@@ -1,0 +1,48 @@
+{
+  "key": "araf",
+  "en": "Araf",
+  "zh": "炼狱",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域恰好包含两个有数字的圆圈。每个区域的面积必须严格介于区域内的两个数字之间（尤其注意面积也不能等于两个数字之一）。",
+  "defaultRows": 7,
+  "defaultCols": 7,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "圆圈数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

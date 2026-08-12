@@ -1,0 +1,11 @@
+{
+  "puzzle": "slither",
+  "rows": 5,
+  "cols": 5,
+  "title": "单格回路",
+  "clues": {
+    "n": {
+      "2,2": 4
+    }
+  }
+}

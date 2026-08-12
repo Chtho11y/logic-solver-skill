@@ -1,0 +1,47 @@
+{
+  "key": "starbattle",
+  "en": "Star Battle",
+  "zh": "星战",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在一些格子内放置一颗星，使得每行、列、区域内的星数等于盘面外给出的数字。任意两颗星不能放在互相接触的格子内。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 星"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "star",
+      "label": "星",
+      "element": "star",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {
+    "defaults": {
+      "stars": 1
+    }
+  },
+  "notes": "params.stars 为每行/列/区域的星数。"
+}

@@ -1,0 +1,46 @@
+{
+  "key": "putteria",
+  "en": "Putteria",
+  "zh": "面积填写",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个区域中的一格填上等于该区域面积的数字。填有数字的格子不能有公共边。每行和每列不能有重复数字。",
+  "defaultRows": 7,
+  "defaultCols": 7,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        12
+      ],
+      "doc": "0 = 空格"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

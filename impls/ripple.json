@@ -1,0 +1,57 @@
+{
+  "key": "ripple",
+  "en": "Ripple Effect",
+  "zh": "涟漪效应",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格里填一个数，使得每个区域里包含数字1~N，其中N是这个区域的总格数。同行列中介于两个相同的数字之间的格数（包括空洞）必须大于等于这个数字的值。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        9
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1,
+        "max": 9
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

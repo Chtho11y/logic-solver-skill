@@ -1,0 +1,56 @@
+{
+  "key": "mochikoro",
+  "en": "Mochikoro",
+  "zh": "藕断丝连",
+  "category": "涂黑II",
+  "subcategory": "色块是矩形",
+  "rule": "涂黑一些空格，使得没有全部涂黑的2×2结构。所有留白格必须对角连通成一个整体，且每一组连通的留白格必须是一个长方形。每一组连通的留白格至多包含一个数字。数字表示其所在的留白的连通组格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "留白矩形面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

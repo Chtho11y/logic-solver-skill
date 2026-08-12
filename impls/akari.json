@@ -1,0 +1,69 @@
+{
+  "key": "akari",
+  "en": "Akari",
+  "zh": "美术馆",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在一些空格内放置一个灯泡，以照亮所有空格。格子里的灯泡可以照亮所有从此格横竖能够直接连接到且不被黑格阻挡的空格，包括此格本身。任意两个灯泡不能互相照亮。黑格里的数字表示与之相邻的（至多）四格中的灯泡个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 灯泡"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "黑格 (1 = 无数字黑格)"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "黑格数字"
+    }
+  ],
+  "layers": [
+    {
+      "id": "wall",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#232733"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "黑格数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "palette": {
+        "*": "#ffffff"
+      }
+    },
+    {
+      "id": "bulb",
+      "label": "灯泡",
+      "element": "bulb",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {},
+  "notes": "每个有数字的黑格同时要在 w 中标记为 1。"
+}

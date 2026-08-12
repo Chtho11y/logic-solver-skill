@@ -1,0 +1,64 @@
+{
+  "key": "shimaguni",
+  "en": "Shimaguni",
+  "zh": "岛国",
+  "category": "涂黑III",
+  "subcategory": "黑块间不相等",
+  "rule": "在每个区域内涂黑恰好一组连通的格子，使得不同区域内涂黑的连通组不相邻。数字表示区域内涂黑格的个数。相邻区域内涂黑格的个数不能相同。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "区域黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

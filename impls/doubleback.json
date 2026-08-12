@@ -1,0 +1,42 @@
+{
+  "key": "doubleback",
+  "en": "Double Back",
+  "zh": "二次返回",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有格子中心且不和自身交叉的回路。回路必须经过每个区域恰好两次。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

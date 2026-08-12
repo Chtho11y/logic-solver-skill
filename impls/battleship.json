@@ -1,0 +1,95 @@
+{
+  "key": "battleship",
+  "en": "Battleships",
+  "zh": "战舰",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "把给出的形状（代表船）放入盘面，使得任意两条船不重叠也不接触。盘面外的数字表示此行或此列内有船的格数。有一些船的部分可能已经在盘面里给出，其中所有不和其他船格相邻的角用圆角表示。水波符号表示此格不能有船。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        6
+      ],
+      "doc": "0=水 1=单格船 2=船身 3=头朝上 4=头朝下 5=头朝左 6=头朝右"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "已给船部分 (同 x 编码)"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 水波 (禁船)"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given",
+      "label": "已给船部",
+      "element": "ship",
+      "target": "cell",
+      "role": "input",
+      "var": "g"
+    },
+    {
+      "id": "wave",
+      "label": "水波",
+      "element": "wave",
+      "target": "cell",
+      "role": "input",
+      "var": "w"
+    },
+    {
+      "id": "outside",
+      "label": "行/列船格数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "ship",
+      "label": "舰队",
+      "element": "ship",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {
+    "defaults": {
+      "top": [],
+      "left": [],
+      "fleet": [
+        4,
+        3,
+        3,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "notes": "后端求解器待实现；当前仅供前端编辑与展示。"
+}

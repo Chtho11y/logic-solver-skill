@@ -1,0 +1,56 @@
+{
+  "key": "canal",
+  "en": "Canal View",
+  "zh": "峡谷",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些空格，使得所有涂黑的格子连通成一个整体，且没有全部涂黑的2×2结构。圆圈里的数字表示此格横竖能够直接连接到且不被留白格阻挡的涂黑格个数，不包括此格本身。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "可见涂黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

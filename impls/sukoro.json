@@ -1,0 +1,60 @@
+{
+  "key": "sukoro",
+  "en": "Sukoro",
+  "zh": "数殖",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填数，使得所有有数字的格子连通成一个整体。每个数字必须等于与其相邻的（至多）四格中有数字的格数。相邻的格子里不能填相同的数字。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        4
+      ],
+      "doc": "0 = 空格"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 该格填了数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

@@ -1,0 +1,56 @@
+{
+  "key": "context",
+  "en": "Context",
+  "zh": "黑斜白邻",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些格子，使得涂黑的格子之间不相邻，且留白的格子连通成一个整体。在留白格内的数字表示和此格相邻的涂黑格的个数。这些提示数在涂黑格里则表示和此格接触（但不相邻）的涂黑格的个数。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "邻接/接触黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

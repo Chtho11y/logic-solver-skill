@@ -1,0 +1,9 @@
+{
+  "puzzle": "simpleloop",
+  "rows": 4,
+  "cols": 4,
+  "title": "哈密顿回路",
+  "clues": {
+    "w": {}
+  }
+}

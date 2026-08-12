@@ -1,0 +1,73 @@
+{
+  "key": "lightshadow",
+  "en": "Light and Shadow",
+  "zh": "黑白分明",
+  "category": "涂黑II",
+  "subcategory": "黑白规则交替",
+  "rule": "涂黑或涂白所有格子，使得每一组连通的涂黑格中恰有一个黑数字（且没有白数字），而每一组连通的涂白格中恰有一个白数字（且没有黑数字）。圆圈里的数字表示其所在的涂黑或涂白的连通组的面积。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 涂白, 1 = 涂黑"
+    },
+    {
+      "name": "bn",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "黑数字"
+    },
+    {
+      "name": "wn",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "白数字"
+    }
+  ],
+  "layers": [
+    {
+      "id": "black",
+      "label": "黑数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "bn",
+      "palette": {
+        "*": "#232733"
+      }
+    },
+    {
+      "id": "white",
+      "label": "白数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "wn",
+      "palette": {
+        "*": "#2b6cb0"
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

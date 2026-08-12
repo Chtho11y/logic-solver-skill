@@ -1,0 +1,53 @@
+{
+  "key": "slither",
+  "en": "Slitherlink",
+  "zh": "数回",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "连接相邻圆点画一条不和自身交叉的回路。数字表示此格中回路经过的边数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路经过该格线"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "格内线段数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "id": "edges",
+      "label": "回路",
+      "element": "edgeline",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

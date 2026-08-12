@@ -1,0 +1,54 @@
+{
+  "key": "masyu",
+  "en": "Masyu",
+  "zh": "珍珠",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心且不和自身交叉的回路，并且通过所有带圈的格子。回路必须在黑圈格转弯，且在前后两格均直行。回路必须在白圈格直行，且在前后两格中至少一格转弯。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路连接两格"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 白圈, 2 = 黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "珍珠",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

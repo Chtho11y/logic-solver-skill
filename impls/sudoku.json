@@ -1,0 +1,50 @@
+{
+  "key": "sudoku",
+  "en": "Sudoku",
+  "zh": "数独",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格内填一个1~N的数（其中N是盘面的边长），使得1~N在每行、每列、每个粗线围成的宫内都恰好出现一次。",
+  "defaultRows": 9,
+  "defaultCols": 9,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        9
+      ],
+      "doc": "1-9"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1,
+        "max": 9
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}
