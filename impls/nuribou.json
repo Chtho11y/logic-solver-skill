@@ -1,0 +1,56 @@
+{
+  "key": "nuribou",
+  "en": "Nuribou",
+  "zh": "数壁",
+  "category": "涂黑II",
+  "subcategory": "黑白规则交替",
+  "rule": "涂黑一些空格，使得每一组连通的留白格恰好包含一个数字。每一组连通的涂黑格必须是一个长或宽为一的长方形，而且互相接触的两组涂黑格面积不能相同。数字表示其所在的留白的连通组格数。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "留白连通组格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "留白组格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑组宽度为一 + 无全黑2x2 + 每留白组恰一个数字 + 组格数。「涂黑组必须成直线（排除 L 形）」与「相接触的两组涂黑面积不同」未编码。"
+}

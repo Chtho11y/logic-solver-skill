@@ -1,0 +1,67 @@
+{
+  "key": "akichi",
+  "en": "Akichiwake",
+  "zh": "数间(空地)",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些格子，使得涂黑的格子之间不相邻，且留白的格子连通成一个整体。任意一横段或纵段留白格不能穿过两个以上区域边界。数字表示此区域内最大留白连通组的面积。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域内最大留白连通组面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "区域内最大留白面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：island_rule + 留白段不穿过两个以上区域边界。「区域内最大留白连通组面积」需按区域求连通分量最大值，未编码。",
+  "unencodedClues": [
+    "n"
+  ]
+}

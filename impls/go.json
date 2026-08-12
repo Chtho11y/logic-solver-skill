@@ -1,0 +1,78 @@
+{
+  "key": "go",
+  "en": "Go",
+  "zh": "围棋",
+  "category": "涂黑II",
+  "subcategory": "黑白规则交替",
+  "rule": "涂黑一些格子，使得有黑圈的格子都涂黑，有白圈的格子都留白。圆圈里的数字表示与其所在的涂黑或留白的连通组相邻且颜色相反的总格数（也就是这一片“棋子”的“气”的数量）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 白圈, 2 = 黑圈"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "气的数量"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle_o",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue_n",
+      "label": "气",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：圆圈颜色固定。「气」= 与整个连通组相邻的异色格总数，需要按连通组聚合去重计数，未编码。",
+  "unencodedClues": [
+    "n"
+  ]
+}

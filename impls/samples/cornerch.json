@@ -1,0 +1,11 @@
+{
+  "puzzle": "cornerch",
+  "rows": 6,
+  "cols": 6,
+  "title": "cornerch",
+  "clues": {
+    "n": {
+      "0,0": 36
+    }
+  }
+}

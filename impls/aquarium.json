@@ -1,0 +1,47 @@
+{
+  "key": "aquarium",
+  "en": "Aquarium",
+  "zh": "水族馆",
+  "category": "涂黑II",
+  "subcategory": "色块是水体",
+  "rule": "涂黑一些格子（代表水），使得每个区域内的水体都处于稳定状态。准确来说，在中间没有粗格线的情况下，留白的格子和涂黑的格子只能纵向相邻且留白格在上（两格之间横向的边界称为“水面”），而区域内每一组涂黑的连通组的水面必须在同一高度。盘面外的数字表示此行或此列内涂黑格的个数。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "完全实现：区域内水往下沉 + 同区域同行水位相同（水面平） + 盘外行列计数。"
+}

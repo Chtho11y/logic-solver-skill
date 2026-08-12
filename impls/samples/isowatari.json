@@ -1,0 +1,14 @@
+{
+  "puzzle": "isowatari",
+  "rows": 6,
+  "cols": 6,
+  "title": "渡池石块",
+  "clues": {
+    "o": {
+      "0,0": 2
+    }
+  },
+  "params": {
+    "n": 3
+  }
+}

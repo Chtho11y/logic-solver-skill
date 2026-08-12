@@ -1,0 +1,39 @@
+{
+  "key": "antmill",
+  "en": "Ant Mill",
+  "zh": "蚂蚁怪圈",
+  "category": "涂黑II",
+  "subcategory": "色块是蚂蚁",
+  "rule": "涂黑一些1×2的长方形，每个涂黑的长方形必须和恰好另外两个涂黑的长方形接触，而且所有长方形必须对角连通成一个整体（形成一个环）。被□覆盖的两个格子要么都涂黑，要么都不涂黑。被×覆盖的两个格子必须一个涂黑，另一个不涂黑。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑格两两成骨牌且互不正交相邻 + 全部骨牌对角连通。「每块骨牌恰与另外两块接触（成环）」与 □/× 成对提示未编码。"
+}

@@ -1,0 +1,56 @@
+{
+  "key": "bosnianroad",
+  "en": "Bosnian Road",
+  "zh": "波斯尼亚路",
+  "category": "涂黑II",
+  "subcategory": "色块是一条路",
+  "rule": "涂黑一些空格，使得所有涂黑的格子连通成一个不和自身接触的环。数字格不能涂黑。数字表示与此格接触的（至多）八格中的涂黑格个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "八邻域涂黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "八邻域涂黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "完全实现：闭环（每黑格恰两个黑邻居 + 连通 + 无全黑2x2）+ 八邻域计数 + 数字格留白。「环不与自身对角接触」仅由无 2x2 部分保证。"
+}

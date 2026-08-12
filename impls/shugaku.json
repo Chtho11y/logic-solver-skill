@@ -1,0 +1,59 @@
+{
+  "key": "shugaku",
+  "en": "School Trip",
+  "zh": "修学旅行",
+  "category": "涂黑II",
+  "subcategory": "",
+  "rule": "在盘面里放置一些互不重叠的1×2的长方形（表示床，其中一个格子表示枕头），并将剩下的格子涂黑，使得所有涂黑格连通成一个整体，且没有全部涂黑的2×2结构。每张床必须与至少一个涂黑格相邻。数字表示与之相邻的（至多）四格中的枕头个数。一个竖着放置的床的枕头不能放在上半部分（也就是说，不存在床头朝北的床）。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "相邻枕头数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "相邻枕头数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 留白格两两成 1x2 床 + 每床至少邻一涂黑格。「枕头」是床内的其中一格，需要额外变量；枕头计数与「竖床床头不朝北」未编码。",
+  "unencodedClues": [
+    "n"
+  ]
+}

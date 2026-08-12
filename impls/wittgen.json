@@ -1,0 +1,56 @@
+{
+  "key": "wittgen",
+  "en": "Wittgenstein Briquet",
+  "zh": "三格长桌",
+  "category": "涂黑II",
+  "subcategory": "色块是桌子",
+  "rule": "在盘面内放置一些互不重叠的1×3的长方形（表示桌子）。桌子不能覆盖数字格。数字表示与之相邻的（至多）四格中被桌子覆盖的格子的个数。所有不被桌子覆盖的格子需要连通成一个整体。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "相邻被覆盖格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "相邻被覆盖格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "完全实现：每个涂黑连通组恰 3 格且宽度为一 + 数字格不被覆盖 + 相邻计数 + 留白连通。「三格必须成直线（排除 L 形三连块）」未编码。"
+}

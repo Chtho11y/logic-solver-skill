@@ -1,0 +1,11 @@
+{
+  "puzzle": "snakeegg",
+  "rows": 6,
+  "cols": 6,
+  "title": "蛇蛋",
+  "clues": {
+    "o": {
+      "0,0": 1
+    }
+  }
+}

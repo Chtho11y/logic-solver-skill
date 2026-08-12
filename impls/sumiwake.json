@@ -1,0 +1,66 @@
+{
+  "key": "sumiwake",
+  "en": "Sumiwake",
+  "zh": "圆角房间",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些格子，使得涂黑的格子之间不相邻，且留白的格子连通成一个整体。任意一横段或纵段留白格不能穿过两个以上区域边界。白圈恰和一个涂黑格接触，黑圈恰和两个涂黑格接触。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 白圈, 2 = 黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle_o",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "完全实现（「接触」按含对角的八邻域解释）。"
+}

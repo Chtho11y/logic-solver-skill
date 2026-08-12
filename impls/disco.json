@@ -1,0 +1,47 @@
+{
+  "key": "disco",
+  "en": "Disconnection",
+  "zh": "disco",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "在每个区域内涂黑恰好两组连通的格子，使得所有涂黑的格子连通成一个整体，且没有全部涂黑的2×2结构。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 每区域至少2个涂黑格。「每区域恰好两组连通」需按区域计连通分量，当前 DSL 的 cc_count 只能全盘统计，未编码。"
+}

@@ -1,0 +1,64 @@
+{
+  "key": "nuritwin",
+  "en": "Nuritwin",
+  "zh": "涂黑成对",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "在每个区域内涂黑恰好两组连通的格子，使得这两组格子面积相等且不相邻，且所有涂黑的格子连通成一个整体。不能有全部涂黑的2×2结构。数字表示其所在区域内一个涂黑格连通组的面积。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域内一个涂黑连通组的面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "一组涂黑格的面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 区域涂黑数为偶且=2×数字。「恰好两组、两组全等面积且互不相邻」需按区域计连通分量，未编码。"
+}

@@ -1,0 +1,47 @@
+{
+  "key": "parquet",
+  "en": "Parquet",
+  "zh": "拼花地板",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "在每个粗线构成的区域内完全涂黑恰好一个被细线分隔的区域，使得所有涂黑的格子连通成一个整体。涂黑格不能形成回路（包括2×2结构）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑格连通且无环（树）。「每个粗线区域内恰好整块涂黑一个细线子区域」需要两级区域（粗线+细线），题面模型只有一层区域，未编码。"
+}

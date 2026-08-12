@@ -1,0 +1,56 @@
+{
+  "key": "tapa",
+  "en": "Tapa",
+  "zh": "土派艺术",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些空格，使得所有涂黑的格子连通成一个整体，且没有全部涂黑的2×2结构。格内一个或多个数字表示和此格接触的（至多）八格中所有连续涂黑格段的长度，但不限定顺序。作为特例，一个单独的“0”表示没有和此格接触的涂黑格，而一个单独的问号（格内没有其他问号或数字）也可以代表“0”。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "八邻域连续涂黑段长度（可多个）"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "八邻域段长",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 提示格留白。Tapa 的环形八邻域多段长度（无序、支持问号）未编码。"
+}

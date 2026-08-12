@@ -1,0 +1,77 @@
+{
+  "key": "diamond",
+  "en": "Diamond Chain",
+  "zh": "钻石链",
+  "category": "涂黑II",
+  "subcategory": "色块是钻石",
+  "rule": "涂黑一些2×2的菱形（斜正方形），使得所有菱形与已经给出的黑格一起对角连通成一个整体。菱形不能与黑格或其他菱形重叠或有公共边。黑格中的数字表示有多少个菱形与此格共顶点。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 已给出的黑格"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "共顶点的菱形数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_w",
+      "label": "已给黑格",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "clue_n",
+      "label": "菱形数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑格对角连通。「菱形」是 2x2 斜正方形（占 4 格但呈 ◇ 形），需要专门的形状放置变量，未编码。",
+  "unencodedClues": [
+    "w",
+    "n"
+  ]
+}

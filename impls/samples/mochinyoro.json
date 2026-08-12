@@ -1,0 +1,11 @@
+{
+  "puzzle": "mochinyoro",
+  "rows": 6,
+  "cols": 6,
+  "title": "藕断丝弯",
+  "clues": {
+    "n": {
+      "0,0": 36
+    }
+  }
+}

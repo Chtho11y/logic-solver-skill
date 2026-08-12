@@ -1,0 +1,11 @@
+{
+  "puzzle": "wittgen",
+  "rows": 6,
+  "cols": 6,
+  "title": "三格长桌",
+  "clues": {
+    "n": {
+      "0,0": 1
+    }
+  }
+}

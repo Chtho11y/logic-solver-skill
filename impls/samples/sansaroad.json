@@ -1,0 +1,12 @@
+{
+  "puzzle": "sansaroad",
+  "rows": 6,
+  "cols": 6,
+  "title": "三叉路口",
+  "clues": {
+    "v": {
+      "0,2": 1,
+      "5,2": 1
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "key": "coral",
+  "en": "Coral",
+  "zh": "珊瑚",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些格子，使得所有涂黑的格子连通成一个整体，且留白的格子连通到边界。涂黑的格子不能形成2×2的区域。盘面外的数字（如果有）表示此行或此列中每一段连续涂黑格的长度，数字之间无顺序要求。问号可以表示任何单个提示数。作为特例，一个单独的“0”表示此行或此列没有涂黑格。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 留白连通到边界。盘外「无序」段长集合需集合匹配（runs 只支持有序），未编码。"
+}

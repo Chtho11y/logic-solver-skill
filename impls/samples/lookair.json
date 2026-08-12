@@ -1,0 +1,11 @@
+{
+  "puzzle": "lookair",
+  "rows": 6,
+  "cols": 6,
+  "title": "观云",
+  "clues": {
+    "n": {
+      "0,0": 0
+    }
+  }
+}

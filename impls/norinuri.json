@@ -1,0 +1,56 @@
+{
+  "key": "norinuri",
+  "en": "Norinuri",
+  "zh": "海苔墙",
+  "category": "涂黑II",
+  "subcategory": "色块是海苔",
+  "rule": "涂黑一些1×2的长方形，将盘面分为若干个留白的区域。涂黑的长方形不能相邻。数字格不能涂黑。每一组连通的留白格必须恰好包含一个数字。数字表示其所在的留白的连通组格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "留白连通组格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "留白组格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "完全实现：骨牌涂黑 + 数字格留白 + 每留白组恰一个数字（组数 = 数字数）+ 组格数。"
+}

@@ -1,0 +1,67 @@
+{
+  "key": "nurimaze",
+  "en": "Nurimaze",
+  "zh": "迷宫地图",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "把一些空格涂黑，使得没有全部涂黑或者全部留白的2×2结构，而且每个区域要么全部涂黑要么全部留白。所有留白格必须连通成一个整体且不成环。（也就是说，在任意两个留白格之间必须有唯一一条通过相邻留白格连接两者且不重复通过同一格的路径。）圆圈表示此格在S格到G格之间的唯一路径上，而三角形表示此格不在这条唯一路径上。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = S, 2 = G, 3 = 圆圈, 4 = 三角形"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_m",
+      "label": "S/G/圆圈/三角",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "m",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：无单色2x2 + 区域单色 + 留白连通且无环（树）。圆圈/三角形相对 S–G 唯一路径的位置关系未编码。",
+  "unencodedClues": [
+    "m"
+  ]
+}

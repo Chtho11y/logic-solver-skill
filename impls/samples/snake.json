@@ -1,0 +1,11 @@
+{
+  "puzzle": "snake",
+  "rows": 6,
+  "cols": 6,
+  "title": "数蛇",
+  "clues": {
+    "o": {
+      "0,0": 2
+    }
+  }
+}

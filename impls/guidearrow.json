@@ -1,0 +1,74 @@
+{
+  "key": "guidearrow",
+  "en": "Guide Arrow",
+  "zh": "指引箭头",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些格子，使得涂黑的格子之间不相邻，且留白的格子连通成一个整体。留白格不能形成回路（包括2×2结构）。箭头表示从此格出发，在不经过涂黑格也不倒退的情况下，能够走到星星的路径的唯一方向。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向 0=上 1=下 2=左 3=右"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 星星"
+    }
+  ],
+  "layers": [
+    {
+      "id": "arrow_d",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue_s",
+      "label": "星星",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "s",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑格互不相邻 + 留白连通且无环（树）。箭头「走到星星的唯一方向」涉及路径唯一性，未编码。",
+  "unencodedClues": [
+    "d",
+    "s"
+  ]
+}

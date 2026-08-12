@@ -1,0 +1,39 @@
+{
+  "key": "cts",
+  "en": "Cross the Streams",
+  "zh": "过河",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些空格，使得所有涂黑的格子连通成一个整体，且没有全部涂黑的2×2结构。盘面外的数字依次表示此行或此列中每一段连续涂黑格的长度。问号可以表示任何单个提示数，而星号可以表示任何个连续的提示数（包括0个）。作为特例，一个单独的“0”表示此行或此列没有涂黑格。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 盘外段长（param left/top，依次匹配）。问号「?」与星号「*」通配提示未编码。"
+}

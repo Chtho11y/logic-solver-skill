@@ -1,0 +1,56 @@
+{
+  "key": "lookair",
+  "en": "Look-Air",
+  "zh": "观云",
+  "category": "涂黑II",
+  "subcategory": "色块是方形",
+  "rule": "涂黑一些格子，使得每一组涂黑的连通组都是正方形。在每行和每列内，任意两个仅由（至少一个）留白格分隔的涂黑格不能在两个全等的正方形里（也就是说任意两个全等的正方形都不能在对方的“视线”内）。数字表示此格以及与其相邻的（至多）四格中涂黑格的个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "此格及四邻中涂黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "含自身五格黑数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑组为长方形（正方形的必要条件）+ 「此格及四邻」计数。「长=宽」与同行列「视线内不得有全等正方形」未编码。"
+}

@@ -1,0 +1,64 @@
+{
+  "key": "hinge",
+  "en": "Hinge",
+  "zh": "合页",
+  "category": "涂黑II",
+  "subcategory": "黑块被对称切",
+  "rule": "涂黑一些格子，使得每一组连通的涂黑格恰好跨过一条连续的区域边界，并被其分隔为沿该区域边界对称的两部分。数字表示此区域内涂黑格的个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域内涂黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "区域内涂黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：区域涂黑格数 = 数字。「每个涂黑连通组跨一条区域边界且沿其轴对称」需按连通组定位边界并做镜像匹配，未编码。"
+}

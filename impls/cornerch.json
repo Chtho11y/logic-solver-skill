@@ -1,0 +1,56 @@
+{
+  "key": "cornerch",
+  "en": "Corner Chain",
+  "zh": "cornerch",
+  "category": "涂黑II",
+  "subcategory": "见cbanana",
+  "rule": "涂黑一些空格，使得所有留白格对角连通成一个整体。数字格不能涂黑。数字表示其所在的留白的连通组的面积。如果一个留白的连通组面积为偶数，则它必须是长方形；如果它的面积为奇数，则它不能是长方形。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "留白连通组面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "留白组面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：留白对角连通 + 数字格留白 + 留白组面积 = 数字。「偶面积必为长方形 / 奇面积必不为长方形」的按组条件判定未编码。"
+}

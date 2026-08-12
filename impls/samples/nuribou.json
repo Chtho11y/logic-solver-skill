@@ -1,0 +1,11 @@
+{
+  "puzzle": "nuribou",
+  "rows": 6,
+  "cols": 6,
+  "title": "数壁",
+  "clues": {
+    "n": {
+      "0,0": 36
+    }
+  }
+}

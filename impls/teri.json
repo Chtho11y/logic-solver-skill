@@ -1,0 +1,56 @@
+{
+  "key": "teri",
+  "en": "Territory",
+  "zh": "矩形领土",
+  "category": "涂黑I",
+  "subcategory": "颜色正交连通",
+  "rule": "涂黑一些格子，使得涂黑的格子之间不相邻，且留白的格子连通成一个整体。有白圈的格子必须留白。白圈里的数字表示包含此格的最大留白长方形的面积。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "最大留白长方形面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "最大留白长方形面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：island_rule + 白圈格留白。「包含此格的最大留白长方形面积」需对每个候选矩形取最大值，未编码。"
+}

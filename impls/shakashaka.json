@@ -1,0 +1,56 @@
+{
+  "key": "shakashaka",
+  "en": "Shakashaka",
+  "zh": "摇啊摇",
+  "category": "涂黑II",
+  "subcategory": "色块是矩形",
+  "rule": "涂黑一些空格的一半（一个等腰直角三角形），使得所有留白的区域都是横平竖直或者对角方向的长方形。黑格里的数字表示与此格相邻的涂黑一半的空格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "相邻三角形格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "相邻三角形格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：黑格数字 = 相邻被涂格数。三角形有四种朝向、且「留白区域为（含对角方向的）长方形」需要三角形朝向变量与对角矩形判定，当前 0/1 涂黑模型无法表达，未编码。"
+}

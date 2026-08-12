@@ -1,0 +1,11 @@
+{
+  "puzzle": "bosnianroad",
+  "rows": 6,
+  "cols": 6,
+  "title": "波斯尼亚路",
+  "clues": {
+    "n": {
+      "0,0": 2
+    }
+  }
+}

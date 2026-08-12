@@ -1,0 +1,11 @@
+{
+  "puzzle": "norinuri",
+  "rows": 6,
+  "cols": 6,
+  "title": "海苔墙",
+  "clues": {
+    "n": {
+      "0,0": 34
+    }
+  }
+}

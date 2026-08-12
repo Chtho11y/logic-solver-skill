@@ -1,0 +1,11 @@
+{
+  "puzzle": "tetrochaink",
+  "rows": 6,
+  "cols": 6,
+  "title": "四格骨牌链(暗)",
+  "clues": {
+    "t": {
+      "1,1": 1
+    }
+  }
+}

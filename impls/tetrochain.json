@@ -1,0 +1,70 @@
+{
+  "key": "tetrochain",
+  "en": "Tetro Chain-Y",
+  "zh": "四格骨牌链(指)",
+  "category": "涂黑II",
+  "subcategory": "色块是4mino",
+  "rule": "涂黑一些格子，使得每个涂黑的连通组均为四格骨牌。所有四格骨牌对角连通，任意两个对角相邻的四格骨牌不能全等。数字格不能涂黑。数字表示相应方向上的黑格个数。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向 0=上 1=下 2=左 3=右"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "该方向黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "arrow_d",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue_n",
+      "label": "该方向黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "完全实现：每个涂黑连通组恰 4 格 + 全部骨牌对角连通 + 数字格留白 + 方向计数。「对角相邻的两个四格骨牌不能全等」未编码。"
+}

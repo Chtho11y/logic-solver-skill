@@ -1,0 +1,56 @@
+{
+  "key": "scrin",
+  "en": "Scrin",
+  "zh": "方形回路",
+  "category": "涂黑II",
+  "subcategory": "色块是矩形",
+  "rule": "给一些格子涂色，使得每一组涂色的连通组都是长方形且至多包含一个圆圈。所有圆圈必须在涂色格内。每个涂色的长方形必须和恰好另外两个涂色的长方形接触，而且所有长方形必须对角连通成一个整体（形成一个环）。圈内的数字表示其所在的长方形的面积。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "所在长方形面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "长方形面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂色组为长方形 + 对角连通 + 圆圈在涂色格内 + 每组至多一个圆圈 + 组面积。「每个长方形恰和另外两个接触（成环）」未编码。"
+}

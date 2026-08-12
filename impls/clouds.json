@@ -1,0 +1,39 @@
+{
+  "key": "clouds",
+  "en": "Clouds",
+  "zh": "云团",
+  "category": "涂黑II",
+  "subcategory": "色块是矩形",
+  "rule": "涂黑一些格子，使得每组连通的黑格都是一个长和宽都至少为二的长方形（代表一个云团）。云团之间不能接触。盘面外的数字表示此行或此列内涂黑格的个数。一些格内的内容可能已经给出：带圆角的黑块表示必须是云团的一角，不带圆角的黑块表示是云团的一部分但不是一角，×表示必须留白。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑组为长方形 + 每黑格至少两个黑邻居（长宽≥2 的必要条件）+ 盘外行列计数。「云团之间互不接触」与圆角/× 预给提示未编码。"
+}

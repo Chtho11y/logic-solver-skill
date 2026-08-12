@@ -1,0 +1,58 @@
+{
+  "key": "circlesquare",
+  "en": "Circles and Squares",
+  "zh": "方圆",
+  "category": "涂黑II",
+  "subcategory": "色块是方形",
+  "rule": "涂黑一些空格，使得所有涂黑的格子连通成一个整体，且没有全部涂黑的2×2结构。有黑圈的格子必须涂黑，有白圈的格子必须留白。每一组留白的连通组都是正方形。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 白圈, 2 = 黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle_o",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 圆圈颜色 + 留白连通组为长方形。「长方形必须是正方形（长=宽）」未编码。"
+}

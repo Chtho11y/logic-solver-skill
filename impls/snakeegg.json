@@ -1,0 +1,75 @@
+{
+  "key": "snakeegg",
+  "en": "Snake Egg",
+  "zh": "蛇蛋",
+  "category": "涂黑II",
+  "subcategory": "色块是一条蛇",
+  "rule": "涂黑一条宽度为一的蛇，使得每一组留白的连通组格数与盘面外给出的数一一对应。黑圈表示此格是蛇的一端。数字表示其所在的留白的连通组格数。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 蛇的一端"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "留白连通组格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle_o",
+      "label": "蛇端",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue_n",
+      "label": "留白组格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "完全实现：蛇形（连通/宽一/恰两端点/无全黑2x2）+ 端点圆圈 + 留白组格数。盘外「留白组格数一一对应」的多重集匹配未编码。"
+}

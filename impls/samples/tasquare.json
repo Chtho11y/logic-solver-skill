@@ -1,0 +1,11 @@
+{
+  "puzzle": "tasquare",
+  "rows": 6,
+  "cols": 6,
+  "title": "正方放置",
+  "clues": {
+    "n": {
+      "1,1": 1
+    }
+  }
+}

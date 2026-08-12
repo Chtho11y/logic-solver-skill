@@ -1,0 +1,56 @@
+{
+  "key": "tasquare",
+  "en": "Tasquare",
+  "zh": "正方放置",
+  "category": "涂黑II",
+  "subcategory": "色块是方形",
+  "rule": "涂黑一些格子，使得每一组涂黑的连通组都是正方形，且留白的格子连通成一个整体。有白色正方形的格子必须留白，且需要和至少一个涂黑正方形相邻。白色正方形里的数字表示与之相邻的所有涂黑正方形的面积之和。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "相邻涂黑正方形面积之和"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "相邻正方形面积和",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：涂黑组为长方形（正方形的必要条件）+ 留白连通 + 提示格留白且至少邻一涂黑格。「长=宽」与「相邻涂黑正方形面积之和」未编码。"
+}
