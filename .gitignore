@@ -3,3 +3,6 @@ __pycache__/
 .venv/
 web/node_modules/
 web/dist/
+editors/vscode/node_modules/
+editors/vscode/out/
+*.vsix

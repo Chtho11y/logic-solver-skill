@@ -1,0 +1,74 @@
+{
+  "name": "Puzzle DSL",
+  "scopeName": "source.puzzle-dsl",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#function-def" },
+    { "include": "#keywords" },
+    { "include": "#constants" },
+    { "include": "#numbers" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.puzzle-dsl",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.puzzle-dsl",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.puzzle-dsl", "match": "\\\\." }
+          ]
+        },
+        {
+          "name": "string.quoted.single.puzzle-dsl",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            { "name": "constant.character.escape.puzzle-dsl", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+    "function-def": {
+      "name": "meta.function.puzzle-dsl",
+      "begin": "\\b(def)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.puzzle-dsl" },
+        "2": { "name": "entity.name.function.puzzle-dsl" }
+      },
+      "end": ":",
+      "patterns": [
+        {
+          "name": "variable.parameter.puzzle-dsl",
+          "match": "[A-Za-z_][A-Za-z0-9_]*"
+        }
+      ]
+    },
+    "keywords": {
+      "name": "keyword.control.puzzle-dsl",
+      "match": "\\b(if|elif|else|for|in|let|and|or|not|def|return|import)\\b"
+    },
+    "constants": {
+      "name": "constant.language.puzzle-dsl",
+      "match": "\\b(true|false)\\b"
+    },
+    "numbers": {
+      "name": "constant.numeric.integer.puzzle-dsl",
+      "match": "\\b[0-9]+\\b"
+    },
+    "operators": {
+      "name": "keyword.operator.puzzle-dsl",
+      "match": "==|!=|<=|>=|&&|\\|\\||=>|[+\\-*/%<>=()\\[\\],:^!.]"
+    }
+  }
+}

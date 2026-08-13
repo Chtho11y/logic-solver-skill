@@ -114,7 +114,7 @@ class _Parser:
 
     def _def_stmt(self) -> ast.DefStmt:
         kw = self._expect(T_KEYWORD, "def")
-        name = self._expect(T_NAME).value
+        name_tok = self._expect(T_NAME)
         self._expect(T_OP, "(")
         params: list[str] = []
         if not self._check(T_OP, ")"):
@@ -124,7 +124,15 @@ class _Parser:
         self._expect(T_OP, ")")
         self._expect(T_OP, ":")
         body = self._suite()
-        return ast.DefStmt(line=kw.line, col=kw.col, name=name, params=params, body=body)
+        return ast.DefStmt(
+            line=kw.line,
+            col=kw.col,
+            name=name_tok.value,
+            params=params,
+            body=body,
+            name_line=name_tok.line,
+            name_col=name_tok.col,
+        )
 
     def _if_stmt(self) -> ast.IfStmt:
         kw = self._expect(T_KEYWORD, "if")

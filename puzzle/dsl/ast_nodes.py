@@ -119,6 +119,10 @@ class DefStmt(Node):
     name: str = ""
     params: list[str] = field(default_factory=list)
     body: list["Stmt"] = field(default_factory=list)
+    # Location of the function *name* (not the ``def`` keyword). Optional so
+    # older constructed nodes remain valid; 0 means "fall back to line/col".
+    name_line: int = 0
+    name_col: int = 0
 
 
 @dataclass
