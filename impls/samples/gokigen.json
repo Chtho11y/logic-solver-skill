@@ -1,0 +1,11 @@
+{
+  "puzzle": "gokigen",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 斜线迷宫",
+  "clues": {
+    "n": {
+      "1,1": 2
+    }
+  }
+}

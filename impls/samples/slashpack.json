@@ -1,0 +1,12 @@
+{
+  "puzzle": "slashpack",
+  "rows": 1,
+  "cols": 2,
+  "title": "1x2 一区",
+  "clues": {
+    "n": {
+      "0,0": 1,
+      "0,1": 2
+    }
+  }
+}

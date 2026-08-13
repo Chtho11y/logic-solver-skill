@@ -1,0 +1,57 @@
+{
+  "key": "cojun",
+  "en": "Cojun",
+  "zh": "叠叠高",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格里填一个数，使得每个区域里包含数字1~N，其中N是这个区域的总格数。相邻的格子里不能填相同的数字。对于任意两个在同区域内纵向相邻的格子，上面的格子里的数字必须比下面的大。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        12
+      ],
+      "doc": "1..N"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "区域 1..N；相邻不同；同区纵向相邻则上格大于下格。"
+}

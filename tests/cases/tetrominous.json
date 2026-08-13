@@ -1,0 +1,22 @@
+{
+  "puzzle": "tetrominous",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x2 一个 O",
+      "rows": 2,
+      "cols": 2,
+      "clues": {
+        "s": {
+          "0,0": 2
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0",
+          "0 0"
+        ]
+      }
+    }
+  ]
+}

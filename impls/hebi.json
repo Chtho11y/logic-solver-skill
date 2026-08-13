@@ -1,0 +1,97 @@
+{
+  "key": "hebi",
+  "en": "Hebi-Ichigo",
+  "zh": "群蛇乱舞",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填入一个数，使得每个数字连通组（代表蛇）是一个从1到5按顺序相连的数字序列。不同的蛇不能相邻（但可以对角接触）。提示数字表示在该方向上（直到下一个黑格或盘面边界为止）看到的第一个数字。特别地，0表示该范围内没有数字。在一条蛇的视线内（沿着从2到1的方向，直到黑格或盘面边界为止）不能有其他的蛇。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1=已填"
+    },
+    {
+      "name": "b",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=黑格/墙"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "b",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "arrow",
+      "label": "视线",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "蛇为 1-5 路径；蛇与蛇正交不相邻。箭头数字=该方向直到墙/边界的第一个数，0=没有。"
+}

@@ -1,0 +1,142 @@
+{
+  "key": "yosenabe",
+  "en": "Yosenabe",
+  "zh": "火锅",
+  "category": "路径I",
+  "subcategory": "移动",
+  "rule": "把每个圆圈横向或纵向移动到一个灰色区域，使得每个灰色区域至少包含一个圆圈。圆圈的移动路径不能交叉，包括在端点交叉。圆圈移动时可以跨过其他灰色区域。灰色区域内的数字表示最终移动到此区域的所有圆圈内数字之和。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "圆圈编号"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 落点"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 圆圈"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "圆圈数字"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 锅"
+    },
+    {
+      "name": "k",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "锅内数字和"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "pot",
+      "label": "灰色锅",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "1": "#bdbdbd"
+      }
+    },
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "圆圈数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "sum",
+      "label": "锅和",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "k"
+    },
+    {
+      "id": "shade",
+      "label": "落点",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "f",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "直线滑入灰格；可越过其他锅。k 为锅内圆圈数字之和。"
+}

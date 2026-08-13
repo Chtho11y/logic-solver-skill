@@ -1,0 +1,62 @@
+{
+  "key": "mirrorbk",
+  "en": "Mirror Block",
+  "zh": "镜像区块",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域至多包含一个数字。数字表示其所在区域的面积。粗线（代表镜子）必须分割两个区域，且这两个区域必须关于镜子呈轴对称。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域面积"
+    },
+    {
+      "name": "m",
+      "kind": "edge",
+      "type": "constant",
+      "doc": "1 = 镜子"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "mirror",
+      "label": "镜子",
+      "element": "edgeline",
+      "target": "edge",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "镜子两侧两区关于该格线轴对称。"
+}

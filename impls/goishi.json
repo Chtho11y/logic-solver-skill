@@ -1,0 +1,57 @@
+{
+  "key": "goishi",
+  "en": "Goishi",
+  "zh": "捡棋子",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "从1开始在每颗棋子上标数，表示捡走棋子的顺序。连续两个被捡走的棋子必须同行或同列，且中间不能有未捡的棋子。捡棋子的过程中不允许180°掉头。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "棋子",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "圆圈为棋子；x 为捡取顺序 1..K。"
+}

@@ -1,0 +1,111 @@
+{
+  "key": "sato",
+  "en": "Satogaeri",
+  "zh": "回娘家",
+  "category": "路径I",
+  "subcategory": "移动",
+  "rule": "把一些圆圈横向或纵向移动，使得在所有移动过后，每个区域恰有一个圆圈。圆圈的移动路径不能交叉，包括在端点交叉，也不能经过其他没有移动的圆圈。数字表示此圆圈需要移动的距离（0表示不能移动）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "圆圈编号"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 落点有圆圈"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 圆圈"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "移动距离"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "距离",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "落点",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "f",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "直线滑动；每区域恰好一个落点。"
+}

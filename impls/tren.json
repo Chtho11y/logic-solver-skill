@@ -1,0 +1,48 @@
+{
+  "key": "tren",
+  "en": "Tren",
+  "zh": "停车场",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在盘面里放置一些互不重叠的1×2或1×3的长方形（表示车）。每辆车必须恰好包含一个数字，而每个数字也必须被一辆车覆盖。每辆车可以按照与它的两条长边平行的方向移动。车里的数字表示这辆车在不和其他车重叠的情况下可以前后移动的总格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "可滑动格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "滑动格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

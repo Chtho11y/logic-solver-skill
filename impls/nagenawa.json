@@ -1,0 +1,60 @@
+{
+  "key": "nagenawa",
+  "en": "Nagenawa",
+  "zh": "套索",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画若干条横平竖直地经过格子中心的回路，使得每条回路都是一个长方形。不同回路之间可以交叉，但不能以其他方式重叠，包括在回路一角交叉。数字表示区域内至少被一个回路经过的格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域内经过格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "矩形回路可交叉不可共角。数字=区域内至少被一条回路经过的格数。"
+}

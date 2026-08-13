@@ -1,0 +1,9 @@
+{
+  "puzzle": "pentatouch",
+  "rows": 2,
+  "cols": 3,
+  "title": "2x3 一个 U",
+  "clues": {
+    "o": {}
+  }
+}

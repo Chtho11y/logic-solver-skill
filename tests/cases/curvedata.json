@@ -1,0 +1,24 @@
+{
+  "puzzle": "curvedata",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "1x2 单提示",
+      "rows": 1,
+      "cols": 2,
+      "clues": {
+        "o": {
+          "0,0": 1
+        }
+      },
+      "answer": {
+        "e": {
+          "V,0,1": 1
+        },
+        "x": [
+          "1 1"
+        ]
+      }
+    }
+  ]
+}

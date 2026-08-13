@@ -1,0 +1,75 @@
+{
+  "key": "hashi",
+  "en": "Hashi",
+  "zh": "数桥",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "在一些圆圈之间画一条或两条横平竖直的线段（代表桥梁），把所有圆圈连成一个整体。线段之间不能交叉，也不能穿过其他圆圈。圆圈里的数字表示从这个圈连出的线段数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 至少一座桥"
+    },
+    {
+      "name": "t",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 双桥（额外一座）"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "岛上数字"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "岛屿",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "桥梁",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "t 为双桥辅助边，不单独绘制。岛与桥格不能斜向误连，连通走占用边。"
+}

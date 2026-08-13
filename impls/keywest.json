@@ -1,0 +1,72 @@
+{
+  "key": "keywest",
+  "en": "Key West",
+  "zh": "群岛之桥",
+  "category": "路径II",
+  "subcategory": "",
+  "rule": "在每个圆圈内填入一个0~4之间的数字，并在一些横竖相邻的圆圈之间画线，把所有圈内数字大于0的圆圈连成一个整体。圆圈里的数字表示从这个圈连出的线段数。横竖相邻的圆圈里不能填相同的数字。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        4
+      ],
+      "doc": "填入的 0~4"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 圆圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "num",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "连线",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "只在相邻圆圈间连线；>0 的圆圈连通；邻圈数字不同。"
+}

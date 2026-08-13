@@ -1,0 +1,83 @@
+{
+  "key": "crossstitch",
+  "en": "Crossstitch",
+  "zh": "十字绣",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "在一些空格里画对角线，使其形成两条不和自身交叉的回路（盘面的两种顶点各一条回路）。两个回路之间可以交叉，但出现交叉的单元格不能横竖相邻。圈内数字表示此格的四个角中被回路经过的个数。带箭头的数字表示在该方向上（直到下一个黑格或盘面边界为止）出现交叉的单元格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        3
+      ],
+      "doc": "0空 1=\\ 2=/ 3=交叉"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=黑格"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "圆圈角数或箭头交叉数"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given_w",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#232733"
+      }
+    },
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "diag",
+      "label": "对角线",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：对角线 0/\\//交叉，格点度 0 或 2，交叉不相邻，圆圈/箭头数字已编码。恰好两条回路未强制。"
+}

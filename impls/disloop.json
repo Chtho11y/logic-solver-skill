@@ -1,0 +1,66 @@
+{
+  "key": "disloop",
+  "en": "Disorderly Loop",
+  "zh": "乱序回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些空格中心且不和自身交叉的回路。提示格中的数字表示从此格箭头指向的相邻格开始，沿箭头方向的下N段回路线段的长度（其中N为提示格中数字的个数）；这些长度与数字一一对应，但顺序不必一致。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "线段长度"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向"
+    }
+  ],
+  "layers": [
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：提示格不在回路上；单数=箭头前方格的直线段长。多段无序多重集未编码。"
+}

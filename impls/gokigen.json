@@ -1,0 +1,73 @@
+{
+  "key": "gokigen",
+  "en": "Slant",
+  "zh": "斜线迷宫",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个格子中画一条对角线，使得对角线不形成环。圈中的数字表示从这个圈引出的斜线数量。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        2
+      ],
+      "doc": "1=╲ 2=╱"
+    },
+    {
+      "name": "n",
+      "kind": "corner",
+      "type": "constant",
+      "doc": "顶点斜线数"
+    },
+    {
+      "name": "par",
+      "kind": "corner",
+      "type": "normal",
+      "domain": [
+        0,
+        4
+      ],
+      "doc": "斜线森林父方向"
+    },
+    {
+      "name": "rk",
+      "kind": "corner",
+      "type": "normal",
+      "domain": [
+        0,
+        80
+      ],
+      "doc": "斜线森林序"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "顶点数字",
+      "element": "number",
+      "target": "corner",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "id": "diag",
+      "label": "斜线",
+      "element": "diagonal",
+      "target": "cell",
+      "role": "output",
+      "var": "g"
+    }
+  ],
+  "params": {},
+  "notes": "g: 1=╲ 2=╱。par/rk 为无环森林辅助量。"
+}

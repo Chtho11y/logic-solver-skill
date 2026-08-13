@@ -1,0 +1,12 @@
+{
+  "puzzle": "firewalk",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 烈焰行者",
+  "clues": {
+    "n": {
+      "0,0": 8
+    },
+    "w": {}
+  }
+}

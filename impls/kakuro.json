@@ -1,0 +1,90 @@
+{
+  "key": "kakuro",
+  "en": "Kakuro",
+  "zh": "数和",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格内放置一个1~9之间的数码，使得每一段空格内的数码不重复。黑色三角形里的数字表示其（面对的）右方的横段或下方的纵段中所有数码之和。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    },
+    {
+      "name": "b",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=黑格/墙"
+    },
+    {
+      "name": "h",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "横向和"
+    },
+    {
+      "name": "v",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "纵向和"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "b",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "横向和",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "h",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "vclue",
+      "label": "纵向和",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "v",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "白格填 1-9；h/v 写在黑格上，分别约束其右方横段 / 下方纵段。"
+}

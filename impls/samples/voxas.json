@@ -1,0 +1,11 @@
+{
+  "puzzle": "voxas",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 两横",
+  "clues": {
+    "o": {
+      "H,1,0": 1
+    }
+  }
+}

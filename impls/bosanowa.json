@@ -1,0 +1,57 @@
+{
+  "key": "bosanowa",
+  "en": "Bosanowa",
+  "zh": "邻差和",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个圆圈中填入一个正整数，使得每个数等于自身与横竖相邻的数之差的总和。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "填数圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "仅在圆圈格填正整数；x=与横竖相邻填数之差的绝对值之和。"
+}

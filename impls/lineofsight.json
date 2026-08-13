@@ -1,0 +1,66 @@
+{
+  "key": "lineofsight",
+  "en": "Line of Sight",
+  "zh": "视线",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "连接相邻圆点画一条不和自身交叉的回路。数字表示从此格开始这个方向中最近的一条回路线段的长度。作为特例，“0”表示这个方向中没有线段。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "最近线段长度"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向"
+    }
+  ],
+  "layers": [
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "edges",
+      "label": "边界线",
+      "element": "edgeline",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "格线回路。数字=该方向最近一条回路线段的长度（非格距）。"
+}

@@ -1,0 +1,74 @@
+{
+  "key": "ubahn",
+  "en": "U-Bahn",
+  "zh": "地铁",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在主盘面内画一些连接相邻格中心的横平竖直的线，使得所有线连通成一个整体。每个格子不能和恰好一个其他格相连（也就是说不能有“死胡同”），但是可以有没有线的格子。盘面外的数字表示此行或此列内有对应连接方式（交叉、丁字、直行、转弯）的格子，不区分具体连接的方向。一些格子里所有的连线已经给出。黑色的格子不能画线。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "b",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=黑格/墙"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "b",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "outside",
+      "label": "连接类型计数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "无线或度 2/3/4，无线死胡同。盘外若为四元组则计 [交叉,丁字,直行,转弯]。"
+}

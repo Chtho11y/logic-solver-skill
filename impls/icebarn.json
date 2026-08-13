@@ -1,0 +1,88 @@
+{
+  "key": "icebarn",
+  "en": "Icebarn",
+  "zh": "冰宫游弋",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心的路径，从盘面边界上指向内部的箭头开始，到边界上指向外部的箭头结束。路径必须按照给出的方向穿过所有箭头。路径在白格上不能和自身交叉。路径不能在（表示冰）的蓝格上转弯，但可以在这些格子上和自身交叉。每一组（粗线标注）的蓝色区域必须至少一次。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=IN 2=OUT"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 冰"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "ice",
+      "label": "冰面",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "1": "#90caf9"
+      }
+    },
+    {
+      "id": "sg",
+      "label": "IN/OUT",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "冰格可十字自交且不得转弯。箭头约束为沿该轴穿过（方向感在自交时为松弛）。"
+}

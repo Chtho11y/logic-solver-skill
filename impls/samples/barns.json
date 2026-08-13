@@ -1,0 +1,10 @@
+{
+  "puzzle": "barns",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 冰宫回路",
+  "clues": {
+    "t": {},
+    "w": {}
+  }
+}

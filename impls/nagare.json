@@ -1,0 +1,66 @@
+{
+  "key": "nagare",
+  "en": "Nagereru-Loop",
+  "zh": "吹风机回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些白格中心且不和自身交叉的有向回路。回路不能经过黑格。回路必须按箭头方向穿过所有带黑色箭头的白格，不能在格内转弯。带白色箭头的黑格代表风扇，会沿箭头方向吹风直到下一个黑格为止。在这些受风影响的白格中，回路不得逆风前进，并且一旦进入受风影响的格子，必须立即按照风向转向，前进至少一格。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 特殊地形"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given_w",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#232733"
+      }
+    },
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：不经黑格；白格箭头处沿轴直行；风扇下风若在回路上则含顺风边。有向逆风/进入后转向未编码。"
+}

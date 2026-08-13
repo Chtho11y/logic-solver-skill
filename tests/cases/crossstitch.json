@@ -1,0 +1,22 @@
+{
+  "puzzle": "crossstitch",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x2 十字绣",
+      "rows": 2,
+      "cols": 2,
+      "clues": {
+        "w": {},
+        "n": {},
+        "d": {}
+      },
+      "answer": {
+        "x": [
+          "0 0",
+          "0 0"
+        ]
+      }
+    }
+  ]
+}

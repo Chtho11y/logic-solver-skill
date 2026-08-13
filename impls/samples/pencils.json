@@ -1,0 +1,11 @@
+{
+  "puzzle": "pencils",
+  "rows": 1,
+  "cols": 3,
+  "title": "1x3 一支笔",
+  "clues": {
+    "n": {
+      "0,0": 1
+    }
+  }
+}

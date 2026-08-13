@@ -1,0 +1,62 @@
+{
+  "key": "easyasabc",
+  "en": "Easy as ABC",
+  "zh": "简单字符",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填一个属于给出的列表中的字符，使得每个字符在每行和每列都恰好出现一次。盘面外的字符表示此行或此列中从这个方向看去遇到的第一个字符。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "第一字符",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "bottom",
+          "left",
+          "right"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "values": [
+        1,
+        2
+      ]
+    }
+  },
+  "notes": "x: 1=A,2=B,…,0=空。values 为字母编号。盘外=该方向见到的第一个字母。"
+}

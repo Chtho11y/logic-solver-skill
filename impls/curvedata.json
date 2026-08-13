@@ -1,0 +1,72 @@
+{
+  "key": "curvedata",
+  "en": "Curve Data",
+  "zh": "曲线数据",
+  "category": "路径II",
+  "subcategory": "",
+  "rule": "画一些横平竖直地经过格子中心的线段组成一些图形，使得每个连通图形恰好经过一个提示，并且每个格子都被某个图形经过。提示表示该图形的形状（不允许旋转或翻转），线段长度可以自由延长或缩短（线段长度至少为1）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "所属提示编号"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 提示格"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "提示",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "fig",
+      "label": "图形编号",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "线段",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：每格都在某图形上，每图恰好一个提示。提示形状的伸缩匹配未编码。"
+}

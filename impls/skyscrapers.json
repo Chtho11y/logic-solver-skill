@@ -1,0 +1,66 @@
+{
+  "key": "skyscrapers",
+  "en": "Skyscrapers",
+  "zh": "摩天楼",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填一个属于给出的列表中的数，使得每个数字在每行和每列都恰好出现一次。每个数字代表一栋对应高度的摩天楼。盘面外的数字表示从这个方向看去能看到的摩天楼个数，其中较高的摩天楼会遮挡后面较矮的摩天楼。（空格不遮挡视线。）",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        12
+      ],
+      "doc": "1..N"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "可见楼数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "bottom",
+          "left",
+          "right"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "默认拉丁方 1..N。盘外=该方向能看到的摩天楼个数。"
+}

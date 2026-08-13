@@ -1,0 +1,11 @@
+{
+  "puzzle": "arrowflow",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 箭头流动",
+  "clues": {
+    "n": {
+      "1,1": 8
+    }
+  }
+}

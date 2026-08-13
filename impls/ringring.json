@@ -1,0 +1,52 @@
+{
+  "key": "ringring",
+  "en": "Ring-ring",
+  "zh": "环环相扣",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "用横平竖直地经过空格中心的长方形回路覆盖每个空格。回路之间可以相交，但是不能有边重叠，也不能共用一角。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 特殊地形"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given_w",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#232733"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "矩形回路覆盖每个空格；可交叉不可共边/共角。"
+}

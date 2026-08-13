@@ -211,7 +211,8 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `cell_of(point)` | 与某 cell/corner/edge 直接相连的 cell |
 | `corner_of(point)` | 与某 cell/corner/edge 直接相连的 corner |
 | `edge_of(point)` | 与某 cell/corner/edge 直接相连的 edge |
-| `dir(cell, value)` | 从某 cell 沿方向 value(0-7) 的所有 cell（不含起点） |
+| `dir(cell, value)` | 从某 cell 沿方向 value(0-7) 的所有 cell（不含起点，保持射线顺序） |
+| `spiral()` | 从左上角起顺时针螺旋走过每个 cell（保持访问顺序，不排序） |
 | `grid(w, h)` | 把棋盘划分为不重叠的 w×h tile（区域列表，仅完整 tile） |
 | `slide(w, h)` | 所有重叠的 w×h 滑动窗口（步长 1，区域列表） |
 | `row_of(point)` / `col_of(point)` | 点的行/列号（编译期整数） |

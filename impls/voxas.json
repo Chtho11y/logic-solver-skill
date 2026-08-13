@@ -1,0 +1,50 @@
+{
+  "key": "voxas",
+  "en": "Voxas",
+  "zh": "二三分割",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个长方形区域，使得每个区域的面积是二或三。每个高为一的区域称为横向，每个宽为一的区域称为纵向。给出的边界必须介于两个不同区域之间，而这些边界上圆点的颜色表示了两个区域的面积和朝向关系：白点表示面积和朝向都相同，灰点表示两者中恰有一个相同，而黑点表示两者均不同。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "o",
+      "kind": "edge",
+      "type": "constant",
+      "doc": "1白 2黑 3灰"
+    }
+  ],
+  "layers": [
+    {
+      "id": "dot",
+      "label": "圆点",
+      "element": "circle",
+      "target": "edge",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "o: 1=白(面积朝向都同) 2=黑(都不同) 3=灰(恰一个相同)。"
+}

@@ -1,0 +1,82 @@
+{
+  "key": "lohkous",
+  "en": "Lohkous",
+  "zh": "长宽度量",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域恰好包含一个有数字的格子。格子内的一个或多个数字表示此区域内每一横段或纵段格子的长度的集合。区域内的这些提示数（包括未知数）不能重复。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n1",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "段长 1"
+    },
+    {
+      "name": "n2",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "段长 2"
+    },
+    {
+      "name": "n3",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "段长 3"
+    }
+  ],
+  "layers": [
+    {
+      "id": "n1",
+      "label": "段长1",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n1",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "n2",
+      "label": "段长2",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n2",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "n3",
+      "label": "段长3",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n3",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "一格可写最多三个不重复段长，等于该区所有横纵段长的集合。"
+}

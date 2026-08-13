@@ -1,0 +1,53 @@
+{
+  "key": "doppelblock",
+  "en": "Doppelblock",
+  "zh": "双黑格",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在格子内填入数字和黑格，使得每行每列均包含1~N-2和两个黑格（N为盘面边长）。盘面外的数字表示该行/列两个黑格之间的所有数字之和。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "黑格间数字和",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "0=黑格，每行每列两个；其余为 1..N-2 各一次。盘外=两黑格之间的和。"
+}

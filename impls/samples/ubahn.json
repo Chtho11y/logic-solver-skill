@@ -1,0 +1,9 @@
+{
+  "puzzle": "ubahn",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 环",
+  "clues": {
+    "b": {}
+  }
+}

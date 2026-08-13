@@ -1,0 +1,63 @@
+{
+  "key": "consecutiveq",
+  "en": "Consecutive Quads",
+  "zh": "连续四数组",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格里填一个1~N的数，使得每个数字在每行和每列都恰好出现一次（其中N是每行或每列的格数）。圆点表示周围四个数中至少有一对连续的数：白点表示恰有一对，而黑点表示至少有两对（不同数对之间可以共用一个数）。所有可能的黑白点不一定全部给出。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        12
+      ],
+      "doc": "1..N"
+    },
+    {
+      "name": "o",
+      "kind": "corner",
+      "type": "constant",
+      "doc": "1=白点 2=黑点"
+    }
+  ],
+  "layers": [
+    {
+      "id": "dot",
+      "label": "四角点",
+      "element": "dot",
+      "target": "corner",
+      "role": "input",
+      "var": "o"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "拉丁方。白点=周围四数恰一对连续，黑点=至少两对。未给出的点不约束。"
+}

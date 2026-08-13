@@ -1,0 +1,11 @@
+{
+  "puzzle": "symmarea",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 一块",
+  "clues": {
+    "n": {
+      "0,0": 4
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "key": "doubleornothing",
+  "en": "Double or Nothing",
+  "zh": "双或无",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画两条横平竖直地经过一些格子中心且分别不和自身交叉的回路。每个空格必须恰有一条回路经过。每个有加号的格子要么两条回路都经过（且在那里交叉），要么两条回路都不经过。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "f",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 第二条回路"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 加号"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given_g",
+      "label": "加号",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "1": "#c0392b"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路一",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    },
+    {
+      "id": "loop2",
+      "label": "回路二",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "f"
+    }
+  ],
+  "params": {},
+  "notes": "两条回路不共边。空格恰好一条经过；加号格要么交叉要么都不用。"
+}

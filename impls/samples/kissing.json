@@ -1,0 +1,12 @@
+{
+  "puzzle": "kissing",
+  "rows": 1,
+  "cols": 2,
+  "title": "1x2 一吻",
+  "clues": {
+    "k": {
+      "V,0,1": 1
+    },
+    "w": {}
+  }
+}

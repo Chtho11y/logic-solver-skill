@@ -1,0 +1,62 @@
+{
+  "key": "arrowflow",
+  "en": "Arrow Flow",
+  "zh": "箭头流动",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格中放置一个箭头（↑ ↓ ← → 之一）。相同的箭头不能相邻。从任意一个带有箭头的格子开始，沿着箭头移动，最终一定可以到达一个线索格。数字表示最终到达这一格的箭头格数目，问号可以表示任意数字。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "a",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        8
+      ],
+      "doc": "箭头 0-3，8=无"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    },
+    {
+      "name": "dest",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        80
+      ],
+      "doc": "箭头终点编号"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "answer",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "output",
+      "var": "a"
+    }
+  ],
+  "params": {},
+  "notes": "空格放箭头，相同箭头不相邻。沿箭头到达线索格。n=到达该格的箭头格数，-1=问号。dest 为辅助。"
+}

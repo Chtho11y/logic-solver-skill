@@ -1,0 +1,88 @@
+{
+  "key": "kaero",
+  "en": "Kaero",
+  "zh": "归路",
+  "category": "路径I",
+  "subcategory": "移动",
+  "rule": "把一些字母沿横平竖直的路径移动，使得在所有移动过后，每个区域有且仅有一种字母，相同的字母都在同一个区域。字母的移动路径不能交叉，包括在端点交叉，也不能经过其他没有移动的字母。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "字母实例编号"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        9
+      ],
+      "doc": "落点字母；0=空"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "字母种类"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "字母",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "dest",
+      "label": "落点",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "f"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "每个字母实例一条可转弯路径；落点后每区一种字母且同字母同区。"
+}

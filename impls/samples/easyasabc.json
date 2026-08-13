@@ -1,0 +1,32 @@
+{
+  "puzzle": "easyasabc",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 简单字符",
+  "params": {
+    "values": [
+      1,
+      2
+    ],
+    "left": [
+      1,
+      2,
+      1
+    ],
+    "top": [
+      1,
+      2,
+      1
+    ],
+    "right": [
+      2,
+      1,
+      2
+    ],
+    "bottom": [
+      2,
+      1,
+      2
+    ]
+  }
+}

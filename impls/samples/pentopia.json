@@ -1,0 +1,11 @@
+{
+  "puzzle": "pentopia",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 一个 U",
+  "clues": {
+    "a": {
+      "2,1": 1
+    }
+  }
+}

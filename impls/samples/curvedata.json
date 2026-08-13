@@ -1,0 +1,11 @@
+{
+  "puzzle": "curvedata",
+  "rows": 1,
+  "cols": 2,
+  "title": "1x2 单提示",
+  "clues": {
+    "o": {
+      "0,0": 1
+    }
+  }
+}

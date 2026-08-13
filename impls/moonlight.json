@@ -1,0 +1,99 @@
+{
+  "key": "moonlight",
+  "en": "Moonlight",
+  "zh": "星光",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在一些空格内放置一颗星或一朵云，使得每行和每列内的图形数量等于盘面外给出的列表。部分格内已放入了黑色圆圈（代表行星）。格子里的星可以照亮所有从此格横竖能够直接连接到且不被其他图形阻挡的行星。当行星被照亮时，其受照亮方向的两个象限呈白色。×表示此格不放置任何图形。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        2
+      ],
+      "doc": "0=空 1=星 2=云"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "2 = 行星"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = ×"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "星/云个数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "bottom",
+          "left",
+          "right"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "circle",
+      "label": "行星",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "block",
+      "label": "禁入",
+      "element": "cross",
+      "target": "cell",
+      "role": "input",
+      "var": "w"
+    },
+    {
+      "id": "shapes",
+      "label": "星/云",
+      "element": "star",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#f1c40f",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "top": [],
+      "bottom": [],
+      "left": [],
+      "right": []
+    }
+  },
+  "notes": "部分实现：left/top=星数，right/bottom=云数；行星与×不放图。照明象限未编码。",
+  "unencodedClues": [
+    "light"
+  ]
+}

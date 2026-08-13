@@ -1,0 +1,86 @@
+{
+  "key": "icelom",
+  "en": "Icelom",
+  "zh": "冰宫巡游",
+  "category": "路径II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有白色格子中心的路径，从\"IN\"开始，到\"OUT\"结束。路径需要按顺序经过所有标有数的格子。路径在白色格子上不能和自身交叉。路径不能在蓝色格子（表示冰）上转弯，但可以在这些格子上和自身交叉。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=IN 2=OUT"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "经过顺序"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 冰"
+    }
+  ],
+  "layers": [
+    {
+      "id": "ice",
+      "label": "冰面",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "1": "#90caf9"
+      }
+    },
+    {
+      "id": "sg",
+      "label": "IN/OUT",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "clue",
+      "label": "顺序",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：冰格可自交且不转弯，白格全经过。数字顺序在冰面自交时无法用单次访问序编码。",
+  "unencodedClues": [
+    "n"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "key": "maxi",
+  "en": "Maxi Loop",
+  "zh": "极大回路",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有格子中心且不和自身交叉的回路。数字表示回路单次经过此区域中经过格数最多的一段的格数。这个最大值必须在某次经过时达到。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "最长访问段"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：哈密顿回路 + 区域进出次数与最长段的鸽笼不等式。未强制某次经过恰好达到 n。"
+}

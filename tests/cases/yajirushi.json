@@ -1,0 +1,21 @@
+{
+  "puzzle": "yajirushi",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "3x3 yajirushi",
+      "rows": 3,
+      "cols": 3,
+      "clues": {
+        "a": {}
+      },
+      "answer": {
+        "a": [
+          "1 1 1",
+          "8 8 8",
+          "0 0 0"
+        ]
+      }
+    }
+  ]
+}

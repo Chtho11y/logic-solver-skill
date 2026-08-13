@@ -1,0 +1,92 @@
+{
+  "key": "haisu",
+  "en": "Haisu",
+  "zh": "入数",
+  "category": "路径II",
+  "subcategory": "",
+  "rule": "从S到G画一条经过所有格子中心的路径。格子内的数N表示此格在第N次经过格子所属的区域时被经过。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        36
+      ],
+      "doc": "访问序 1..N"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=S 2=G"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第几次进入本区"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "sg",
+      "label": "S/G",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "clue",
+      "label": "入区次数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "order",
+      "label": "访问序",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "哈密顿路径 S→G；数字=该格所在停留是本区第几次进入。domain 上限 36。"
+}

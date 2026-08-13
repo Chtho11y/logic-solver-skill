@@ -1,0 +1,9 @@
+{
+  "puzzle": "pipelink",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 管道回路",
+  "clues": {
+    "s": {}
+  }
+}

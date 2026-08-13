@@ -1,0 +1,79 @@
+{
+  "key": "slashpack",
+  "en": "Slash Pack",
+  "zh": "斜线分区",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "在一些空格里画一条对角线，把盘面分成若干个区域。每个区域必须包含1~N的数字各一次，其中N是盘面内出现的最大的数字。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        2
+      ],
+      "doc": "0=无 1=\\\\ 2=/"
+    },
+    {
+      "name": "u",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        63
+      ],
+      "doc": "三角区域号 A"
+    },
+    {
+      "name": "v",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        63
+      ],
+      "doc": "三角区域号 B"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "slash",
+      "label": "斜线",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "s",
+      "palette": {
+        "1": "#9aa4b2",
+        "2": "#c0392b"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：三角邻边编号一致 + 每区 1..N 各一次。s: 1=\\ 2=/。",
+  "unencodedClues": [
+    "connectivity"
+  ]
+}

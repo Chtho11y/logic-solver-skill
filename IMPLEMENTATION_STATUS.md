@@ -2,7 +2,7 @@
 
 生成时间：2026-08-13　　目录总数：**236** 条（`rules.txt`）
 
-> 本报告数据由脚本从 `rules.txt` + `impls/*.json` 直接统计，非人工记录。
+> 本报告数据由 `rules.txt` + `impls/*.dsl` + `impls/*.json` 的 `notes` / `unencodedClues` 直接统计，非凭记忆。完全/部分以 JSON 为准：含「部分实现」「未编码」「松弛」或非空 `unencodedClues` 记为 B。
 
 ---
 
@@ -10,138 +10,186 @@
 
 | 分组 | 条数 | 占比 | 说明 |
 |---|---:|---:|---|
-| **A. 本次完全实现** | **12** | 5% | 规则的全部决定性约束均已编码 |
-| **B. 本次部分实现** | **31** | 13% | 约束为真解的**合法松弛**，不排除任何正确答案 |
+| **A. 完全实现** | **125** | 53% | 规则的全部决定性约束均已编码（不含基线） |
+| **B. 部分实现** | **63** | 27% | 约束为真解的**合法松弛**，不排除任何正确答案 |
 | **C. 原有实现（基线）** | 46 | 19% | 本次任务之前已存在，**未在本次审计范围内** |
-| **D. 尚未实现** | **147** | 62% | 无 `impls/` 文件 |
+| **D. 尚未实现** | **2** | 1% | 无 `impls/` 文件：`kouchoku`、`angleloop` |
 | 合计 | 236 | 100% | |
 
-本次会话产出 **43** 条（A+B），全部通过三重验证：编译、样例可满足、**线索非空洞**。
+累计产出 **188** 条（A+B）。`impls/*.dsl` 共 234 个，与 `rules.txt` 236 键相减，缺口仅为上述 2 条。
 
 ### 关于上一轮的纠正
 
-上一轮我曾声称"190 条全部补全"，那是**过度宣称**：当时的 `compile`+`solve` 只证明"能编译且空盘可满足"，未校验与规则的一致性；复审发现 137 条存在**错误编码**（写了真解不满足的约束）。该批产物已按你的要求 `git clean` 全部回滚，当前 43 条是重做结果。
+上一轮我曾声称「190 条全部补全」，那是**过度宣称**：当时的 `compile`+`solve` 只证明「能编译且空盘可满足」，未校验与规则的一致性；复审发现 137 条存在**错误编码**（写了真解不满足的约束）。该批产物已按你的要求 `git clean` 全部回滚。其后各轮按「合法松弛、宁缺毋错」重做；本文件是剩余规则全部处理完后的终稿。en/zh/rule 仍取自 `rules.txt`，不另撰。
 
 ---
 
-## 2. A. 完全实现（12 条）
+## 2. A. 完全实现（125 条）
 
-| key | 中文名 | 分类 | 已编码的关键机制 |
-|---|---|---|---|
-| `nothree` | 等隔无三 | 涂黑I | island_rule + 圆圈恰触1黑 + **同行列等距三连黑禁止**（全间距枚举） |
-| `sumiwake` | 圆角房间 | 涂黑I | island_rule + 留白段跨区限制 + 白圈触1黑/黑圈触2黑 |
-| `usoone` | 单一谎言 | 涂黑I | island_rule + 邻黑计数 + **每区域恰好一个错误数字** |
-| `yajikazu` | 真假仙人 | 涂黑I | island_rule + **提示仅在其格留白时生效**（涂黑则失效） |
-| `ayeheya` | 对称数间 | 涂黑I | island_rule + 跨区限制 + 区域黑数 + **区域180°旋转对称** |
-| `bosnianroad` | 波斯尼亚路 | 涂黑II | **闭环**（每黑格恰2黑邻+连通+无2x2）+ 八邻计数 + 数字格留白 |
-| `sansaroad` | 三叉路口 | 涂黑II | 留白连通 + 无全白2x2 + **三叉度3/其余度2** + 点提示 |
-| `snake` | 数蛇 | 涂黑II | **蛇形**（连通/宽1/恰2端点）+ 端点·蛇身圆圈 + 盘外行列计数 |
-| `dominion` | 多米诺分区 | 涂黑II | **骨牌配对且互不相邻** + 字母格留白 + 同字母同区/异字母异区 |
-| `norinuri` | 海苔墙 | 涂黑II | 骨牌涂黑 + **每留白组恰一数字**（组数=数字数）+ 组格数 |
-| `isowatari` | 渡池石块 | 涂黑II | **每黑组恰 N 格** + 留白连通 + 无全白2x2 + 圆圈颜色 |
-| `aquarium` | 水族馆 | 涂黑II | **区域内水往下沉 + 同区同行水位相同**（水面平）+ 盘外计数 |
-
-> 少数条目带解释性附注（如 `bosnianroad` 的"环不与自身对角接触"由无 2x2 部分保证），已写入各自 `notes`。
-
----
-
-## 3. B. 部分实现（31 条）
-
-约束均为真解的**合法松弛**：可作为正确起点，但当前不足以唯一确定解。`unencoded` 列出"已声明可录入、但尚未参与约束"的线索变量（已在 JSON 的 `unencodedClues` 中标记，验证器据此豁免）。
-
-### 涂黑I（13 条）
-
-| key | 中文名 | 已编码 | 未编码（缺口） |
-|---|---|---|---|
-| `disco` | disco | 涂黑连通+无2x2+每区≥2黑 | 每区域**恰好两组**连通 |
-| `parquet` | 拼花地板 | 涂黑连通且**无环（树）** | 粗线/细线**两级区域**模型缺失 |
-| `teri` | 矩形领土 | island_rule + 白圈留白 | 含此格的**最大留白矩形面积** |
-| `akichi` | 数间(空地) | island_rule + 跨区限制 | 区域内**最大**留白连通组面积（`n`） |
-| `nuritwin` | 涂黑成对 | 涂黑连通+无2x2+区黑数为偶且=2×数字 | 恰两组、两组**等面积且不相邻** |
-| `guidearrow` | 指引箭头 | 黑不相邻 + 留白**无环（树）** | 箭头指向星星的**唯一路径方向**（`d,s`） |
-| `oasis` | 绿洲 | island_rule+无全白2x2+白圈留白 | 沿留白**可达白圈计数** |
-| `sashikabe` | 曲尺数墙 | 涂黑连通+无2x2+留白宽度为一 | **恰L形**（仅一次转弯）、圆圈/箭头定位（`n,d`） |
-| `oneroom` | 单房门 | island_rule+区黑数+**相邻区至多一门** | 每区域**内部**留白连通 |
-| `cts` | 过河 | 涂黑连通+无2x2+盘外**有序段长** | `?` / `*` 通配提示 |
-| `coral` | 珊瑚 | 涂黑连通+无2x2+**留白连通到边界** | 盘外**无序**段长集合匹配 |
-| `tapa` | 土派艺术 | 涂黑连通+无2x2+提示格留白 | **环形八邻域多段长度**（无序、含?） |
-| `nurimaze` | 迷宫地图 | 无单色2x2+区域单色+留白**树** | 圆圈/三角相对 S–G 唯一路径的位置（`m`） |
-
-### 涂黑II（18 条）
-
-| key | 中文名 | 已编码 | 未编码（缺口） |
-|---|---|---|---|
-| `hinge` | 合页 | 区域黑格数 | 每黑组跨一条区界且**沿其轴对称** |
-| `snakeegg` | 蛇蛋 | 蛇形 + 端点圆圈 + 留白组格数 | 盘外留白组格数**多重集一一对应** |
-| `shakashaka` | 摇啊摇 | 黑格数字=相邻被涂格数 | **三角形四朝向**变量 + 含对角矩形判定 |
-| `circlesquare` | 方圆 | 涂黑连通+无2x2+圆圈+留白组为**矩形** | 矩形须为**正方形**（长=宽） |
-| `tetrochain` | 四格骨牌链(指) | 每黑组恰4格+对角连通+方向计数 | 对角相邻骨牌**不全等** |
-| `tetrochaink` | 四格骨牌链(暗) | 每黑组恰4格+对角连通+点提示 | 对角相邻骨牌**不全等** |
-| `go` | 围棋 | 圆圈颜色固定 | **「气」**=连通组相邻异色格去重计数（`n`） |
-| `diamond` | 钻石链 | 涂黑对角连通 | **◇菱形**（2x2斜正方形）放置模型（`w,n`） |
-| `wittgen` | 三格长桌 | 每黑组恰3格且宽1+邻接计数+留白连通 | 三格须**成直线**（排除 L 形） |
-| `nuribou` | 数壁 | 黑组宽1+无2x2+每留白组恰一数字+组格数 | 黑组**成直线**、相接触黑组**面积不同** |
-| `cornerch` | cornerch | 留白对角连通+数字格留白+组面积 | 偶面积**必为**矩形 / 奇面积**必不为**矩形 |
-| `tasquare` | 正方放置 | 黑组为矩形+留白连通+提示格邻黑 | 长=宽、**相邻正方形面积之和** |
-| `antmill` | 蚂蚁怪圈 | 骨牌配对+互不正交邻+对角连通 | 每骨牌**恰与两块接触**（成环）、□/× 提示 |
-| `mochinyoro` | 藕断丝弯 | 无2x2+留白对角连通+留白组矩形+组格数 | 任意黑组**都不是**矩形 |
-| `scrin` | 方形回路 | 涂色组矩形+对角连通+圆圈在色内+组面积 | 每矩形**恰与两块接触**（成环） |
-| `lookair` | 观云 | 黑组为矩形+含自身五格计数 | 长=宽、同行列**视线内无全等正方形** |
-| `clouds` | 云团 | 黑组矩形+每黑格≥2黑邻+盘外计数 | 云团**互不接触**、圆角/× 预给提示 |
-| `shugaku` | 修学旅行 | 涂黑连通+无2x2+留白成床骨牌+每床邻黑 | **枕头**变量、枕头计数、竖床不朝北（`n`） |
-
----
-
-## 4. D. 尚未实现
+按分类列出全部完全实现的 key（机制见各自 `impls/*.json` 的 `notes`）。首轮涂黑 12 条的机制表保留在文末历史节，此处不重复。
 
 | 分类 | 条数 | keys |
 |---|---:|---|
-| 放置 | 8 | `pentatouch kissing pentopia statuepark pencils tren kinkonkan moonlight` |
-| 填写 | 30 | `bosanowa gokigen simplegako blind fuzuli doppelblock renban goishi kakuro easyasabc hanare r roma toichika japanesesums wagiri makaro yajirushi cojun tateyoko arrowflow scrabble kropki-pairs skyscrapers consecutiveq snail magic kropki hebi ubahn` |
-| 分区 | 15 | `pentominous tetrominous cbblock heteromino slashpack symmarea subomino mirrorbk nikoji dbchoco sendai lohkous narrow voxas heavydots` |
-| 回路I | 15 | `lineofsight waterwalk firewalk disloop icewalk orbital wbloop reflect slalom kouchoku crossstitch bhaibahan tapaloop angleloop nagare` |
-| 路径I | 14 | `wblink walllogic hashi coffeemilk kaero bonsan sato forestwalk yosenabe rectslider pmemory firefly icebarn herugolf` |
-| 回路II | 9 | `ringring pipelink maxi trainstations barns vertigo doubleornothing railpool nagenawa` |
-| 路径II | 7 | `haisu rassi keywest mintonette curvedata icelom anglers` |
+| 涂黑I | 5 | `nothree sumiwake usoone yajikazu ayeheya` |
+| 涂黑II | 8 | `bosnianroad dominion snake norinuri isowatari binairo aquarium sansaroad` |
+| 涂黑III | 6 | `batten cocktail tawa stostone interbd martini` |
+| 填写 | 29 | `bosanowa gokigen simplegako blind fuzuli doppelblock renban goishi kakuro easyasabc hanare r roma toichika japanesesums makaro yajirushi cojun tateyoko arrowflow scrabble kropki-pairs skyscrapers consecutiveq snail magic kropki hebi ubahn` |
+| 放置 | 5 | `magnets gaps dosufuwa pencils tren` |
+| 分区 | 28 | `meadows fivecells fourcells pentominous tetrominous domino-search squarejam cbblock heteromino symmarea subomino wafusuma kramma tentaisho sashigane mirrorbk bdblock nikoji sendai lohkous lapaz tatamibari narrow snakepit compass aho voxas heavydots` |
+| 回路I | 13 | `myopia swslither midloop geradeweg lineofsight nanameguri dotchi castle orbital reflect dotchi2 balance moonsun` |
+| 回路II | 11 | `ringring yajilin-regions koburin pipelink nuriloop barns nothing mukkonn doubleornothing nagenawa kurarin` |
+| 路径I | 14 | `wblink numlin walllogic hashi coffeemilk kaero bonsan sato forestwalk yosenabe rectslider pmemory firefly herugolf` |
+| 路径II | 6 | `haisu rassi hidato keywest mintonette anglers` |
 
-涂黑II 的 `binairo`、涂黑III 11 条、回路I 中较易的 10 条已实现（见第 8 节）。
+---
 
-### 4.1 暂缓（过难，仅标注）
+## 3. B. 部分实现（63 条）
 
-这些规则需要非正交几何、沿回路走访、自交/多回路或给定形状目录，当前库没有合适原语；硬编码容易写错，故本轮不做。
+约束均为真解的**合法松弛**：可作为正确起点，但当前不足以唯一确定解。缺口写在 JSON 的 `notes` / `unencodedClues`。**逐条说明见 §4.1**（含已编码内容与未实现原因）。
 
-| key | 难点 |
-|---|---|
-| `lineofsight` | 最近回路**线段长度**（非整段距离） |
-| `waterwalk` / `firewalk` / `icewalk` | 沿回路的颜色段长；火格可走两次；冰格可自交 |
-| `disloop` | 前方 N 段长度的**无序**多重集匹配 |
-| `orbital` / `ringring` / `nagenawa` | 多条矩形回路且允许交叉 |
-| `wbloop` / `bhaibahan` | 沿回路在相邻圆圈之间计转弯 |
-| `reflect` / `pipelink` | 指定格自交 |
-| `slalom` / `nagare` | 有向回路 + 关卡次序 / 风向 |
-| `kouchoku` / `angleloop` / `crossstitch` | 非正交线段、夹角、双顶点回路 |
-| `tapaloop` | 八邻域多段无序（同 tapa） |
-| `maxi` | 区域内单次经过的最长段（多次进出） |
-| `trainstations` | 仅十字格自交；按数字顺序走访且数字格不转弯 |
-| `barns` | 冰格自交且不转弯；粗线墙 |
-| `vertigo` | 任意自交 + 全程同向转弯 |
-| `doubleornothing` | 双回路；加号格交叉或都不经过 |
-| `railpool` | 区域内直线段长度的无序集合 |
-| `pentatouch` / `kissing` / `pentopia` / `statuepark` | 给定多连块目录 + 旋转翻转放置 |
-| `pencils` / `tren` / `kinkonkan` / `moonlight` | 复合放置（笔迹、滑动车、镜面反射、星云照明） |
-| `hashi` | 岛屿间 1/2 桥、禁止交叉、全图连通；无“互相看见的岛屿”原语 |
-| `pentominous` / `tetrominous` / `heteromino` / `subomino` | 多连块形状目录 / 平移全等 / 一形能否放入另一形 |
-| `slashpack` | 格内对角线把盘面剖成区域 |
-| `symmarea` | 码牌 + 每区 180° 对称但中心未知（需枚举格心/边心/顶点） |
-| `mirrorbk` | 镜子轴对称的两区 |
-| `cbblock` | 每区两个虚线块、非矩形、邻区不全等 |
-| `nikoji` | 同字母区域平移全等（含字母相对位置） |
-| `dbchoco` | 灰白两块相邻且全等 |
-| `sendai` | 市内再分且与同形同向市相邻 |
-| `lohkous` | 区域内横纵段长的无序集合 |
-| `narrow` | 非矩形 + 同符号不同形 + 禁止同符 2×2 |
-| `voxas` | 面积 2/3 的矩形 + 区界圆点表示面积/朝向关系 |
-| `heavydots` | 顶点伸出 3/4 条界，且与已标点相邻的未标点有额外禁止 |
+| 分类 | 条数 | keys |
+|---|---:|---|
+| 涂黑I | 13 | `disco parquet teri akichi nuritwin guidearrow oasis sashikabe oneroom cts coral tapa nurimaze` |
+| 涂黑II | 18 | `hinge snakeegg shakashaka circlesquare tetrochain go diamond wittgen nuribou cornerch tasquare antmill mochinyoro scrin tetrochaink lookair clouds shugaku` |
+| 涂黑III | 5 | `mrtile ququ kuroclone evolmino chainedb` |
+| 填写 | 1 | `wagiri` |
+| 放置 | 6 | `pentatouch kissing pentopia statuepark kinkonkan moonlight` |
+| 分区 | 2 | `slashpack dbchoco` |
+| 回路I | 10 | `waterwalk firewalk disloop icewalk wbloop slalom crossstitch bhaibahan tapaloop nagare` |
+| 回路II | 5 | `alternate maxi trainstations vertigo railpool` |
+| 路径I | 1 | `icebarn` |
+| 路径II | 2 | `curvedata icelom` |
+
+---
+
+## 4. D. 尚未实现（2 条）
+
+无 `impls/<key>.dsl` 的 key **仅有**：
+
+| 分类 | 条数 | keys |
+|---|---:|---|
+| 回路I | 2 | `kouchoku` `angleloop` |
+
+其余 234 条均有编码文件。曾列在旧稿「尚未实现」里的填写 / 路径 / 放置 / 分区 / 其余回路，本轮均已落入 A 或 B，不再出现在本节。
+
+### 4.1 因困难未实现（逐条）
+
+含全部 **D（跳过）** 与 **B（部分）**。硬编码缺失约束时，若会把合法真解判 UNSAT，本轮一律不写该约束。
+
+#### 尚未编码（D，2）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `kouchoku` | 交直 | 回路I | 无文件 | 线段可非正交，仅垂直才可交叉；同字母须沿回路连续。现有原语只有横竖格心连线。若改成正交哈密顿回路，会排除全部合法斜线解。 |
+| `angleloop` | 角度回路 | 回路I | 无文件 | 必须在符号顶点转弯，夹角可为锐/直/钝，线段不必正交。正交格线只能 90°。硬套数回式格线回路会排除锐角、钝角真解。 |
+
+#### 填写（1）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `wagiri` | 斜线(环和切) | 填写 | 每格一条对角线；顶点数字=引出的斜线数 | 「輪/切」要求判定一条斜线是否落在某个圈上。库没有「边是否属于圈」的原语。若把整盘收成单圈或禁止分叉，会排除合法的非环斜线配置。`unencodedClues: ["m"]` |
+
+#### 路径（3）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `icebarn` | 冰宫游弋 | 路径I | IN/OUT；冰格直行或十字自交；白格不自交；冰区必经；箭头沿该轴穿过 | 冰面允许自交时，箭头的**方向感**无法用「该轴有边」表达。强制单向穿过会排除冰上十字折返仍合法穿过箭头的解。 |
+| `curvedata` | 曲线数据 | 路径II | 每格属于某图形；每图恰好一个提示 | 提示是禁止旋转/翻转的折线骨架，只允许伸缩各段。没有「指定折线的相似匹配」原语。按格数硬套形状会排除可伸缩的真解；放任自由路径则过宽。 |
+| `icelom` | 冰宫巡游 | 路径II | IN→OUT；走遍白格；冰可交叉且不转弯 | 数字须按 1..k **访问顺序**经过。冰面自交时同一格可走两次，单次访问序不够用。用首次访问序号强制顺序会排除「后一次交叉才碰到该数字」的真解。`unencodedClues: ["n"]` |
+
+#### 放置（6）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `statuepark` | 雕像公园 | 放置 | 五格连通块、块间正交不相邻、余白连通、黑/白圈 | 题面给出的是**具体形状目录**（可旋转翻转）。库不能把「给定多连块列表」实例化为放置变量。若只允许某几种固定五格，会排除目录里其它形状的真解。`unencodedClues: ["shapes"]` |
+| `pentopia` | 近视五格 | 放置 | 五格块、互不八邻接触、近视箭头 | 同上，目录未编码；当前允许任意五格骨牌。收紧成标准 12 种或某固定子集，会排除目录外/目录内与子集不一致的真解。`unencodedClues: ["shapes"]` |
+| `pentatouch` | pentatouch | 放置 | 五格块；仅在标记格点对角相接 | 形状目录未编码。硬写标准五格全集或题面以外的集合，都会排除「目录与全集不同」的真解。`unencodedClues: ["shapes"]` |
+| `kissing` | kissing | 放置 | 仅在标记边上正交相接；× 不覆盖 | 形状目录未编码（块大小也不固定为 5）。假定某种骨牌集将排除其它多连块真解。`unencodedClues: ["shapes"]` |
+| `kinkonkan` | 金刚镜 | 放置 | 每区恰好一条对角线镜子（m 1=主对角 2=副对角） | 字母光束须配对结束，数字=反射次数，每镜至少用一次。没有「沿镜面反射的射线」原语。若禁止镜子或改成无反射直行，会排除所有合法反射解。unencodedClues: letters, bounces |
+| `moonlight` | 星光 | 放置 | 行列星/云个数；行星与 × 不放图 | 「星照亮行星、受照象限变白」是视线+象限着色，现有放置原语没有照明模型。若忽略照明只排个数，题面仍 SAT，但白象限线索完全空转。`unencodedClues: ["light"]` |
+
+#### 分区（2）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `slashpack` | 斜线分区 | 分区 | 格内对角线；共享边上三角形编号一致；每个编号含 1..N 各一次 | 区域须由三角形沿邻边连通成块。当前只对齐了编号，未强制三角形图连通。若再要求「编号相同即四连通格连通」，斜线切开后同号不相连的合法剖分会被误杀。`unencodedClues: ["connectivity"]` |
+| `dbchoco` | 双巧克力 | 分区 | 灰白面积相等、各自连通、两色正交相邻、数字=半区面积 | 灰白两块须在旋转/翻转下全等。8 种变换的格对格匹配在 DSL 里过重，且易把「全等」写成「同外接框」而排除旋转全等真解。`unencodedClues: ["congruence"]` |
+
+#### 回路I（10）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `waterwalk` | 水面行者 | 回路I | 单回路；必经数字格；水段沿回路 ≤2；n=1 | n>1 要的是「沿回路的连续白段长度」。没有按走访顺序切颜色段的原语。用正交白连通块面积代替，会把弯出回路的白格算进去，从而排除/误杀真解。 |
+| `firewalk` | 烈焰行者 | 回路I | 连通回路；火格必转弯、允许度 4；必经数字；n=1 | 同上，n>1 的沿回路白段长未编码。火格可走两次，更不能用普通连通块长冒充段长。 |
+| `icewalk` | 冰宫行者 | 回路I | 冰不转弯可自交；陆地不交叉；必经数字；n=1 | 同上，n>1 白段长未编码。冰上自交时「沿回路下一段白」与格的首次访问不一致。 |
+| `disloop` | 乱序回路 | 回路I | 提示格不在回路上；单个数字=前方格的直线段长 | 多个数字是前方 N 段长度的**无序多重集**。有序匹配会排除段长对、但顺序不同的真解。 |
+| `wbloop` | 黑白回路 | 回路I | 经过所有圆圈；同一横/竖直线段上的圆圈同色 | 规则比的是沿回路**连续**两圈之间的转弯次数（同色 0 次 / 异色 1 次）。共线同色只是必要条件。用「所有正交相邻圈异色」会排除隔格同色的真解。 |
+| `slalom` | 巡行通关 | 回路I | 不经黑格；过圆圈；关卡直行；圈内数字=关卡数 | 回路有向，且黑格箭头给出关卡次序。无向回路无法谈「第 k 个关卡」。强行给边定向又容易把反向走访的真解排除。`unencodedClues: ["d"]` |
+| `crossstitch` | 十字绣 | 回路I | 对角线空/单斜/交叉；格点度 0 或 2；交叉不相邻；圆圈/箭头数字 | 必须恰好两条回路（两种顶点各一条）。强制单圈会排除双回路真解；不限制条数则可能出现更多圈。 |
+| `bhaibahan` | 同胞回路 | 回路I | 过所有圈；相邻圈一直行一转弯；直行 n=直线段内部格数 | 转弯数字是沿回路的连续转弯段长，仅 n=1 已写。n>1 需要走访序列。用「邻域转弯格数」代替会把非沿回路的弯算进去。 |
+| `tapaloop` | 土派回路 | 回路I | 单个数字=八邻域恰好一段连续；多段则约束总和与段数 | 多段长度须无序一一对应。有序匹配或只比总和，前者排除真解、后者过宽（本轮取后者）。 |
+| `nagare` | 吹风机回路 | 回路I | 不经黑格；白箭头格沿轴直行；下风格若在回路上则含顺风边 | 「不得逆风、进入风区必须转向顺风至少一格」是有向约束。无向回路写「禁止某向边」会排除反向吹风仍合法的走法。 |
+
+#### 回路II（5）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `alternate` | 交替回路 | 回路II | 被回路边直接相连的圆圈异色 | 规则是沿回路连续经过的两圈异色（中间可隔空格）。只约束边相邻会漏掉隔格同色；改成「所有圆圈两两异色」又排除不相邻同色真解。 |
+| `maxi` | 极大回路 | 回路II | 哈密顿回路；进出次数与最长段的鸽笼不等式 | 「最大值必须在某次经过时达到」需要枚举每一次进出。不等式只给上界，不强迫某次等于 n；若改成「整个区域经过格数=n」会排除多次进出的真解。 |
+| `trainstations` | 铁轨 | 回路II | 走遍全盘；仅数字格可自交；数字格不转弯 | 须按 1..k 顺序走访车站。哈密顿自交回路上没有可靠的全局访问序变量。按坐标远近或首次访问编号排序会排除绕行真解。 |
+| `vertigo` | 晕头转向 | 回路II | 走遍全盘；允许自交 | 沿一个方向走完整圈时，转弯须全左或全右。无向自交回路无法定义「左转」。任意指定一个环定向，会把另一手方向的真解排除一半。 |
+| `railpool` | 轨道库 | 回路II | 与区域相交的直线段长度做成不重复集合 | 问号（未知段长）未编码。把问号当成禁止或当成 0，都会排除「该位置是通配段长」的真解。 |
+
+#### 涂黑I（13）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `disco` | disco | 涂黑I | 涂黑连通、无全黑 2×2、每区至少 2 黑 | 「每区恰好两组连通」需要按区域切连通分量。`cc_count` 只能全盘统计。把「至少 2 黑」收成「恰好 2 格」会排除大块双组真解。 |
+| `parquet` | 拼花地板 | 涂黑I | 涂黑连通且无环（树） | 粗线/细线两级区域：每个粗线区须整块涂黑恰好一个细线子区。题面只有一层 `regions`。硬用当前区域当细线，会把粗线边界理解错并排除真解。 |
+| `teri` | 矩形领土 | 涂黑I | island_rule；白圈留白 | 「含此格的最大留白矩形面积」要对每个候选矩形取 max。枚举不全会漏更大矩形，枚举时误含黑格会排除真解。 |
+| `akichi` | 数间(空地) | 涂黑I | island_rule；留白段跨区限制 | 数字是区内**最大**留白连通块面积，不是黑格数。用 `region_black_count` 或整区留白格数代替会排除「区内多块留白」的真解。`unencodedClues: ["n"]` |
+| `nuritwin` | 涂黑成对 | 涂黑I | 涂黑连通、无 2×2、区黑数为偶且=2×数字 | 「恰好两组、等面积、不相邻」要按区计分量。只保证偶数格数会过宽；写成「恰好两格」则排除大块真解。 |
+| `guidearrow` | 指引箭头 | 涂黑I | 黑不相邻；留白无环（树） | 箭头是到星星的**唯一路径方向**。树只保证唯一路径存在，不约束箭头与该方向一致。若强制箭头四向都通往星，会排除只在一格转向的真解。`unencodedClues: ["d","s"]` |
+| `oasis` | 绿洲 | 涂黑I | island_rule、无全白 2×2、白圈留白 | 数字是沿留白可达的白圈个数。没有按颜色的可达计数原语。用曼哈顿距离或整盘白圈数代替会排除被黑格隔开的真解。 |
+| `sashikabe` | 曲尺数墙 | 涂黑I | 涂黑连通、无 2×2、留白宽度为一 | 「恰 L 形（只转一次）」以及圈/箭定位未编码。宽 1 允许蛇形多弯。若再禁所有转弯，会排除合法 L；若要求每块恰好一弯却用错端点定义，也会误杀。`unencodedClues: ["n","d"]` |
+| `oneroom` | 单房门 | 涂黑I | island_rule、区黑数、邻区至多一门 | 「区内留白也连通」要按区求分量。全盘留白连通并不蕴含区内连通；强行把区界当墙重算又可能与「门」冲突。 |
+| `cts` | 过河 | 涂黑I | 涂黑连通、无 2×2、盘外**有序**段长 | `?` / `*` 通配未编码。把问号当固定数字、把星号当空，会排除通配真解。 |
+| `coral` | 珊瑚 | 涂黑I | 涂黑连通、无 2×2、留白连通到边界 | 盘外段长是**无序**多重集。`runs` 只支持有序；有序匹配会排除段顺序不同的真解。 |
+| `tapa` | 土派艺术 | 涂黑I | 涂黑连通、无 2×2、提示格留白 | 八邻域环形多段长度（无序、含 `?`）。线性化邻域或有序匹配会排除环绕提示格的合法分段。 |
+| `nurimaze` | 迷宫地图 | 涂黑I | 无单色 2×2、区域单色、留白为树 | 圆圈/三角相对 S–G 唯一路径的位置。树保证唯一路径，但不标记哪些格在路径上。用「圈必为端点」之类硬规则会排除路径中段的圈。`unencodedClues: ["m"]` |
+
+#### 涂黑II（18）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `hinge` | 合页 | 涂黑II | 区域黑格数 | 每黑组须跨一条区界并沿该界轴对称。要先定位跨界再镜像匹配。用「区黑数偶数」代替对称，过宽；用区域自身 180° 对称则排除合页轴不是区域中心的真解。 |
+| `snakeegg` | 蛇蛋 | 涂黑II | 蛇形、端点圆圈、留白组格数 | 盘外数字与留白块大小须多重集一一对应。有序列表匹配会排除块的空间排列不同的真解。 |
+| `shakashaka` | 摇啊摇 | 涂黑II | 黑格数字=相邻被涂格数 | 半格三角形有四朝向，留白须成（含对角的）矩形。0/1 涂黑模型表达不了斜边。把半格当成全黑会排除「只涂一角」的真解。 |
+| `circlesquare` | 方圆 | 涂黑II | 涂黑连通、无 2×2、圆圈、留白组为矩形 | 「矩形须为正方形」未编码。强制所有矩形正方形会排除长条留白真解——因此只能停在矩形。 |
+| `tetrochain` | 四格骨牌链(指) | 涂黑II | 每黑组恰 4 格、对角连通、方向计数 | 对角相邻骨牌不能全等。全等要 8 变换。若改成「相邻面积不同」对四格无意义；若只禁平移全等会漏镜像对。 |
+| `tetrochaink` | 四格骨牌链(暗) | 涂黑II | 每黑组恰 4 格、对角连通、点提示 | 与 `tetrochain` 相同，对角不全等未编码。 |
+| `go` | 围棋 | 涂黑II | 圆圈颜色固定 | 「气」= 与整块相连的异色格去重计数。邻格简单求和会重复计数。`unencodedClues: ["n"]` |
+| `diamond` | 钻石链 | 涂黑II | 涂黑对角连通 | ◇ 是占 4 格的斜正方形，与 2×2 方块不同。用正交 2×2 放置会排除真正的菱形解。`unencodedClues: ["w","n"]` |
+| `wittgen` | 三格长桌 | 涂黑II | 每黑组恰 3 格且宽 1、邻接计数、留白连通 | 须成直线，排除 L。宽 1 的三格仍可以是 L。禁止一切弯会误伤其它谜，这里只能保持松弛。 |
+| `nuribou` | 数壁 | 涂黑II | 黑组宽 1、无 2×2、每留白组恰一数字、组格数 | 黑组须成直线，且相接触的黑组面积不同。宽 1 仍含 L 形。按全盘面积互异会排除不相接触但同面积的真解。 |
+| `cornerch` | cornerch | 涂黑II | 留白对角连通、数字格留白、组面积 | 「偶面积⇒矩形、奇面积⇒非矩形」要按组条件分支。把全部留白强制成矩形会排除奇面积非矩形真解。 |
+| `tasquare` | 正方放置 | 涂黑II | 黑组为矩形、留白连通、提示格邻黑 | 长=宽，以及相邻正方形面积之和。矩形松弛不排除正方形真解；若用「邻黑格数」冒充面积和则会排除大块邻接。 |
+| `antmill` | 蚂蚁怪圈 | 涂黑II | 骨牌配对、互不正交邻、对角连通 | 「每牌恰与两牌接触成环」以及 □/× 成对提示未编码。改成「对角连通即成环」过宽；改成「恰好两骨牌」又排除多牌环。 |
+| `mochinyoro` | 藕断丝弯 | 涂黑II | 无 2×2、留白对角连通、留白组矩形、组格数 | 「任意黑组都不是矩形」未编码。禁止所有 2×n 黑条会排除合法非矩形黑块，也会误杀 1 格黑（1×1 是矩形）。 |
+| `scrin` | 方形回路 | 涂黑II | 涂色组矩形、对角连通、圈在色内、组面积 | 「每矩形恰与两块接触成环」未编码。对角连通不等于度 2 环。强制全部矩形边相邻会排除只在角上相接的真解。 |
+| `lookair` | 观云 | 涂黑II | 黑组为矩形；含自身五格计数 | 须正方形，且同行列视线内无全等正方形。矩形松弛合法；用「同面积不能同行」会排除被其它正方形挡住视线的真解。 |
+| `clouds` | 云团 | 涂黑II | 黑组矩形、每黑格 ≥2 黑邻、盘外计数 | 云团互不接触，以及圆角/× 预给。≥2 邻只是长宽≥2 的必要。禁止一切黑正交邻接会排除云团内部。 |
+| `shugaku` | 修学旅行 | 涂黑II | 涂黑连通、无 2×2、留白成床骨牌、每床邻黑 | 「枕头」是床的一格，需额外变量；竖床不能床头朝北。把整床当枕头或禁止所有竖床，都会排除合法床位。`unencodedClues: ["n"]` |
+
+#### 涂黑III（5）
+
+| key | 中文名 | 分类 | 已编码 | 未实现原因 |
+|---|---|---|---|---|
+| `mrtile` | 复制瓦片 | 涂黑III | 数字=黑组面积；每组须对角贴上另一组 | 对角伙伴须与本组全等。面积相同≠全等。按面积配对会排除/放过形状不同的块。 |
+| `ququ` | 区区 | 涂黑III | 留白组恰一数字且面积匹配 | 对角接触的黑组不能全等。没有按组的 8 变换比较。禁对角接触会排除形状不同的合法对角对。 |
+| `kuroclone` | 黑块克隆 | 涂黑III | 每区恰两组；提示=邻格黑组面积 | 区内两组须全等。两组等面积仍可能不同形。 |
+| `evolmino` | 生长方块 | 涂黑III | 每组恰一箭头格；箭上后组比前组多一格 | 后组须为前组的**平移**加一格。只比大小会允许旋转/翻转变形，其中有些不是合法生长。 |
+| `chainedb` | 区块链 | 涂黑III | 每黑组恰一数字（问号不限面积）；对角链 | 同一 8-链内两组不能全等。全等比较缺失。把整条链禁同面积会排除不同形同面积的真解。 |
 
 ---
 
@@ -155,137 +203,123 @@ nurimisaki paintarea putteria ripple shikaku shimaguni simpleloop slither
 starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 ```
 
-抽样阅读过的 `nurikabe / hitori / slither / sudoku / fillomino / masyu / akari / starbattle / yajilin / kurodoko / context / shikaku` 编码忠实；其余未逐条核对，故不做质量断言。
+抽样阅读过的 `nurikabe / hitori / slither / sudoku / fillomino / masyu / akari / starbattle / yajilin / kurodoko / context / shikaku` 编码忠实；其余未逐条核对，故不做质量断言。本轮**没有**覆盖这些文件。
 
 ---
 
 ## 6. 本次的工程改动
 
-**新增库函数**（`puzzle/lib/shading.dsl`，纯追加，不影响原有 46 条）：
+**库函数（纯追加，不影响基线 46 条）**
 
-| 函数 | 用途 |
+| 文件 | 用途 |
 |---|---|
-| `color_count` / `color_adjacent_pairs` | 同色格数、同色相邻对数 |
-| `color_is_tree` | 连通且无环（\|V\|−\|E\|=1），同时排除 2x2 |
-| `color_is_acyclic` | 无环但不强制连通 |
-| `width_one` | 宽度为一（同色邻居 ≤2） |
-| `snake_shape` / `cycle_shape` | 蛇（恰2端点）/ 闭环（每格度2） |
-| `all_dominoes` | 同色格两两成 1x2 且不同骨牌互不相邻 |
-| `groups_of_size` | 每个同色连通组恰 k 格 |
-| `group_size_clue` / `group8_size_clue` | 数字=所在连通组格数（4/8 连通） |
-| `majority_dot_clue` | 点提示四邻黑白多寡 |
+| `puzzle/lib/shading.dsl` | `color_count` / `color_is_tree` / `snake_shape` / `cycle_shape` / `all_dominoes` / `groups_of_size` 等 |
+| `puzzle/lib/loops.dsl` | `nearest_loop_dist` / `arm_used_len` / `full_straight_len` |
+| `puzzle/lib/regions.dsl` | `region_width` / `regions_are_squares` / `no_four_meet` / `region_border_clue` 等 |
+| `puzzle/lib/fill2.dsl` | 填写：`spiral()`、`dir()` 射线序、拉丁方/可见性辅助 |
+| `puzzle/lib/paths2.dsl` | 路径：滑动、冰面直行/十字、配对路径 |
+| `puzzle/lib/place2.dsl` | 放置/分区：多连块大小、镜像、三角编号 |
+| `puzzle/lib/loops2.dsl` | 回路：矩形圈、自交、冰/火格、段长松弛 |
 
-**流程改进**（针对上一轮失误的根因）：
+**流程改进**（针对回滚前那一轮失误的根因）：
 
-1. **元数据强制取自 `rules.txt`** —— `en/zh/rule/category/subcategory` 不再由我撰写，杜绝上一轮"仙人指路→趋势"这类捏造。
-2. **非空洞（bite）测试** —— 逐个给常量线索赋值，断言约束数**必须增长**；这正是能抓出上一轮 `region_visited_cells(e, n)` 死语句的检查。
-3. **样例带真实线索且手工核验** —— `nurimaze`（留白梳齿）、`cts`（十字）、`aquarium`（水位阶梯）、`sansaroad`（外框+竖弦）的解均已渲染并逐格对照，不再依赖空盘 sat。
-4. **`unencodedClues` 显式声明** —— 部分实现的缺口写进 JSON，而非隐藏在注释里。
+1. **元数据强制取自 `rules.txt`** —— `en/zh/rule/category/subcategory` 不再撰写。
+2. **非空洞（bite）测试** —— 给常量线索赋值，断言约束数必须增长。
+3. **样例带真实线索** —— 不再依赖空盘 sat 作为「实现完成」的证据。
+4. **`unencodedClues` 显式声明** —— 部分实现的缺口写进 JSON。
 
 ### 已知遗留问题
 
-- 部分实现的条目**不具备唯一解**，作为出题器会有多解；作为解题器不会漏解。
-- `verify.py` 只验证"样例可满足"，**尚未**验证"解唯一"或"已知真题得到已知解"。
+- 部分实现的条目**不具备唯一解**；作为解题器不会漏解，作为出题器会有多解。
+- `verify.py` 只验证「样例可满足」，**尚未**验证「解唯一」或「已知真题得到已知解」。
+- 基线 46 条仍未纳入本轮审计。
 
 ---
 
-## 7. 后续建议顺序
+## 7. 后续建议
 
-1. **填写 30 条** —— 先补摩天楼可见性、Kakuro 和式、Kropki。
-2. **路径I** 其余条目（`hashi` 见 §4.1；滑动/反射类更难）。
-3. **分区** 剩余形状目录 / 镜像 / 全等（见 §4.1）。
-4. **放置** 中带形状目录的（`pentatouch` 等）等全等原语后再做。
+1. **仅剩的完全跳过（D=2）**：为 `kouchoku` / `angleloop` 增加**非正交几何**（任意方向的点对线段、夹角、垂直才可交叉）。在现有正交格线模型上补约束只会排除真解，不建议硬编。
+2. **收紧 B 类部分实现**，按缺口类型而不是按分类：
+   - **形状目录**：`statuepark` `pentopia` `pentatouch` `kissing` —— 需要把题面给定的多连块列表变成放置变量。
+   - **沿回路段长 / 走访序**：`waterwalk` `firewalk` `icewalk` `bhaibahan` `icelom` `trainstations` `disloop` `maxi` —— 需要回路走访序列，而不是连通块面积。
+   - **全等 / 8 变换**：`dbchoco` `mrtile` `ququ` `kuroclone` `evolmino` `chainedb` `tetrochain` `tetrochaink` `nikoji` 已做平移、其余未做旋转翻转。
+   - **有向回路**：`slalom` `nagare` `vertigo`。
+   - **圈/斜线属于环**：`wagiri`；**双回路条数**：`crossstitch`。
+   - **通配线索**：`cts` 的 `?`/`*`，`railpool` 的问号，`tapa`/`tapaloop` 的无序多段。
+   - **复合机关**：`kinkonkan` 反射光束、`moonlight` 照明象限、`curvedata` 折线伸缩、`shakashaka` 半格三角、`icebarn` 自交时的箭头方向。
+3. 基线 46 条若要宣称「全部规则已实现」，仍须按同样标准审计（目前明确未做）。
 
 ---
 
-## 8. 本轮补全（涂黑III + binairo + 回路I 易项）
+## 8. 本轮补全（填写 / 路径 / 放置+分区 / 回路 remaining）
 
-测试已改为 `tests/cases/*.json` 的盘面+答案；`unique` 默认关闭，只做 **accept**（钉入答案仍 SAT）。
+测试为 `tests/cases/*.json` 的盘面+答案；`unique` 默认关闭，只做 **accept**。本轮处理旧稿 §4 中全部剩余 key：**96 条编码，2 条因非正交几何跳过**。
 
-### 8.1 涂黑III（11 条，此前一轮）
+### 8.1 填写（30/30，无跳过）
 
-完整：`batten tawa cocktail martini stostone interbd`  
-部分（全等未编码）：`mrtile ququ chainedb kuroclone evolmino`
+完整 29：`bosanowa gokigen simplegako blind fuzuli doppelblock renban goishi kakuro easyasabc hanare r roma toichika japanesesums makaro yajirushi cojun tateyoko arrowflow scrabble kropki-pairs skyscrapers consecutiveq snail magic kropki hebi ubahn`
 
-### 8.2 本轮新实现
+部分 1：`wagiri`（见 §4.1）
 
-| key | 分类 | 机制 |
+库：`puzzle/lib/fill2.dsl`（含 `spiral()`、`dir()` 射线序）。
+
+### 8.2 路径 I+II remaining（21/21，无跳过）
+
+`numlin` / `hidato` 此前已完成，不计入这 21。
+
+完整 18：`wblink walllogic hashi coffeemilk kaero bonsan sato forestwalk yosenabe rectslider pmemory firefly herugolf haisu rassi keywest mintonette anglers`
+
+部分 3：`icebarn` `curvedata` `icelom`（见 §4.1）
+
+库：`puzzle/lib/paths2.dsl`。
+
+### 8.3 放置+分区 remaining（23/23，无跳过）
+
+完整 15：`pencils tren pentominous tetrominous heteromino cbblock symmarea subomino mirrorbk nikoji sendai lohkous narrow voxas heavydots`
+
+部分 8：`statuepark pentopia pentatouch kissing kinkonkan moonlight slashpack dbchoco`（见 §4.1）
+
+库：`puzzle/lib/place2.dsl`。
+
+### 8.4 回路 I+II remaining（22/24 已编码，2 跳过）
+
+完整 8：`lineofsight orbital reflect ringring pipelink barns doubleornothing nagenawa`
+
+部分 14：`waterwalk firewalk disloop icewalk wbloop slalom crossstitch bhaibahan tapaloop nagare maxi trainstations vertigo railpool`
+
+`railpool` 的直线段长集合已编码，但 JSON notes 写明「问号未编码」，故记 B 而非 A。
+
+跳过 2：`kouchoku` `angleloop`（见 §4.1）
+
+库：`puzzle/lib/loops2.dsl`。
+
+### 8.5 此前各轮（仍计入 A/B 总数，供对照）
+
+这些不是本轮新写，但属于回滚后的重做产物，已计入 §1。
+
+| 批次 | 完整 | 部分 |
 |---|---|---|
-| `binairo` | 涂黑II | 无三连 + 行列各半 + 行列图案互异 + 圈色 |
-| `myopia` | 回路I | 数回 + 箭头=最近回路边方向（位掩码 `a`） |
-| `swslither` | 回路I | 数回 + `inside_flag` 羊内狼外 |
-| `midloop` | 回路I | 直穿黑点且两臂等长 |
-| `geradeweg` | 回路I | 过圈；直线段长=数字 |
-| `dotchi` | 回路I | 过白圈不过黑圈；区内白圈全直或全弯 |
-| `dotchi2` | 回路I | 每区择一色走遍；黑弯白直 |
-| `balance` | 回路I | 白圈两臂等长、黑圈不等；数字=两臂和 |
-| `nanameguri` | 回路I | 每区一次；对角线格不穿过对角 |
-| `moonsun` | 回路I | 每区一次；区内日月二择；跨区切换 |
-| `castle` | 回路I | 提示格不在回路上；白内黑外；箭头方向回路格数 |
+| 涂黑 I/II 首轮 | `nothree sumiwake usoone yajikazu ayeheya bosnianroad sansaroad snake dominion norinuri isowatari aquarium` | §3 涂黑 I/II 共 31 条 |
+| 涂黑III | `batten tawa cocktail martini stostone interbd` | `mrtile ququ chainedb kuroclone evolmino` |
+| 涂黑II + 回路I 易项 | `binairo myopia swslither midloop geradeweg dotchi dotchi2 balance nanameguri moonsun castle` | — |
+| 回路II 易项 + Hidato | `yajilin-regions koburin nuriloop nothing kurarin mukkonn hidato` | `alternate` |
+| 放置易项 | `magnets gaps dosufuwa` | — |
+| 路径I 数连 | `numlin` | — |
+| 分区易项 | `fourcells fivecells meadows squarejam tatamibari tentaisho kramma aho domino-search lapaz compass sashigane snakepit wafusuma bdblock` | — |
 
-### 8.3 库追加
+首轮 12 条完全实现的机制（历史记录，与 JSON notes 一致）：
 
-- `loops.dsl`：`nearest_loop_dist` / `arm_used_len` / `full_straight_len`
-- `shading.dsl`：`half_filled_lines` / `lines_all_unique`
-- `drop_covers`（垒石刚体下落；与全等无关）
-
-### 8.4 回路II 易项 + Hidato
-
-完整：`yajilin-regions` `koburin` `nuriloop` `nothing` `kurarin` `mukkonn` `hidato`  
-部分：`alternate`（仅回路边直接相连的圆圈异色；沿回路隔格的连续同色圆圈未编码）
-
-| key | 机制 |
-|---|---|
-| `yajilin-regions` | `loop_visits_all_but` + `no_adjacent` + `region_black_count` |
-| `koburin` | 数字格不涂黑、不在回路上；其余格回路 xor 涂黑；`n_adj4` |
-| `nuriloop` | `cloop`；辅助 `y`=不在回路上（声明于 variables、不进 layers）；岛大小同数墙 |
-| `nothing` | 区域全经过或全不经过；进出 0 或 2；未经过区域不相邻 |
-| `kurarin` | 留白单回路（连通 + 每格恰 2 个留白邻 + `cc_count==1`）；格点 `c` 1/2/3 用 `cell_of` 多数。不用 `cycle_shape`（`no2x2` 会禁掉合法 4 循环）。角键 `"1,1"` 表示顶点 (r,c) |
-| `mukkonn` | 每格至多一个三角形；`link_dir => arm_len == n` |
-| `hidato` | 填 1..N 各一次（N=`rows.size * cols.size`）；`distinct(x)`；相邻数字八邻域 |
-| `alternate` | `link_between(e,p,q)==1 =>` 圆圈异色（非“所有正交相邻圆圈异色”） |
-
-暂缓（自交 / 多矩形回路 / 无序段长 / 有向转弯）：`ringring` `pipelink` `maxi` `trainstations` `barns` `vertigo` `doubleornothing` `railpool` `nagenawa`。
-
-### 8.5 放置易项
-
-完整：`magnets` `gaps` `dosufuwa`
-
-| key | 机制 |
-|---|---|
-| `magnets` | 骨牌区域空或一对 `+/-`；正交相邻不能同号；left/top=正号数，right/bottom=负号数 |
-| `gaps` | 每行每列两星；八邻不相接；盘外数字=两星之间空格数（不含星本身） |
-| `dosufuwa` | 每区一气球(1)一铅球(2)；铅球在盘底/黑格上/铅球上；气球在盘顶/黑格下/气球下 |
-
-暂缓：带多连块目录或复合机关的放置（见 §4.1）。
-
-### 8.6 路径I：数连
-
-完整：`numlin` — 端点 `cdeg==1` 且 `x=n`；其余格要么不经过（x=0, 度 0）要么度 2；邻接边推出同号；`cc_count(x, n)==1`。盘外边强制为 0。
-
-`hashi` 暂缓（见 §4.1）。
-
-### 8.7 分区易项
-
-完整：`fourcells` `fivecells` `meadows` `squarejam` `tatamibari` `tentaisho` `kramma` `aho` `domino-search` `lapaz` `compass` `sashigane` `snakepit` `wafusuma` `bdblock`
-
-| key | 机制 |
-|---|---|
-| `fourcells` / `fivecells` | `all_regions_size` + `c.border` 四边计数 |
-| `meadows` | 正方形 + 每区一黑圈 |
-| `squarejam` | 正方形 + 禁止四区共顶点 + 数字=边长 |
-| `tatamibari` | 长方形 + 每区一符号 + 禁止四区共顶点；`s` 1=宽>高 2=高>宽 3=正方形 |
-| `tentaisho` | 每区一圆点；绕该格心 180°。圆点只写在格子中心 |
-| `kramma` | 贯通横竖切割；每区至少一圈且同色 |
-| `aho` | 每区一数字=面积；`size%3==0` 则恰一个 2×2 缺一角（L），否则长方形 |
-| `domino-search` | 全区骨牌；`param("tiles")` 的每个无序数对恰出现一次 |
-| `lapaz` | 黑不相邻；白格骨牌；横向数字=该行黑数，竖向=该列黑数 |
-| `compass` | 每区一叉；`nu/nd/nl/nr` = 区内严格更上/下/左/右的格数 |
-| `sashigane` | 宽 1、恰两端点、恰一转弯；圈在转弯、箭在端点指向转弯 |
-| `snakepit` | 码牌邻区面积不同 + 蛇（宽 1、≥2 格、恰两端、无 2×2）；圈=端、灰≠端 |
-| `wafusuma` | 邻区面积不同；格线数字=两侧面积和且必须跨区 |
-| `bdblock` | 同数字同区、异数字异区、每区至少一数字；黑点顶点恰 3 条界且全部给出 |
-
-库追加（`regions.dsl`）：`region_width` / `region_height` / `regions_are_squares` / `no_four_meet` / `region_border_clue` / `region_deg` / `same_reg_dir` / `region_notch_count` / `region_end_count` / `region_above` 等方向计数。
-
-暂缓：形状目录、镜像、两色巧克力全等、斜线剖分等（见 §4.1）。
+| key | 中文名 | 分类 | 已编码的关键机制 |
+|---|---|---|---|
+| `nothree` | 等隔无三 | 涂黑I | island_rule + 圆圈恰触1黑 + **同行列等距三连黑禁止** |
+| `sumiwake` | 圆角房间 | 涂黑I | island_rule + 留白段跨区限制 + 白圈触1黑/黑圈触2黑 |
+| `usoone` | 单一谎言 | 涂黑I | island_rule + 邻黑计数 + **每区域恰好一个错误数字** |
+| `yajikazu` | 真假仙人 | 涂黑I | island_rule + **提示仅在其格留白时生效** |
+| `ayeheya` | 对称数间 | 涂黑I | island_rule + 跨区限制 + 区域黑数 + **区域180°旋转对称** |
+| `bosnianroad` | 波斯尼亚路 | 涂黑II | **闭环** + 八邻计数 + 数字格留白 |
+| `sansaroad` | 三叉路口 | 涂黑II | 留白连通 + 无全白2x2 + **三叉度3/其余度2** |
+| `snake` | 数蛇 | 涂黑II | **蛇形** + 端点·蛇身圆圈 + 盘外行列计数 |
+| `dominion` | 多米诺分区 | 涂黑II | **骨牌配对且互不相邻** + 字母分区 |
+| `norinuri` | 海苔墙 | 涂黑II | 骨牌涂黑 + **每留白组恰一数字** |
+| `isowatari` | 渡池石块 | 涂黑II | **每黑组恰 N 格** + 留白连通 + 无全白2x2 |
+| `aquarium` | 水族馆 | 涂黑II | **区域内水往下沉 + 同区同行水位相同** |

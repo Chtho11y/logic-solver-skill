@@ -1,0 +1,52 @@
+{
+  "key": "pipelink",
+  "en": "Pipelink",
+  "zh": "管道回路",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有格子中心的回路。回路中的两条线段可以十字交叉，但不能在交叉处转弯。格子中的线索表示此格如何被回路经过。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "管道形状 1横 2竖 3交叉 4上左 5上右 6下左 7下右"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "管道形状",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "s",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "s: 1=横 2=竖 3=交叉 4=上左 5=上右 6=下左 7=下右。经过全部格子。"
+}

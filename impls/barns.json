@@ -1,0 +1,66 @@
+{
+  "key": "barns",
+  "en": "Barns",
+  "zh": "冰宫回路",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有格子中心的回路。回路不能穿过任何粗格线。回路在白格上不能和自身交叉。回路不能在（表示冰）的蓝格上转弯，但可以在这些格子上和自身交叉。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "t",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 冰格"
+    },
+    {
+      "name": "w",
+      "kind": "edge",
+      "type": "constant",
+      "doc": "1 = 粗格线"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given_t",
+      "label": "冰格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "t",
+      "palette": {
+        "1": "#7fdbff"
+      }
+    },
+    {
+      "id": "walls",
+      "label": "粗格线",
+      "element": "edgeline",
+      "target": "edge",
+      "role": "input",
+      "var": "w"
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "经过全部格子。粗格线不可穿过。冰格不转弯可自交。"
+}

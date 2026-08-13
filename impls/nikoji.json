@@ -1,0 +1,48 @@
+{
+  "key": "nikoji",
+  "en": "NIKOJI",
+  "zh": "异同分割",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域恰好包含一个字母。包含相同字母的区域必须平移全等，包括字母在区域内的相对位置。包含不同字母的区域不能以任何方式全等。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "字母编号"
+    }
+  ],
+  "layers": [
+    {
+      "id": "letter",
+      "label": "字母",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "s",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "同字母平移全等（含字母位置）；异字母任意旋转翻转都不全等。"
+}

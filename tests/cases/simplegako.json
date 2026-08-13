@@ -1,0 +1,20 @@
+{
+  "puzzle": "simplegako",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x2 简单计数",
+      "rows": 2,
+      "cols": 2,
+      "clues": {
+        "x": {}
+      },
+      "answer": {
+        "x": [
+          "3 3",
+          "3 3"
+        ]
+      }
+    }
+  ]
+}

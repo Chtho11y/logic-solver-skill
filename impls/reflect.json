@@ -1,0 +1,85 @@
+{
+  "key": "reflect",
+  "en": "Reflect Link",
+  "zh": "反射回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心的回路。回路必须在且只能在含有十字的格子里与自身交叉。回路需要经过所有三角形，并在每个三角形处以直角“反射”转弯。数字表示从该三角形出发的两条线段所经过的格子总数（包括三角形所在的格子）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=三角形 2=十字"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "0上右 1下右 2下左 3上左"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "两臂格子总数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "三角/十字",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "仅在十字格自交；三角形处按 d 直角转弯。数字=两臂格子数（含本格）。"
+}

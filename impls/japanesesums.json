@@ -1,0 +1,60 @@
+{
+  "key": "japanesesums",
+  "en": "Japanese Sums",
+  "zh": "日本和",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填一个属于给出的列表中的数，使得每个数字在每行和每列都最多出现一次。盘面外的数字依次表示此行或此列中每一段有数字的格子之和。问号表示未知的和。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "段和",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "values": [
+        1,
+        2
+      ]
+    }
+  },
+  "notes": "values 为可填数字；每行每列至多一次。盘外依次为各填数段之和，? 为未知和。"
+}

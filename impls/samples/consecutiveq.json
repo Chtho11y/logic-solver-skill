@@ -1,0 +1,14 @@
+{
+  "puzzle": "consecutiveq",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 连续四数组",
+  "clues": {
+    "o": {
+      "1,1": 2
+    },
+    "x": {
+      "0,0": 1
+    }
+  }
+}

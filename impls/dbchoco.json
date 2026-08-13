@@ -1,0 +1,70 @@
+{
+  "key": "dbchoco",
+  "en": "Double Choco",
+  "zh": "双巧克力",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域里恰有一组连通的灰格和一组连通的白格，而且两组格子相邻且全等。数字表示其所在区域中一个连通组的面积（也就是区域总面积的一半）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=灰 0=白",
+      "dense": true
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "一组面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "灰色",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "一组面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：灰白两块等面积、各自边数足够连通、且相邻。灰白全等（旋转翻转）未编码。",
+  "unencodedClues": [
+    "congruence"
+  ]
+}

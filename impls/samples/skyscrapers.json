@@ -1,0 +1,28 @@
+{
+  "puzzle": "skyscrapers",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 摩天楼",
+  "params": {
+    "left": [
+      3,
+      2,
+      1
+    ],
+    "top": [
+      3,
+      2,
+      1
+    ],
+    "right": [
+      1,
+      2,
+      2
+    ],
+    "bottom": [
+      1,
+      2,
+      2
+    ]
+  }
+}

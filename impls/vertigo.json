@@ -1,0 +1,35 @@
+{
+  "key": "vertigo",
+  "en": "Vertigo",
+  "zh": "晕头转向",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有格子中心的回路。回路可以在任何格内与自身交叉。在按照一个方向走遍整个回路时，所有转弯的方向必须相同（全部都是左转或者全部都是右转）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    }
+  ],
+  "layers": [
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：经过全部格子，允许自交。沿回路转弯方向全局一致未编码。"
+}

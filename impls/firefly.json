@@ -1,0 +1,95 @@
+{
+  "key": "firefly",
+  "en": "Firefly/Hotaru Beam",
+  "zh": "萤火虫",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "从每个圆圈（代表萤火虫）沿虚格线画出一条路径，使得所有圆圈通过路径连通成一个整体。每条路径从一个圆圈的黑点开始，在某个圆圈（可以是同一个圆圈）的黑点以外的位置结束。路径不能交叉也不能穿过圆圈。圆圈里的数字表示从它的黑点引出的路径转弯的次数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "发出此光束的萤火虫编号"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 萤火虫"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "黑点方向"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "引出路径转弯次数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "萤火虫",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "arrow",
+      "label": "黑点方向",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "转弯数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "格心连线：黑点方向迈出第一步，在另一萤火虫非黑点侧结束。"
+}

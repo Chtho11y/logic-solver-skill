@@ -1,0 +1,57 @@
+{
+  "key": "r",
+  "en": "Renban",
+  "zh": "连番",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格内填入一个1~N的数（其中N为盘面的边长），使得1~N在每行、每列都恰好出现一次。每个区域内的所有数必须构成一个连续数字序列，顺序任意。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        12
+      ],
+      "doc": "1..N"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "拉丁方 1..N；每个区域内数字构成连续段。"
+}

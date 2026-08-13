@@ -1,0 +1,70 @@
+{
+  "key": "tateyoko",
+  "en": "Tatebo-Yokobo",
+  "zh": "翠竹交错",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个白格中画一条横线“—”或竖线“ | \"。相连的线段会组成更长的线段。黑格中的数字表示有多少条线段从此格引出。白格中的数字表示通过此格的线段长度。一条线段至多通过一个白色数字格。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        2
+      ],
+      "doc": "0=黑 1=横 2=竖"
+    },
+    {
+      "name": "b",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=黑格/墙"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "数字提示"
+    }
+  ],
+  "layers": [
+    {
+      "id": "shade",
+      "label": "黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "b",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "answer",
+      "label": "横竖",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {},
+  "notes": "白格 1=横线 2=竖线。白数字=线段长；黑数字=引出线段数。一线段至多一个白数字。"
+}

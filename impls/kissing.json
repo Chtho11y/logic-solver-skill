@@ -1,0 +1,84 @@
+{
+  "key": "kissing",
+  "en": "Kissing Polyominoes",
+  "zh": "kissing",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "把给出的形状放入盘面，使得不同形状在且仅在被标记出的边界相邻。形状可以旋转或翻转。×表示此格不能被形状覆盖。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 被覆盖"
+    },
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "k",
+      "kind": "edge",
+      "type": "constant",
+      "doc": "1 = 亲吻边"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = × 禁入"
+    }
+  ],
+  "layers": [
+    {
+      "id": "kiss",
+      "label": "亲吻边",
+      "element": "edgeline",
+      "target": "edge",
+      "role": "input",
+      "var": "k"
+    },
+    {
+      "id": "block",
+      "label": "禁入",
+      "element": "cross",
+      "target": "cell",
+      "role": "input",
+      "var": "w"
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：仅在标记边上正交相接，× 不覆盖。形状目录未编码。",
+  "unencodedClues": [
+    "shapes"
+  ]
+}

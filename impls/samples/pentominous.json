@@ -1,0 +1,11 @@
+{
+  "puzzle": "pentominous",
+  "rows": 1,
+  "cols": 5,
+  "title": "1x5 一条 I",
+  "clues": {
+    "s": {
+      "0,0": 2
+    }
+  }
+}

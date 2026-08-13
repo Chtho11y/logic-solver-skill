@@ -1,0 +1,52 @@
+{
+  "key": "walllogic",
+  "en": "Four Winds",
+  "zh": "四风",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "从一些数字格的边中点往外画一些横平竖直的箭头。箭头不能经过数字格或者穿出盘面。数字表示从此格延伸出的所有箭头占用的总格数（不包括数字格本身）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头占用总格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "箭头",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "空格均被某数字的直臂覆盖；数字=四向臂长之和。"
+}

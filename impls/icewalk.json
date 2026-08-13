@@ -1,0 +1,69 @@
+{
+  "key": "icewalk",
+  "en": "Ice Walk",
+  "zh": "冰宫行者",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心的回路，并且经过所有带数字的格子。回路在白格上不能和自身交叉。回路不能在（表示冰）的蓝格上转弯，但可以在这些格子上和自身交叉。数字表示此格所属于的连续白格构成的回路段经过的格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 特殊地形"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "白段长度"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given_w",
+      "label": "冰格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#7fdbff"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：冰格不转弯可自交，白格不自交。数字格必经且非冰。n=1 已编码；n>1 沿回路白段长度未编码。"
+}

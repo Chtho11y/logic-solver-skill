@@ -1,0 +1,35 @@
+{
+  "key": "yajirushi",
+  "en": "Yajirushi",
+  "zh": "yajirushi",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格中放置一个箭头（↑ ↓ ← → 之一）。每个箭头都和另一个箭头配对，它们相互指向，它们之间不能有其他箭头，且不能相邻。所有未放置箭头的空格必须在一对箭头之间。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "a",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        8
+      ],
+      "doc": "箭头 0-3，8=无"
+    }
+  ],
+  "layers": [
+    {
+      "id": "answer",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "output",
+      "var": "a"
+    }
+  ],
+  "params": {},
+  "notes": "箭头两两对射、中间无箭头且不相邻；所有空格都在某对箭头之间。8=无。"
+}

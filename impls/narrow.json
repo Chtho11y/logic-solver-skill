@@ -1,0 +1,48 @@
+{
+  "key": "narrow",
+  "en": "Narrowfence",
+  "zh": "narrow",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个非长方形区域，使得每个区域恰好包含一个符号。两个包含相同符号的区域形状必须不同（旋转或翻转后全等的形状视为相同）。不允许存在一个2×2的结构，其四个格子都属于带有相同符号的区域。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "符号"
+    }
+  ],
+  "layers": [
+    {
+      "id": "symbol",
+      "label": "符号",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "s",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "非矩形；同符号不同形（自由全等）；禁止同符号 2×2。"
+}

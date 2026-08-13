@@ -1,0 +1,21 @@
+{
+  "puzzle": "scrabble",
+  "rows": 1,
+  "cols": 3,
+  "title": "CAT",
+  "clues": {
+    "x": {
+      "0,0": 3,
+      "0,2": 20
+    }
+  },
+  "params": {
+    "words": [
+      [
+        3,
+        1,
+        20
+      ]
+    ]
+  }
+}

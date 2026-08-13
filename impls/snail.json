@@ -1,0 +1,78 @@
+{
+  "key": "snail",
+  "en": "Magic Snail",
+  "zh": "蜗牛",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填一个属于给出的列表（1~N）中的数，使得每个数字在每行和每列都恰好出现一次。从有圆圈的格子开始，沿着螺旋（“蜗牛”）的这一路径，所经过的数字必须按1~N循环：1, 2, ..., N, 1, 2, ...。×表示此格不能填数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=叉/禁止填数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "起点",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "forbid",
+      "label": "叉号",
+      "element": "cross",
+      "target": "cell",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "values": [
+        1,
+        2
+      ]
+    }
+  },
+  "notes": "1..K 每行每列各一次。从圆圈起沿螺旋，填数按 1..K 循环。叉格不填。"
+}

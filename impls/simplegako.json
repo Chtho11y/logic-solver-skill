@@ -1,0 +1,49 @@
+{
+  "key": "simplegako",
+  "en": "Simple Gako",
+  "zh": "简单计数",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格里填数，使得每个数字等于其所在的行和列中包含这个数的总格数（包括此格本身）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        12
+      ],
+      "doc": "1..N"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "每格数字=该数字在其所在行+列出现次数（含自身）。"
+}

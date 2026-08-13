@@ -1,0 +1,39 @@
+{
+  "key": "cbblock",
+  "en": "Combi Block",
+  "zh": "组合区块",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域恰好包含两个用虚线描边的块。区域不能是长方形。相邻的两个区域不能全等。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "虚线块",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "给定区域是虚线描边的块；求解分区每区恰好两块，非矩形，相邻不全等。"
+}

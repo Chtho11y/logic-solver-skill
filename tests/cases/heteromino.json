@@ -1,0 +1,17 @@
+{
+  "puzzle": "heteromino",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "1x3 一条 I",
+      "rows": 1,
+      "cols": 3,
+      "clues": {},
+      "answer": {
+        "c": [
+          "0 0 0"
+        ]
+      }
+    }
+  ]
+}

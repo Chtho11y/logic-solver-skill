@@ -385,7 +385,8 @@ def _fn_dir(ctx, args, pos):
     while _cell_in(ctx.grid, r, c):
         points.append((r, c))
         r, c = r + dr, c + dc
-    return RegionValue.of(PointKind.CELL, points)
+    # Keep walk order (do not sort): LEFT/UP rays must start at the nearest cell.
+    return RegionValue(kind=PointKind.CELL, points=tuple(points))
 
 
 def _block(r0: int, c0: int, w: int, h: int) -> RegionValue:
@@ -445,6 +446,40 @@ def _fn_cells(ctx, args, pos):
     if args:
         raise CompileError("cells() takes no arguments", pos.line, pos.col)
     return RegionValue.of(PointKind.CELL, ctx.grid.cells())
+
+
+def _fn_spiral(ctx, args, pos):
+    """All cells in clockwise spiral order, starting at top-left going right.
+
+    Unlike other region producers this does *not* sort the points: Magic Snail
+    needs the visit order.
+    """
+
+    if args:
+        raise CompileError("spiral() takes no arguments", pos.line, pos.col)
+    rows, cols = ctx.grid.rows, ctx.grid.cols
+    points: list[Point] = []
+    r0, c0, r1, c1 = 0, 0, rows - 1, cols - 1
+    while r0 <= r1 and c0 <= c1:
+        for c in range(c0, c1 + 1):
+            points.append((r0, c))
+        r0 += 1
+        if r0 > r1:
+            break
+        for r in range(r0, r1 + 1):
+            points.append((r, c1))
+        c1 -= 1
+        if c0 > c1:
+            break
+        for c in range(c1, c0 - 1, -1):
+            points.append((r1, c))
+        r1 -= 1
+        if r0 > r1:
+            break
+        for r in range(r1, r0 - 1, -1):
+            points.append((r, c0))
+        c0 += 1
+    return RegionValue(kind=PointKind.CELL, points=tuple(points))
 
 
 def _fn_corners(ctx, args, pos):
@@ -1130,6 +1165,10 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     # -- geometry ------------------------------------------------------
     "cells": BuiltinFunction(
         "cells", _fn_cells, signature="cells()", doc="Every cell of the board (a region)."
+    ),
+    "spiral": BuiltinFunction(
+        "spiral", _fn_spiral, signature="spiral()",
+        doc="Every cell in clockwise spiral order from top-left (not sorted).",
     ),
     "corners": BuiltinFunction(
         "corners", _fn_corners, signature="corners()", doc="Every corner of the lattice."

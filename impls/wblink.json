@@ -1,0 +1,72 @@
+{
+  "key": "wblink",
+  "en": "Shirokuro Link",
+  "zh": "黑白配",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "用横平竖直的线段把黑圈和白圈两两连接配对，使得每个圈都恰好属于一对。线段之间不能交叉，包括在端点交叉。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "配对编号；0=未经过"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "answer",
+      "label": "配对编号",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "黑白两两配对，路径可转弯、不交叉。"
+}

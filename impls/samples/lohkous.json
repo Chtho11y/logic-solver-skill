@@ -1,0 +1,11 @@
+{
+  "puzzle": "lohkous",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 一段长",
+  "clues": {
+    "n1": {
+      "0,0": 2
+    }
+  }
+}

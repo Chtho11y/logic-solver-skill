@@ -1,0 +1,11 @@
+{
+  "puzzle": "walllogic",
+  "rows": 1,
+  "cols": 3,
+  "title": "1x3 四风",
+  "clues": {
+    "n": {
+      "0,0": 2
+    }
+  }
+}

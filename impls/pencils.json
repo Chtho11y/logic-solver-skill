@@ -1,0 +1,71 @@
+{
+  "key": "pencils",
+  "en": "Pencils",
+  "zh": "铅笔",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在盘面中放入一些铅笔。一根铅笔依次由一个1×N的笔杆、一个1×1的笔头、一条从笔尖开始，由N个单位线段相连而成的笔迹构成。铅笔（包括它们的笔迹）必须互不重叠地覆盖盘面上的所有格子。数字必须位于笔杆内，并且表示笔杆的长度。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "k",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        2
+      ],
+      "doc": "0=笔杆 1=笔头 2=笔迹"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "笔杆长度"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "笔杆长",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "kind",
+      "label": "笔的部件",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "k",
+      "palette": {
+        "0": "#f5d76e",
+        "1": "#c0392b",
+        "2": "#2980b9"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "k: 0=笔杆 1=笔头 2=笔迹。"
+}

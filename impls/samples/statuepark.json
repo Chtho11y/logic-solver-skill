@@ -1,0 +1,12 @@
+{
+  "puzzle": "statuepark",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 一个 U",
+  "clues": {
+    "o": {
+      "0,1": 2,
+      "1,1": 1
+    }
+  }
+}

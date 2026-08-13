@@ -1,0 +1,59 @@
+{
+  "key": "pentopia",
+  "en": "Pentopia",
+  "zh": "近视五格",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "把给出的形状中的一部分（不一定是全部）放入盘面，使得任意两个形状不接触（对角接触也不行）。有箭头的格子不能被覆盖。格子里的箭头指向所有横竖方向中离此格最近的被覆盖的格子。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 被覆盖"
+    },
+    {
+      "name": "a",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头位掩码 1上2下4左8右"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "箭头掩码",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "a",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：五格骨牌互不八邻接触 + 近视箭头。形状目录未编码。a 为方向位掩码。",
+  "unencodedClues": [
+    "shapes"
+  ]
+}

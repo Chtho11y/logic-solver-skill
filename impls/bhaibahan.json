@@ -1,0 +1,71 @@
+{
+  "key": "bhaibahan",
+  "en": "Bhai Bahan",
+  "zh": "同胞回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心且不和自身交叉的回路，并且通过所有带圈的格子。如果两个圆圈格横竖相邻，则回路在其中一格直行，在另一格拐弯。如果回路在圆圈格直行，则圈内数字表示沿回路连续出现该数量的直行格。如果在圆圈格拐弯，则圈内数字表示沿回路连续出现该数量的拐弯格。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=圆圈"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "连续直行或转弯格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：相邻圆圈一直行一转弯；直行数字=直线段内部格数。转弯数字仅 n=1。"
+}

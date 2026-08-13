@@ -1,0 +1,89 @@
+{
+  "key": "anglers",
+  "en": "Anglers",
+  "zh": "渔夫",
+  "category": "路径II",
+  "subcategory": "",
+  "rule": "从每个数字画一条横平竖直的路径，穿过若干个相邻格中心后连到一条鱼。每条鱼必须恰好和一个数字相连。路径不能和自身或互相交叉，包括在端点交叉。每个格子必须恰好有一条路径经过。数字表示其路径的长度（等于路径使用的总格数，包括最终的鱼格）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "路径编号"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "路径长度"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "2 = 鱼"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "长度",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "circle",
+      "label": "鱼",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "pid",
+      "label": "路径编号",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "覆盖全部格子；数字连到唯一一条鱼；数字=路径格数。"
+}

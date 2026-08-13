@@ -1,0 +1,49 @@
+{
+  "key": "pentominous",
+  "en": "Pentominous",
+  "zh": "五格拼板",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个五格骨牌，使得任意两个相邻的骨牌都不全等。字母表示其所在骨牌的形状。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "形状字母 F=1 … Z=12"
+    }
+  ],
+  "layers": [
+    {
+      "id": "letter",
+      "label": "形状",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "s",
+      "options": {
+        "min": 1,
+        "max": 12
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "s: F=1 I=2 L=3 N=4 P=5 T=6 U=7 V=8 W=9 X=10 Y=11 Z=12。"
+}

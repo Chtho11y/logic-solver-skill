@@ -1,0 +1,69 @@
+{
+  "key": "firewalk",
+  "en": "Fire Walk",
+  "zh": "烈焰行者",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条经过一些格子的回路，并且经过所有带数字的格子。回路经过（表示火焰）的红格时必须转弯。回路可以两次经过同一个红格，前提是此格的中心需要位于回路内。数字表示此格所属于的连续白格构成的回路段经过的格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 特殊地形"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "白段长度"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given_w",
+      "label": "火格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#c0392b"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：火格必转弯，允许度4。数字格必经且非火。n=1 已编码；n>1 沿回路白段长度未编码。"
+}

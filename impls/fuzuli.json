@@ -1,0 +1,59 @@
+{
+  "key": "fuzuli",
+  "en": "Fuzuli",
+  "zh": "冗余",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填一个属于给出的列表中的数，使得每个数字在每行和每列都恰好出现一次。不能有全部填数的2×2结构。×表示此格不能填数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=叉/禁止填数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "forbid",
+      "label": "叉号",
+      "element": "cross",
+      "target": "cell",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "values": [
+        1,
+        2
+      ]
+    }
+  },
+  "notes": "values 为可填数字列表；每行每列各出现一次；无全填 2x2；叉格不填。"
+}

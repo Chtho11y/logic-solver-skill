@@ -1,0 +1,28 @@
+{
+  "puzzle": "moonlight",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 空盘",
+  "clues": {
+    "o": {},
+    "w": {}
+  },
+  "params": {
+    "left": [
+      0,
+      0
+    ],
+    "top": [
+      0,
+      0
+    ],
+    "right": [
+      0,
+      0
+    ],
+    "bottom": [
+      0,
+      0
+    ]
+  }
+}

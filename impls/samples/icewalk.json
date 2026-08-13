@@ -1,0 +1,12 @@
+{
+  "puzzle": "icewalk",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 冰宫行者",
+  "clues": {
+    "n": {
+      "0,0": 8
+    },
+    "w": {}
+  }
+}

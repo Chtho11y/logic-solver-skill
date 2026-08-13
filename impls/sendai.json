@@ -1,0 +1,56 @@
+{
+  "key": "sendai",
+  "en": "Sendai-Miyagi",
+  "zh": "宫城县仙台市",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把每个区域（代表县）分成若干个小区域（代表市）。每个市需要与另一个大小方向均相同的市相邻。数字代表所在的县被划分成的市的个数，没有数字的县可以被划分为任意个数的市。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "市的个数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "县",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "市数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "每市须与另一个平移全等的市相邻。数字=该县的市数。"
+}

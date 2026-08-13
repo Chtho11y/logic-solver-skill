@@ -1,0 +1,94 @@
+{
+  "key": "kinkonkan",
+  "en": "Kin-Kon-Kan",
+  "zh": "金刚镜",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在一些格子内填入一条对角线（代表镜子），使得每个区域恰有一面镜子。光束从网格外的字母出发垂直射入网格，并在遇到镜子时发生反射。从某个字母出发的光束必须在另一处相同字母的位置结束。数字表示光束被镜子反射的次数。每一面镜子至少被一束光使用一次。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        2
+      ],
+      "doc": "0=无 1=\\\\ 2=/"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "letters",
+      "label": "字母",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "letters",
+      "options": {
+        "sides": [
+          "top",
+          "bottom",
+          "left",
+          "right"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "bounces",
+      "label": "反射次数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "bounces",
+      "options": {
+        "sides": [
+          "top",
+          "bottom",
+          "left",
+          "right"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "mirrors",
+      "label": "镜子",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "m",
+      "palette": {
+        "1": "#7f8ea3",
+        "2": "#c0392b"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "letters": [],
+      "bounces": [],
+      "top": [],
+      "bottom": [],
+      "left": [],
+      "right": []
+    }
+  },
+  "notes": "部分实现：每区恰一面镜子。字母光束配对与反射次数未编码。m: 1=\\ 2=/。",
+  "unencodedClues": [
+    "letters",
+    "bounces"
+  ]
+}

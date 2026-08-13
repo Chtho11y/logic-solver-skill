@@ -1,0 +1,101 @@
+{
+  "key": "rectslider",
+  "en": "Rectangle Slider",
+  "zh": "长方滑动",
+  "category": "路径I",
+  "subcategory": "移动",
+  "rule": "把一些黑格横向或纵向移动，使得在所有移动过后每一组连通的黑格都是面积至少为二的长方形。黑格的移动路径不能交叉，包括在端点交叉，也不能经过其他没有移动的黑格。数字表示此黑格需要移动的距离（0表示不能移动）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "黑格编号"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 落点黑格"
+    },
+    {
+      "name": "b",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 起始黑格"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "移动距离"
+    }
+  ],
+  "layers": [
+    {
+      "id": "start",
+      "label": "起始黑格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "b",
+      "palette": {
+        "1": "#232733"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "距离",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "落点",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "f",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "直线滑动；落点连通组均为面积≥2 的矩形。"
+}

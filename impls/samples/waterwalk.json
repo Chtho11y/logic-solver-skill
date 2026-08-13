@@ -1,0 +1,12 @@
+{
+  "puzzle": "waterwalk",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 水面行者",
+  "clues": {
+    "n": {
+      "0,0": 8
+    },
+    "w": {}
+  }
+}

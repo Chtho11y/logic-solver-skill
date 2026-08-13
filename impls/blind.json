@@ -1,0 +1,43 @@
+{
+  "key": "blind",
+  "en": "Blind Spot",
+  "zh": "盲点",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个区域中放置一个箭头（↑ ↓ ← → 之一），使得每行每列恰好出现四种箭头各一次。箭头不能指向另一个箭头，除非有粗线阻挡。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "a",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        8
+      ],
+      "doc": "箭头 0-3，8=无"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "answer",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "output",
+      "var": "a"
+    }
+  ],
+  "params": {},
+  "notes": "每区一箭头；每行每列↑↓←→各一次。8=无箭头。"
+}

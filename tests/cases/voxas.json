@@ -1,0 +1,22 @@
+{
+  "puzzle": "voxas",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x2 两横",
+      "rows": 2,
+      "cols": 2,
+      "clues": {
+        "o": {
+          "H,1,0": 1
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0",
+          "2 2"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "key": "rassi",
+  "en": "Rassi Silai",
+  "zh": "绳索缝纫",
+  "category": "路径II",
+  "subcategory": "",
+  "rule": "在每个区域内画一条经过该区域所有格子的路径。位于路径端点的格子不能互相接触（对角接触也不行）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "每区一条哈密顿路径；所有端点互不接触（含对角）。"
+}

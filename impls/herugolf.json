@@ -1,0 +1,150 @@
+{
+  "key": "herugolf",
+  "en": "Herugolf",
+  "zh": "高尔夫",
+  "category": "路径I",
+  "subcategory": "移动",
+  "rule": "把每个圆圈通过一系列（至少一次）横向或纵向移动至一个H格。每个H格必须恰好和一个圆圈相连。每个圆圈第一次移动的长度必须等于圆圈里的数字，而之后的每一次移动长度必须比前一次短一格（所以总移动次数不能超过圆圈里的数字）。每一次移动的终点不能在蓝格内（表示水坑），但移动期间可以穿过蓝格。连续两次移动之间的方向可以改变也可以不改变，但不能完全相反（也就是说不能“掉头”）。圆圈的移动路径不能交叉，包括在端点交叉。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "沿球路径的步序"
+    },
+    {
+      "name": "u",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "球编号"
+    },
+    {
+      "name": "r",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        8
+      ],
+      "doc": "本杆剩余步数"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        8
+      ],
+      "doc": "本杆长度"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 球"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第一杆长度"
+    },
+    {
+      "name": "h",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = H 洞"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 水坑"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "球",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "第一杆",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "hole",
+      "label": "洞",
+      "element": "text",
+      "target": "cell",
+      "role": "input",
+      "var": "h"
+    },
+    {
+      "id": "water",
+      "label": "水坑",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#42a5f5"
+      }
+    },
+    {
+      "id": "order",
+      "label": "步序",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "r/s 为杆数状态。每杆直线；停点不在水上；不可 180° 掉头。"
+}

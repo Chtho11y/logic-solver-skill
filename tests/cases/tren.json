@@ -1,0 +1,21 @@
+{
+  "puzzle": "tren",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "1x3 一辆车",
+      "rows": 1,
+      "cols": 3,
+      "clues": {
+        "n": {
+          "0,1": 0
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0 0"
+        ]
+      }
+    }
+  ]
+}

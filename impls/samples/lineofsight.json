@@ -1,0 +1,14 @@
+{
+  "puzzle": "lineofsight",
+  "rows": 4,
+  "cols": 4,
+  "title": "4x4 视线",
+  "clues": {
+    "n": {
+      "1,1": 4
+    },
+    "d": {
+      "1,1": 0
+    }
+  }
+}

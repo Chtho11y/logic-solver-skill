@@ -1,0 +1,66 @@
+{
+  "key": "heavydots",
+  "en": "Heavy Dots",
+  "zh": "重点",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域都不完全包含2×2的结构。每个区域至多只能包含一个数字，表示此区域的面积。黑点表示从这个顶点恰好延伸出三条区域的边界线，而白点表示从这个顶点恰好延伸出四条区域的边界线。所有可能的黑白点不一定全部给出，但是与黑点或白点相邻但没有标记的顶点不能延伸出三条或四条边界线。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域面积"
+    },
+    {
+      "name": "o",
+      "kind": "corner",
+      "type": "constant",
+      "doc": "1=白点四界 2=黑点三界"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "dot",
+      "label": "顶点",
+      "element": "dot",
+      "target": "corner",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "o: 1=白(恰四条界) 2=黑(恰三条界)。与已标点相邻的未标点不能为 3/4 条。"
+}

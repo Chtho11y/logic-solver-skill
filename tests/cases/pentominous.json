@@ -1,0 +1,21 @@
+{
+  "puzzle": "pentominous",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "1x5 一条 I",
+      "rows": 1,
+      "cols": 5,
+      "clues": {
+        "s": {
+          "0,0": 2
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0 0 0 0"
+        ]
+      }
+    }
+  ]
+}

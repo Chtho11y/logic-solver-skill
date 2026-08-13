@@ -1,0 +1,63 @@
+{
+  "key": "scrabble",
+  "en": "Scrabble",
+  "zh": "拼词",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格内放置一个字符，使得所有有字符的格子连通成一个整体。每个至少两格的横段或纵段的内容（从左到右或从上到下）都在盘面外的单词列表中给出，其中每个单词必须出现恰好一次。有一些字符可能已经放入了盘面。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "填数（0=空/黑）"
+    },
+    {
+      "name": "f",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1=已填"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given",
+      "label": "已给字母",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "words": []
+    }
+  },
+  "notes": "x: 1=A,2=B,…,0=空。param words 为单词（字母编号列表），每个恰好出现一次。"
+}

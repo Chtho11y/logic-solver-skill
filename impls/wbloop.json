@@ -1,0 +1,54 @@
+{
+  "key": "wbloop",
+  "en": "Kuroshiro Loop",
+  "zh": "黑白回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心且不和自身交叉的回路，并且通过所有带圈的格子。在连续经过的两个同色圆圈之间，回路不能转弯。在连续经过的两个异色圆圈之间，回路必须恰好转弯一次。（回路在圆圈格上的转弯不计入上述规则要求。）",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：经过所有圆圈；同一横/竖直线段上的圆圈必须同色。沿回路拐弯间隔的连续圆圈未完全编码。"
+}

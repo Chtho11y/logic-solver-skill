@@ -1,0 +1,31 @@
+{
+  "puzzle": "scrabble",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "CAT",
+      "rows": 1,
+      "cols": 3,
+      "clues": {
+        "x": {
+          "0,0": 3,
+          "0,2": 20
+        }
+      },
+      "answer": {
+        "x": [
+          "3 1 20"
+        ]
+      },
+      "params": {
+        "words": [
+          [
+            3,
+            1,
+            20
+          ]
+        ]
+      }
+    }
+  ]
+}

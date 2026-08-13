@@ -1,0 +1,11 @@
+{
+  "puzzle": "forestwalk",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 白环",
+  "clues": {
+    "n": {
+      "0,0": 4
+    }
+  }
+}

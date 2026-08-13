@@ -1,0 +1,31 @@
+{
+  "key": "heteromino",
+  "en": "Heteromino",
+  "zh": "三格拼版",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个三格骨牌，使得任意两个相邻的骨牌都不平移全等（也就是说，它们要么形状不同，要么朝向不同）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    }
+  ],
+  "layers": [
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "相邻三格骨牌的平移类（I 横/竖 + L 四朝向）必须不同。"
+}

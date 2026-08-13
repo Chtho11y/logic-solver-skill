@@ -1,0 +1,70 @@
+{
+  "key": "tapaloop",
+  "en": "Tapa-like Loop",
+  "zh": "土派回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些空格中心且不和自身交叉的回路。格内一个或多个数字表示回路每次经过与此格接触的（至多）八格形成的区域时连续经过的格数，但不限定顺序。作为特例，一个单独的“0”表示回路不经过任何与此格接触的格子，而一个单独的问号（格内没有其他问号或数字）也可以代表“0”。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第一段长"
+    },
+    {
+      "name": "n2",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第二段长"
+    },
+    {
+      "name": "n3",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第三段长"
+    },
+    {
+      "name": "n4",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第四段长"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：单数提示为八邻域恰好一段连续；多段仅约束总和与段数，无序长度一一对应未编码。"
+}

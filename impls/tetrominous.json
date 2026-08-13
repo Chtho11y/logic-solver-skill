@@ -1,0 +1,49 @@
+{
+  "key": "tetrominous",
+  "en": "Tetrominous",
+  "zh": "四格拼板",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个四格骨牌，使得任意两个相邻的骨牌都不全等。字母表示其所在骨牌的形状。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "形状 I=1 O=2 T=3 L=4 S=5"
+    }
+  ],
+  "layers": [
+    {
+      "id": "letter",
+      "label": "形状",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "s",
+      "options": {
+        "min": 1,
+        "max": 5
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "s: I=1 O=2 T=3 L=4 S=5（自由四格骨牌，含镜像）。"
+}

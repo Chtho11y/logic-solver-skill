@@ -1,0 +1,22 @@
+{
+  "puzzle": "symmarea",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x2 一块",
+      "rows": 2,
+      "cols": 2,
+      "clues": {
+        "n": {
+          "0,0": 4
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0",
+          "0 0"
+        ]
+      }
+    }
+  ]
+}

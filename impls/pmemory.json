@@ -1,0 +1,97 @@
+{
+  "key": "pmemory",
+  "en": "Persistence of Memory",
+  "zh": "记忆的永恒",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心的路径，使得路径经过的所有格子构成一条宽度为一且不和自身接触的蛇。路径的两端用黑色圆圈给出。路径需要经过所有涂灰的区域至少一次。形状、朝向相同的涂灰区域内部的经过方式完全相同。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "沿路径访问序；0=未经过"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "2 = 黑圈端点"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 灰区格"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "gray",
+      "label": "灰区",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "1": "#bdbdbd"
+      }
+    },
+    {
+      "id": "circle",
+      "label": "端点",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "order",
+      "label": "访问序",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "蛇形路径；同形同向灰区内部连线一致。"
+}

@@ -1,0 +1,71 @@
+{
+  "key": "orbital",
+  "en": "Orbital",
+  "zh": "行星轨道",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一些横平竖直地经过空格中心的长方形回路。回路之间可以相交，但是不能有边重叠，也不能共用一角。白圈格必须被回路经过，黑圈格不能被回路经过。每个黑圈格恰好位于一个回路的内部，且黑圈中的数字表示那个回路经过的白圈个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "该回路白圈数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "矩形回路可交叉。白圈在周界上，黑圈在恰好一个矩形内部，数字=该矩形周界白圈数。"
+}

@@ -1,0 +1,64 @@
+{
+  "key": "coffeemilk",
+  "en": "Coffee Milk",
+  "zh": "咖啡牛奶",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "在一些圆圈之间画一条横平竖直的线段。线段之间不能交叉，也不能穿过其他圆圈。黑圈和白圈不能直接连接。每一组连通的圆圈必须恰好包含一个灰圈，以及相同数量的黑圈和白圈。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "u",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "所属灰圈编号"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白 2=黑 3=灰"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "线段",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "u 为辅助：每组用其灰圈下标作编号。"
+}

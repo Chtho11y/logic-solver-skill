@@ -1,0 +1,70 @@
+{
+  "key": "wagiri",
+  "en": "Wagiri",
+  "zh": "斜线(环和切)",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个格子中画一条对角线。圈中的数字表示从这个圈引出的斜线数量。写有“輪”的格子的对角线必须属于一个环的一部分，标有“切”的格子的对角线不能属于环的一部分。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        2
+      ],
+      "doc": "1=╲ 2=╱"
+    },
+    {
+      "name": "n",
+      "kind": "corner",
+      "type": "constant",
+      "doc": "顶点斜线数"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=叉/禁止填数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "顶点数字",
+      "element": "number",
+      "target": "corner",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "id": "mark",
+      "label": "輪/切",
+      "element": "text",
+      "target": "cell",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "diag",
+      "label": "斜线",
+      "element": "diagonal",
+      "target": "cell",
+      "role": "output",
+      "var": "g"
+    }
+  ],
+  "params": {},
+  "notes": "g: 1=╲ 2=╱。m: 1=輪 2=切（是否在环上）当前未编码。",
+  "unencodedClues": [
+    "m"
+  ]
+}

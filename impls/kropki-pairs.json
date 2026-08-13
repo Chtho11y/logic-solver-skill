@@ -1,0 +1,63 @@
+{
+  "key": "kropki-pairs",
+  "en": "Kropki Pairs",
+  "zh": "黑白点对",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个空格里填一个1~N的数，使得每个数字在每行和每列都恰好出现一次（其中N是每行或每列的格数）。两格之间的白点表示两个数的差（的绝对值）为1，黑点表示两个数（按某个顺序）的比值为1:2。所有可能的黑白点不一定全部给出。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        12
+      ],
+      "doc": "1..N"
+    },
+    {
+      "name": "o",
+      "kind": "edge",
+      "type": "constant",
+      "doc": "1=白点 2=黑点"
+    }
+  ],
+  "layers": [
+    {
+      "id": "dot",
+      "label": "黑白点",
+      "element": "dot",
+      "target": "edge",
+      "role": "input",
+      "var": "o"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "拉丁方。白点差 1，黑点比 1:2。未给出的点不约束。"
+}

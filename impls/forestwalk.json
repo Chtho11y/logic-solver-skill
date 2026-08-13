@@ -1,0 +1,89 @@
+{
+  "key": "forestwalk",
+  "en": "Forest Walk",
+  "zh": "森林行者",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "画一个横平竖直地经过一些格子中心的网络。网络在绿色格子中必须恰好向三个方向有边连出（也就是形成 T 字），在白色格子必须恰好向两个方向有边连出。数字表示此格所属于的连续白格构成的网络段经过的格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "u",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "白段编号"
+    },
+    {
+      "name": "z",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        36
+      ],
+      "doc": "白段根距离"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 绿格"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "白段格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "green",
+      "label": "绿格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "palette": {
+        "1": "#66bb6a"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "白段长度",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "网络",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "绿格度数 3，白格 0 或 2；u/z 辅助编码白段。"
+}

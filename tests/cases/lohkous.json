@@ -1,0 +1,22 @@
+{
+  "puzzle": "lohkous",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x2 一段长",
+      "rows": 2,
+      "cols": 2,
+      "clues": {
+        "n1": {
+          "0,0": 2
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0",
+          "0 0"
+        ]
+      }
+    }
+  ]
+}
