@@ -80,7 +80,7 @@ for p in clue_cells(o):
 ''',
     [S, const("o", "1 = 蛇的一端"), const("n", "留白连通组格数")],
     [circle_layer("o", "蛇端"), num_layer("n", "留白组格数"), SHADE_LAYER], rows=6, cols=6,
-    notes="完全实现：蛇形（连通/宽一/恰两端点/无全黑2x2）+ 端点圆圈 + 留白组格数。"
+    notes="部分实现：蛇形（连通/宽一/恰两端点/无全黑2x2）+ 端点圆圈 + 留白组格数。"
           "盘外「留白组格数一一对应」的多重集匹配未编码。",
     status="partial",
     sample=sample("snakeegg", 6, 6, clues={"o": {"0,0": 1}}))
@@ -189,7 +189,7 @@ for p in clue_cells(n):
 ''',
     [S, const("d", "箭头方向 0=上 1=下 2=左 3=右"), const("n", "该方向黑格数")],
     [arrow_layer("d"), num_layer("n", "该方向黑格数"), SHADE_LAYER], rows=6, cols=6,
-    notes="完全实现：每个涂黑连通组恰 4 格 + 全部骨牌对角连通 + 数字格留白 + 方向计数。"
+    notes="部分实现：每个涂黑连通组恰 4 格 + 全部骨牌对角连通 + 数字格留白 + 方向计数。"
           "「对角相邻的两个四格骨牌不能全等」未编码。",
     status="partial",
     sample=sample("tetrochain", 6, 6, clues={"d": {"0,0": 3}, "n": {"0,0": 2}}))
@@ -206,7 +206,7 @@ connected8(x, 1)
 majority_dot_clue(x, t)
 ''',
     [S, const("t", "点提示 1=白多 2=黑多 3=相等")], [DOT(), SHADE_LAYER], rows=6, cols=6,
-    notes="完全实现：每个涂黑连通组恰 4 格 + 对角连通 + 点提示黑白多寡。"
+    notes="部分实现：每个涂黑连通组恰 4 格 + 对角连通 + 点提示黑白多寡。"
           "「对角相邻的两个四格骨牌不能全等」未编码。",
     status="partial",
     sample=sample("tetrochaink", 6, 6, clues={"t": {"1,1": 1}}))
@@ -278,7 +278,7 @@ connected(x, 0)
 ''',
     [S, const("n", "相邻被覆盖格数")], [num_layer("n", "相邻被覆盖格数"), SHADE_LAYER],
     rows=6, cols=6,
-    notes="完全实现：每个涂黑连通组恰 3 格且宽度为一 + 数字格不被覆盖 + 相邻计数 + 留白连通。"
+    notes="部分实现：每个涂黑连通组恰 3 格且宽度为一 + 数字格不被覆盖 + 相邻计数 + 留白连通。"
           "「三格必须成直线（排除 L 形三连块）」未编码。",
     status="partial",
     sample=sample("wittgen", 6, 6, clues={"n": {"0,0": 1}}))
