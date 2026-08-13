@@ -1,0 +1,56 @@
+{
+  "key": "mrtile",
+  "en": "Mirroring Tile",
+  "zh": "复制瓦片",
+  "category": "涂黑III",
+  "subcategory": "黑块间全等",
+  "rule": "涂黑一些空格。数字表示其所在的涂黑的连通组的面积。每个涂黑的连通组需要与另一个与其全等的涂黑的连通组对角相邻。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "所在黑组面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：数字=黑组面积，且每组须对角贴上另一组。未编码：对角伙伴须与本组全等。"
+}

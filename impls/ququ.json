@@ -1,0 +1,56 @@
+{
+  "key": "ququ",
+  "en": "Ququ",
+  "zh": "区区",
+  "category": "涂黑III",
+  "subcategory": "黑块间不全等",
+  "rule": "涂黑一些格子，使得每一组连通的留白格恰好包含一个数字。数字表示其所在的留白的连通组格数。对角接触的涂黑的连通组不能以任何方式全等。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "所在留白组格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：留白组恰一数字且面积匹配（类数墙）。未编码：对角接触的黑组不能全等。"
+}

@@ -1,0 +1,56 @@
+{
+  "key": "tawa",
+  "en": "Tawamurenga",
+  "zh": "砖墙",
+  "category": "涂黑III",
+  "subcategory": "",
+  "rule": "涂黑一些格子，使得没有同一行内连续三个格子都被涂黑。每个涂黑格（只要它不在最后一行）的下面至少有另一个涂黑格。数字格不能涂黑。数字表示与之相邻的（至多）六格中涂黑格的个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "周围（除正上）黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "邻黑数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "邻域为八邻域去掉正上方一格（内部最多 7 格；规则文「六格」按边角折减理解）。"
+}

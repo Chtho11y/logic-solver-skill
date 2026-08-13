@@ -155,6 +155,7 @@ def write_spec(
     uses_regions: bool = False,
     notes: str = "",
     params: dict | None = None,
+    unencoded: list[str] | None = None,
 ) -> Path:
     """Write ``impls/<key>.json``, filling names/rule text from ``rules.txt``."""
 
@@ -174,6 +175,8 @@ def write_spec(
         "params": params or {},
         "notes": notes,
     }
+    if unencoded:
+        data["unencodedClues"] = list(unencoded)
     IMPLS_DIR.mkdir(parents=True, exist_ok=True)
     path = IMPLS_DIR / f"{key}.json"
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

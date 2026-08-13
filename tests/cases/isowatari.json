@@ -1,0 +1,33 @@
+{
+  "puzzle": "isowatari",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "six dominoes (n=2) tiled so every 2x2 wi",
+      "note": "six dominoes (n=2) tiled so every 2x2 window has a black",
+      "rows": 6,
+      "cols": 6,
+      "clues": {
+        "o": {
+          "0,0": 2,
+          "1,1": 1,
+          "3,3": 1,
+          "5,0": 1
+        }
+      },
+      "answer": {
+        "x": [
+          "#..##.",
+          "#.#...",
+          "..#.##",
+          "#.....",
+          "#.#.#.",
+          "..#.#."
+        ]
+      },
+      "params": {
+        "n": 2
+      }
+    }
+  ]
+}

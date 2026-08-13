@@ -218,3 +218,35 @@ def majority_dot_clue(x, c):
             n_adj4(x, p, 1) > n_adj4(x, p, 0)
         else:
             n_adj4(x, p, 1) == n_adj4(x, p, 0)
+
+
+# -- region-scoped black groups (涂黑III) ------------------------------------
+
+def region_blacks_separated(x):
+    # 涂黑格不能隔着区域边界相邻
+    for p in cells():
+        for q in adj4(p):
+            if not same_region(p, q):
+                not (is_black(x, p) and is_black(x, q))
+
+def one_black_group_per_region(x):
+    # 每个区域恰好一组连通的涂黑格（组不跨区 + 组数 = 区域数）
+    region_blacks_separated(x)
+    cc_count(x, 1) == regions.size
+
+def at_most_one_black_group_per_region(x):
+    region_blacks_separated(x)
+    for p in cells():
+        for q in cells():
+            if before(p, q):
+                if same_region(p, q):
+                    not (cc_root(x, p) and cc_root(x, q) and is_black(x, p) and is_black(x, q))
+
+def two_black_groups_per_region(x):
+    region_blacks_separated(x)
+    cc_count(x, 1) == 2 * regions.size
+    for p in cells():
+        let nroot = 0
+        for q in region_of(p):
+            let nroot = nroot + b2i(cc_root(x, q) and is_black(x, q))
+        nroot == 2

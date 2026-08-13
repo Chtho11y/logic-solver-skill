@@ -1,0 +1,56 @@
+{
+  "key": "chainedb",
+  "en": "Chained Block",
+  "zh": "区块链",
+  "category": "涂黑III",
+  "subcategory": "黑块间不全等",
+  "rule": "涂黑一些格子，使得每个涂黑的连通组恰好包含一个数字。数字表示其所在的涂黑的连通组的面积，问号可以表示任意数字。多个对角接触的涂黑连通组构成“链”，每个涂黑连通组都必须是某个“链”的一部分。同一个“链“中的两个涂黑连通组不能以任何方式全等。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "所在黑组面积，-1=问号"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "n<0 表示问号，不限制该组面积。未编码：同一 8-链内两组不能全等。"
+}

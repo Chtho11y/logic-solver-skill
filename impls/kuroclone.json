@@ -1,0 +1,78 @@
+{
+  "key": "kuroclone",
+  "en": "Kuroclone",
+  "zh": "黑块克隆",
+  "category": "涂黑III",
+  "subcategory": "黑块间全等",
+  "rule": "在每个区域内涂黑恰好两组连通的格子，使得这两组格子全等且不相邻。数字格不能涂黑。涂黑格不能隔区域边界相邻。数字表示其指向的相邻格所在的涂黑格连通组的面积。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "指向邻格黑组面积"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向 0=上 1=下 2=左 3=右"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：每区恰两组、提示指向邻格黑组面积。未编码：区内两组须全等。"
+}

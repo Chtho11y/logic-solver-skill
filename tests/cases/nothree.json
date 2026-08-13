@@ -1,0 +1,32 @@
+{
+  "puzzle": "nothree",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "isolated blacks + equal-spacing ban",
+      "note": "isolated blacks + equal-spacing ban, 6 circles pinning the ring",
+      "rows": 6,
+      "cols": 6,
+      "clues": {
+        "o": {
+          "1,0": 1,
+          "0,3": 1,
+          "5,4": 1,
+          "5,0": 1,
+          "2,5": 1,
+          "4,5": 1
+        }
+      },
+      "answer": {
+        "x": [
+          ".#....",
+          "....#.",
+          "......",
+          "......",
+          "#...#.",
+          "......"
+        ]
+      }
+    }
+  ]
+}

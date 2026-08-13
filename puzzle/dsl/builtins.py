@@ -786,6 +786,54 @@ def _make_cc_root(deltas, label: str):
     return fn
 
 
+# -- gravity / covering (Stostone) --------------------------------------------
+
+def _fn_drop_covers(ctx, args, pos):
+    """Each black 4-component falls as a rigid body; images fill rows ``start..``."""
+
+    if len(args) != 2:
+        raise CompileError("drop_covers(var, start_row) takes two arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "drop_covers", pos)
+    start = _as_int(args[1], "drop_covers")
+    z3 = ctx.z3
+    grid = ctx.grid
+    rows, cols = grid.rows, grid.cols
+    if not 0 <= start <= rows:
+        raise CompileError(f"drop_covers start_row {start} out of range", pos.line, pos.col)
+    cc = _value_cc(ctx, var, _CC4)
+    cells = cc["cells"]
+    ids = cc["id"]
+    drop = ctx.memo(("drop", var.name), lambda: {
+        p: z3.Int(f"{var.name}#drop#r{p[0]}c{p[1]}") for p in cells
+    })
+    parts = []
+    for p in cells:
+        ctx.add_aux(drop[p] >= 0)
+        ctx.add_aux(drop[p] <= max(0, rows - 1 - p[0]))
+        parts.append(z3.Implies(var.quantities[p] != 1, drop[p] == 0))
+    for p in cells:
+        for q in cells:
+            if p < q:
+                parts.append(z3.Implies(ids[p] == ids[q], drop[p] == drop[q]))
+    by_col: dict[int, list[Point]] = {}
+    for p in cells:
+        by_col.setdefault(p[1], []).append(p)
+    for col, column in by_col.items():
+        column.sort()
+        for i, p in enumerate(column):
+            for q in column[i + 1:]:
+                both = z3.And(var.quantities[p] == 1, var.quantities[q] == 1)
+                parts.append(z3.Implies(both, p[0] + drop[p] < q[0] + drop[q]))
+        for dest_r in range(rows):
+            hits = [
+                z3.If(z3.And(var.quantities[p] == 1, p[0] + drop[p] == dest_r), 1, 0)
+                for p in column
+            ]
+            total = z3.Sum(hits) if hits else 0
+            parts.append(total == (1 if dest_r >= start else 0))
+    return z3.And(parts) if parts else z3.BoolVal(True)
+
+
 # -- loops on the corner / cell lattice ---------------------------------------
 
 
@@ -1211,6 +1259,10 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     "cc8_root": BuiltinFunction(
         "cc8_root", _make_cc_root(_CC8, "cc8_root"), signature="cc8_root(var, cell)",
         doc="Whether the cell represents its 8-connected component.",
+    ),
+    "drop_covers": BuiltinFunction(
+        "drop_covers", _fn_drop_covers, signature="drop_covers(var, start_row)",
+        doc="Black 4-components fall rigidly down and occupy exactly rows start_row..end.",
     ),
     # -- loops ----------------------------------------------------------
     "deg": BuiltinFunction(

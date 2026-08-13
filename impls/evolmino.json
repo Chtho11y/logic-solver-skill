@@ -1,0 +1,70 @@
+{
+  "key": "evolmino",
+  "en": "Evolmino",
+  "zh": "生长方块",
+  "category": "涂黑III",
+  "subcategory": "黑块间做差",
+  "rule": "在一些空格内填入正方形，使得每一组连通的正方形都恰有一个正方形位于一条箭头上。每条箭头经过至少两组这样的连通正方形。在一条箭头上，每一组正方形（若不是第一组）必须与前一组形状完全相同（不允许旋转或翻转），并且再多出一个正方形。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "a",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头编号（同号同箭）"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头方向"
+    }
+  ],
+  "layers": [
+    {
+      "id": "arrow",
+      "label": "箭头方向",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "箭头编号",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "a",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "部分实现：每组恰一箭头格、箭上后组比前组多一格。未编码：后组须为前组的平移。每条箭为正线，d 写在每个箭头格上。"
+}

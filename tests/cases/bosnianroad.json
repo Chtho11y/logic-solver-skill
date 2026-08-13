@@ -1,0 +1,40 @@
+{
+  "puzzle": "bosnianroad",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "a rectangular ring (12 black cells) with",
+      "note": "a rectangular ring (12 black cells) with 14 number clues",
+      "rows": 6,
+      "cols": 6,
+      "clues": {
+        "n": {
+          "0,0": 1,
+          "0,2": 3,
+          "2,2": 5,
+          "2,3": 5,
+          "5,2": 3,
+          "5,4": 2,
+          "0,4": 2,
+          "1,0": 2,
+          "4,0": 2,
+          "3,2": 5,
+          "5,0": 1,
+          "0,5": 1,
+          "2,0": 3,
+          "5,5": 1
+        }
+      },
+      "answer": {
+        "x": [
+          "......",
+          ".####.",
+          ".#..#.",
+          ".#..#.",
+          ".####.",
+          "......"
+        ]
+      }
+    }
+  ]
+}

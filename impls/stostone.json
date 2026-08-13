@@ -1,0 +1,64 @@
+{
+  "key": "stostone",
+  "en": "Stostone",
+  "zh": "垒石",
+  "category": "涂黑III",
+  "subcategory": "黑块间求和",
+  "rule": "在每个区域内涂黑恰好一组连通的格子，使得不同区域内涂黑的连通组不相邻。数字表示区域内涂黑格的个数。如果每一组涂黑格（像一块石头一样）不改变形状地垂直下落，它们必须恰好覆盖盘面的下半部分。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域内涂黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "行数应为偶数；各组刚体下落恰好覆盖下半盘。"
+}

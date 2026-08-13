@@ -1,0 +1,75 @@
+{
+  "key": "interbd",
+  "en": "International Borders",
+  "zh": "国界线",
+  "category": "涂黑III",
+  "subcategory": "黑块们界定区域",
+  "rule": "涂黑一些格子，使得每个留白的连通组都包含且仅包含某一种颜色的所有提示。提示格不能涂黑。数字表示与此格相邻的（至多）四格中涂黑格的个数。每个涂黑格必须至少和两个留白的连通组相邻（也就是说，每个涂黑格都是某条“国界线”的一部分）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "k",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "提示颜色（任意正整数标签）"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "四邻黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "提示颜色",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "k",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "邻黑数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

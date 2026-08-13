@@ -1,0 +1,83 @@
+{
+  "key": "martini",
+  "en": "Martini",
+  "zh": "马提尼",
+  "category": "涂黑III",
+  "subcategory": "黑块对角连通",
+  "rule": "在每个区域内涂黑至多一组连通的格子，使得不同区域内涂黑的连通组不相邻。所有涂黑格必须对角连通成一个整体。有黑圈的格子必须涂黑，有白圈的格子必须留白。白圈里的数字表示其所在的留白的连通组中的白圈个数，包括自身（这个连通组可能横跨多个区域）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "白圈所在留白组中的白圈数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "clue",
+      "label": "白圈计数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "o: 1=白圈须留白，2=黑圈须涂黑（与 masyu/isowatari 一致）。"
+}
