@@ -1,0 +1,58 @@
+{
+  "key": "binairo",
+  "en": "Binairo",
+  "zh": "横竖无三",
+  "category": "涂黑II",
+  "subcategory": "黑白规则交替",
+  "rule": "涂黑一些空格，使得没有全部涂黑或者全部留白的1×3或3×1的结构。每行和每列中必须恰有一半的格子涂黑。任意两行（从左到右）的涂黑情况必须不同，任意两列（从上到下）的涂黑情况也必须不同。有黑圈的格子必须涂黑，有白圈的格子必须留白。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "给定圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "边长须为偶数。o: 1=白圈须留白，2=黑圈须涂黑。"
+}

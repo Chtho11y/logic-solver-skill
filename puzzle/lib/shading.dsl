@@ -250,3 +250,31 @@ def two_black_groups_per_region(x):
         for q in region_of(p):
             let nroot = nroot + b2i(cc_root(x, q) and is_black(x, q))
         nroot == 2
+
+def half_filled_lines(x):
+    # 每行每列恰一半涂黑（盘面边长须为偶数）
+    for r in rows:
+        num_eq(x[r], 1) == cols.size / 2
+    for c in cols:
+        num_eq(x[c], 1) == rows.size / 2
+
+def lines_all_unique(x):
+    # 任意两行（两列）的涂黑图案不同
+    for p in cells():
+        for q in cells():
+            if col_of(p) == 0 and col_of(q) == 0 and row_of(p) < row_of(q):
+                let diff = false
+                for a in row(row_of(p)):
+                    for b in row(row_of(q)):
+                        if col_of(a) == col_of(b):
+                            let diff = diff or (at(x, a) != at(x, b))
+                diff
+    for p in cells():
+        for q in cells():
+            if row_of(p) == 0 and row_of(q) == 0 and col_of(p) < col_of(q):
+                let diff = false
+                for a in col(col_of(p)):
+                    for b in col(col_of(q)):
+                        if row_of(a) == row_of(b):
+                            let diff = diff or (at(x, a) != at(x, b))
+                diff

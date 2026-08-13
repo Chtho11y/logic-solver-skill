@@ -1,0 +1,81 @@
+{
+  "key": "swslither",
+  "en": "Sheep Wolf Slitherlink",
+  "zh": "羊圈数回",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "连接相邻圆点画一条不和自身交叉的回路。数字表示此格中回路经过的边数。狼必须在回路外，羊必须在回路内。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "此格回路边数"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=羊 2=狼"
+    },
+    {
+      "name": "ins",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路内部"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "circle",
+      "label": "羊/狼",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "edges",
+      "label": "边界线",
+      "element": "edgeline",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "o: 1=羊（回路内）2=狼（回路外）。ins 为内部标记，不绘制。"
+}

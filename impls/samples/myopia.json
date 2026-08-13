@@ -1,0 +1,11 @@
+{
+  "puzzle": "myopia",
+  "rows": 4,
+  "cols": 4,
+  "title": "4x4 近视回路",
+  "clues": {
+    "a": {
+      "1,1": 8
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "key": "myopia",
+  "en": "Myopia",
+  "zh": "近视回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "连接相邻圆点画一条不和自身交叉的回路。箭头指向所有横竖方向中离此格最近的回路线段。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "a",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "箭头位掩码 1=上 2=下 4=左 8=右"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "箭头掩码",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "a",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "edges",
+      "label": "边界线",
+      "element": "edgeline",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "a 为方向位掩码，可按位组合（如 9=上+右）。"
+}

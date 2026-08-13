@@ -1,0 +1,54 @@
+{
+  "key": "midloop",
+  "en": "Midloop",
+  "zh": "中点回路",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心且不和自身交叉的回路。回路必须笔直经过所有黑点，而且每个黑点必须是其所在的直线段的中点。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "黑点"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "中点",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

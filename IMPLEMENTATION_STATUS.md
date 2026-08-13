@@ -92,19 +92,37 @@
 
 ---
 
-## 4. D. 尚未实现（147 条）
+## 4. D. 尚未实现
 
 | 分类 | 条数 | keys |
 |---|---:|---|
-| 涂黑II | 1 | `binairo` |
-| 涂黑III | 11 | `batten mrtile ququ kuroclone cocktail tawa stostone evolmino interbd chainedb martini` |
 | 放置 | 11 | `pentatouch kissing magnets gaps pentopia dosufuwa statuepark pencils tren kinkonkan moonlight` |
 | 填写 | 30 | `bosanowa gokigen simplegako blind fuzuli doppelblock renban goishi kakuro easyasabc hanare r roma toichika japanesesums wagiri makaro yajirushi cojun tateyoko arrowflow scrabble kropki-pairs skyscrapers consecutiveq snail magic kropki hebi ubahn` |
 | 分区 | 30 | `meadows fivecells fourcells pentominous tetrominous domino-search squarejam cbblock heteromino slashpack symmarea subomino wafusuma kramma tentaisho sashigane mirrorbk bdblock nikoji dbchoco sendai lohkous lapaz tatamibari narrow snakepit compass aho voxas heavydots` |
-| 回路I | 25 | `myopia swslither midloop geradeweg lineofsight nanameguri waterwalk dotchi castle firewalk disloop icewalk orbital wbloop reflect slalom dotchi2 kouchoku balance crossstitch moonsun bhaibahan tapaloop angleloop nagare` |
+| 回路I | 15 | `lineofsight waterwalk firewalk disloop icewalk orbital wbloop reflect slalom kouchoku crossstitch bhaibahan tapaloop angleloop nagare` |
 | 路径I | 15 | `wblink numlin walllogic hashi coffeemilk kaero bonsan sato forestwalk yosenabe rectslider pmemory firefly icebarn herugolf` |
 | 回路II | 16 | `alternate ringring yajilin-regions koburin pipelink maxi nuriloop trainstations barns vertigo nothing mukkonn doubleornothing railpool nagenawa kurarin` |
 | 路径II | 8 | `haisu rassi hidato keywest mintonette curvedata icelom anglers` |
+
+涂黑II 的 `binairo`、涂黑III 11 条、回路I 中较易的 10 条已实现（见第 8 节）。
+
+### 4.1 暂缓（过难，仅标注）
+
+这些规则需要非正交几何、沿回路走访、自交/多回路或给定形状目录，当前库没有合适原语；硬编码容易写错，故本轮不做。
+
+| key | 难点 |
+|---|---|
+| `lineofsight` | 最近回路**线段长度**（非整段距离） |
+| `waterwalk` / `firewalk` / `icewalk` | 沿回路的颜色段长；火格可走两次；冰格可自交 |
+| `disloop` | 前方 N 段长度的**无序**多重集匹配 |
+| `orbital` / `ringring` / `nagenawa` | 多条矩形回路且允许交叉 |
+| `wbloop` / `bhaibahan` | 沿回路在相邻圆圈之间计转弯 |
+| `reflect` / `pipelink` | 指定格自交 |
+| `slalom` / `nagare` | 有向回路 + 关卡次序 / 风向 |
+| `kouchoku` / `angleloop` / `crossstitch` | 非正交线段、夹角、双顶点回路 |
+| `tapaloop` | 八邻域多段无序（同 tapa） |
+| `pentatouch` / `kissing` / `pentopia` / `statuepark` | 给定多连块目录 + 旋转翻转放置 |
+| `pencils` / `tren` / `kinkonkan` / `moonlight` | 复合放置（笔迹、滑动车、镜面反射、星云照明） |
 
 ---
 
@@ -147,14 +165,47 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 ### 已知遗留问题
 
-- 部分实现的 31 条**不具备唯一解**，作为出题器会有多解；作为解题器不会漏解。
-- `verify.py` 只验证"样例可满足"，**尚未**验证"解唯一"或"已知真题得到已知解"。补齐 147 条前建议先加真题回归集。
+- 部分实现的条目**不具备唯一解**，作为出题器会有多解；作为解题器不会漏解。
+- `verify.py` 只验证"样例可满足"，**尚未**验证"解唯一"或"已知真题得到已知解"。
 
 ---
 
 ## 7. 后续建议顺序
 
-1. **回路/路径 64 条**（回路I+II、路径I+II）—— 库中 `loops.dsl` 最完备（`cloop`/`deg`/`seg_len`/`region_crossings` 齐全），单位成本最低。
-2. **分区 30 条** —— 依赖 CC 变量的 `.size`/`.border`，`shikaku`/`fillomino` 已有可直接套用的范式。
-3. **填写 30 条** —— 需先补 `outside.dsl` 的可见性（摩天楼）、和式（kakuro/日本和）辅助。
-4. **涂黑III 11 条 + 放置 11 条** —— 多数需要"形状全等/克隆"判定，建议先在库中实现通用的**多连块同构比较**再动手。
+1. **回路II / 路径** 中与 Yajilin、Simple Loop、Hashi、Numberlink 同构的条目（`yajilin-regions` `koburin` `nuriloop` `alternate` `nothing` `kurarin` `hashi` `numlin`）。
+2. **分区 30 条** —— `shikaku`/`fillomino` 范式。
+3. **填写 30 条** —— 先补摩天楼可见性、Kakuro 和式。
+4. **放置** 中不含多连块目录的（`magnets` `gaps` `dosufuwa`）；带形状目录的等全等原语后再做。
+
+---
+
+## 8. 本轮补全（涂黑III + binairo + 回路I 易项）
+
+测试已改为 `tests/cases/*.json` 的盘面+答案；`unique` 默认关闭，只做 **accept**（钉入答案仍 SAT）。
+
+### 8.1 涂黑III（11 条，此前一轮）
+
+完整：`batten tawa cocktail martini stostone interbd`  
+部分（全等未编码）：`mrtile ququ chainedb kuroclone evolmino`
+
+### 8.2 本轮新实现
+
+| key | 分类 | 机制 |
+|---|---|---|
+| `binairo` | 涂黑II | 无三连 + 行列各半 + 行列图案互异 + 圈色 |
+| `myopia` | 回路I | 数回 + 箭头=最近回路边方向（位掩码 `a`） |
+| `swslither` | 回路I | 数回 + `inside_flag` 羊内狼外 |
+| `midloop` | 回路I | 直穿黑点且两臂等长 |
+| `geradeweg` | 回路I | 过圈；直线段长=数字 |
+| `dotchi` | 回路I | 过白圈不过黑圈；区内白圈全直或全弯 |
+| `dotchi2` | 回路I | 每区择一色走遍；黑弯白直 |
+| `balance` | 回路I | 白圈两臂等长、黑圈不等；数字=两臂和 |
+| `nanameguri` | 回路I | 每区一次；对角线格不穿过对角 |
+| `moonsun` | 回路I | 每区一次；区内日月二择；跨区切换 |
+| `castle` | 回路I | 提示格不在回路上；白内黑外；箭头方向回路格数 |
+
+### 8.3 库追加
+
+- `loops.dsl`：`nearest_loop_dist` / `arm_used_len` / `full_straight_len`
+- `shading.dsl`：`half_filled_lines` / `lines_all_unique`
+- `drop_covers`（垒石刚体下落；与全等无关）

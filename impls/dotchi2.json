@@ -1,0 +1,62 @@
+{
+  "key": "dotchi2",
+  "en": "Dotchi Dotchi Loop",
+  "zh": "dotchi2",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心且不和自身交叉的回路。在每个区域内，回路要么通过所有带白圈的格子，不通过任何带黑圈的格子，要么通过所有带黑圈的格子，不通过任何带白圈的格子。每个区域都至少有一个圆圈被回路经过。回路必须在黑圈格转弯，在白圈格直行。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "每区至少一圈；合成空盘在无圈区域会无解。"
+}

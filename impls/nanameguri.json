@@ -1,0 +1,60 @@
+{
+  "key": "nanameguri",
+  "en": "Nanameguri",
+  "zh": "nanameguri",
+  "category": "回路I",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些格子中心且不和自身交叉的回路。回路必须经过每个区域恰好一次。回路必须经过所有包含对角线的格子，但不能穿过对角线。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "g",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=\\ 2=/"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "clue",
+      "label": "对角线",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "g",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "g: 1=主对角线（不穿过则走 上+右 或 左+下），2=副对角线（上+左 或 右+下）。"
+}

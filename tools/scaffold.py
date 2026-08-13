@@ -142,6 +142,7 @@ def var(
 
 
 SHADE_VAR = var("x", "cell", "normal", (0, 1), "0 = 留白, 1 = 涂黑")
+LOOP_VAR = var("e", "edge", "normal", (0, 1), "1 = 回路")
 CLUE_VAR = var("n", "cell", "constant", None, "题目给出的数字提示")
 
 

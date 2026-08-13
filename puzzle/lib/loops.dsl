@@ -171,3 +171,26 @@ def region_turns(e, reg):
     for p in reg:
         let total = total + b2i(turns(e, p))
     return total
+
+def nearest_loop_dist(e, p, d):
+    # 1-based distance to the nearest loop edge looking from `p` in direction
+    # `d` (the far side of `p`, then of each cell beyond). 0 = none.
+    let dist = 0
+    let seen = false
+    let hit0 = link_dir(e, p, d) == 1
+    let dist = ite(hit0, 1, dist)
+    let seen = seen or hit0
+    let k = 1
+    for q in dir(p, d):
+        let k = k + 1
+        let hit = link_dir(e, q, d) == 1
+        let dist = ite(seen, dist, ite(hit, k, dist))
+        let seen = seen or hit
+    return dist
+
+def arm_used_len(e, p, d):
+    # Straight-arm length including `p` itself, or 0 if the loop does not leave `p` that way.
+    return ite(link_dir(e, p, d) == 1, 1 + arm_len(e, p, d), 0)
+
+def full_straight_len(e, p):
+    return 1 + ite(goes_horizontal(e, p), arm_len(e, p, LEFT) + arm_len(e, p, RIGHT), arm_len(e, p, UP) + arm_len(e, p, DOWN))
