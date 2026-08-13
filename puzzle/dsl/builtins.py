@@ -711,20 +711,29 @@ def _expect_cell_var(value, name: str, pos) -> VarValue:
     return value
 
 
-def _build_value_cc(ctx, var: VarValue, deltas) -> dict:
+def _build_value_cc(ctx, var: VarValue, deltas, cells=None) -> dict:
     """Encode maximal same-valued connected components of a cell variable.
 
     Produces per-cell ``id`` (the minimum linear index of the component) plus a
     spanning-tree ``dist`` witness so that *equal id* is equivalent to
     *connected through cells of the same value*.
+
+    When ``cells`` is given, only those points participate: everything else is
+    treated as a wall (region-scoped connectivity).
     """
 
     z3 = ctx.z3
     grid = ctx.grid
     cols = grid.cols
-    cells = sort_points(var.order)
+    if cells is None:
+        cells = sort_points(var.order)
+        tag = f"{var.name}#cc{len(deltas)}"
+    else:
+        allowed = set(var.order)
+        cells = sort_points(p for p in cells if p in allowed)
+        ctx._aux_counter += 1
+        tag = f"{var.name}#cc{len(deltas)}#in{ctx._aux_counter}"
     cell_set = set(cells)
-    tag = f"{var.name}#cc{len(deltas)}"
     ids = {p: z3.Int(f"{tag}#id#r{p[0]}c{p[1]}") for p in cells}
     dist = {p: z3.Int(f"{tag}#d#r{p[0]}c{p[1]}") for p in cells}
     for (r, c) in cells:
@@ -741,11 +750,17 @@ def _build_value_cc(ctx, var: VarValue, deltas) -> dict:
         ctx.add_aux(z3.Implies(dp > 0, z3.Or(parents) if parents else z3.BoolVal(False)))
         for n in neighbours:
             ctx.add_aux(z3.Implies(var.quantities[n] == xp, ids[n] == idp))
-    return {"id": ids, "dist": dist, "cells": cells}
+    return {"id": ids, "dist": dist, "cells": cells, "tag": tag}
 
 
-def _value_cc(ctx, var: VarValue, deltas):
-    return ctx.memo(("valuecc", var.name, len(deltas)), lambda: _build_value_cc(ctx, var, deltas))
+def _value_cc(ctx, var: VarValue, deltas, region_points=None):
+    if region_points is None:
+        return ctx.memo(("valuecc", var.name, len(deltas)), lambda: _build_value_cc(ctx, var, deltas))
+    points = sort_points(region_points)
+    return ctx.memo(
+        ("valuecc", var.name, len(deltas), points),
+        lambda: _build_value_cc(ctx, var, deltas, points),
+    )
 
 
 def _cc_value_value(ctx, var: VarValue, cc: dict, member: str) -> VarValue:
@@ -764,14 +779,15 @@ def _make_cc_id(deltas, label: str):
     return fn
 
 
-def _ensure_cc_size(ctx, var: VarValue, deltas) -> dict:
-    cc = _value_cc(ctx, var, deltas)
+def _ensure_cc_size(ctx, var: VarValue, deltas, region_points=None) -> dict:
+    cc = _value_cc(ctx, var, deltas, region_points)
     if "size" in cc:
         return cc
     z3 = ctx.z3
     cells = cc["cells"]
     ids = cc["id"]
-    sizes = {p: z3.Int(f"{var.name}#cc{len(deltas)}#n#r{p[0]}c{p[1]}") for p in cells}
+    tag = cc.get("tag", f"{var.name}#cc{len(deltas)}")
+    sizes = {p: z3.Int(f"{tag}#n#r{p[0]}c{p[1]}") for p in cells}
     for p in cells:
         ctx.add_aux(sizes[p] == z3.Sum([z3.If(ids[q] == ids[p], 1, 0) for q in cells]))
     cc["size"] = sizes
@@ -819,6 +835,110 @@ def _make_cc_root(deltas, label: str):
         return cc["id"][cell] == cell[0] * ctx.grid.cols + cell[1]
 
     return fn
+
+
+def _expect_cell_region(value, name: str, pos) -> RegionValue:
+    if not isinstance(value, RegionValue) or value.kind is not PointKind.CELL:
+        raise CompileError(f"{name}() expects a cell region", pos.line, pos.col)
+    return value
+
+
+def _make_cc_count_in(deltas, label: str):
+    def fn(ctx, args, pos):
+        if len(args) != 3:
+            raise CompileError(
+                f"{label}(var, value, region) takes three arguments", pos.line, pos.col
+            )
+        var = _expect_cell_var(args[0], label, pos)
+        value = to_numeric(args[1])
+        region = _expect_cell_region(args[2], label, pos)
+        cc = _value_cc(ctx, var, deltas, region.points)
+        z3 = ctx.z3
+        cols = ctx.grid.cols
+        terms = [
+            z3.If(z3.And(cc["id"][p] == p[0] * cols + p[1], var.quantities[p] == value), 1, 0)
+            for p in cc["cells"]
+        ]
+        return z3.Sum(terms) if terms else 0
+
+    return fn
+
+
+def _make_cc_size_in(deltas, label: str):
+    def fn(ctx, args, pos):
+        if len(args) != 3:
+            raise CompileError(
+                f"{label}(var, cell, region) takes three arguments", pos.line, pos.col
+            )
+        var = _expect_cell_var(args[0], label, pos)
+        cell = _expect_cell(args[1], label, pos)
+        region = _expect_cell_region(args[2], label, pos)
+        if cell not in set(region.points) or cell not in var.quantities:
+            return 0
+        cc = _ensure_cc_size(ctx, var, deltas, region.points)
+        return cc["size"][cell]
+
+    return fn
+
+
+def _ensure_cc_bbox(ctx, var: VarValue, deltas) -> dict:
+    cc = _ensure_cc_size(ctx, var, deltas)
+    if "width" in cc:
+        return cc
+    z3 = ctx.z3
+    cells = cc["cells"]
+    ids = cc["id"]
+    tag = cc.get("tag", f"{var.name}#cc{len(deltas)}")
+    rows, cols = ctx.grid.rows, ctx.grid.cols
+    widths = {p: z3.Int(f"{tag}#w#r{p[0]}c{p[1]}") for p in cells}
+    heights = {p: z3.Int(f"{tag}#h#r{p[0]}c{p[1]}") for p in cells}
+    for p in cells:
+        min_r, max_r = rows, -1
+        min_c, max_c = cols, -1
+        for q in cells:
+            same = ids[q] == ids[p]
+            min_r = z3.If(z3.And(same, q[0] < min_r), q[0], min_r)
+            max_r = z3.If(z3.And(same, q[0] > max_r), q[0], max_r)
+            min_c = z3.If(z3.And(same, q[1] < min_c), q[1], min_c)
+            max_c = z3.If(z3.And(same, q[1] > max_c), q[1], max_c)
+        ctx.add_aux(widths[p] == max_c - min_c + 1)
+        ctx.add_aux(heights[p] == max_r - min_r + 1)
+    cc["width"] = widths
+    cc["height"] = heights
+    return cc
+
+
+def _make_cc_width(deltas, label: str):
+    def fn(ctx, args, pos):
+        if len(args) != 1:
+            raise CompileError(f"{label}(var) takes exactly one argument", pos.line, pos.col)
+        var = _expect_cell_var(args[0], label, pos)
+        cc = _ensure_cc_bbox(ctx, var, deltas)
+        return _cc_value_value(ctx, var, cc, "width")
+
+    return fn
+
+
+def _make_cc_height(deltas, label: str):
+    def fn(ctx, args, pos):
+        if len(args) != 1:
+            raise CompileError(f"{label}(var) takes exactly one argument", pos.line, pos.col)
+        var = _expect_cell_var(args[0], label, pos)
+        cc = _ensure_cc_bbox(ctx, var, deltas)
+        return _cc_value_value(ctx, var, cc, "height")
+
+    return fn
+
+
+def _fn_cc_is_rect(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("cc_is_rect(var, cell) takes two arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "cc_is_rect", pos)
+    cell = _expect_cell(args[1], "cc_is_rect", pos)
+    cc = _ensure_cc_bbox(ctx, var, _CC4)
+    if cell not in cc["size"]:
+        raise CompileError("cc_is_rect() cell is not in the variable", pos.line, pos.col)
+    return cc["size"][cell] == cc["width"][cell] * cc["height"][cell]
 
 
 # -- gravity / covering (Stostone) --------------------------------------------
@@ -906,38 +1026,192 @@ def _fn_at(ctx, args, pos):
     return var.quantities[point]
 
 
+def _parse_run_clues(raw, name: str, pos) -> list[int]:
+    """Parse run-length clues: drop 0, keep positives, keep -1 as ``?``."""
+
+    value = to_numeric(raw)
+    if not isinstance(value, list):
+        value = [value]
+    clues: list[int] = []
+    for item in value:
+        n = _as_int(item, name)
+        if n == 0:
+            continue
+        if n == -1 or n > 0:
+            clues.append(n)
+        else:
+            raise CompileError(
+                f"{name}() length {n} is invalid (use a positive length or -1 for ?)",
+                pos.line,
+                pos.col,
+            )
+    return clues
+
+
+def _as_compile_bool(value: Any, name: str, pos) -> bool:
+    if isinstance(value, bool):
+        return value
+    raise CompileError(f"{name}() extra flag must be a compile-time boolean", pos.line, pos.col)
+
+
+def _new_bool(ctx, prefix: str):
+    ctx._aux_counter += 1
+    return ctx.z3.Bool(f"{prefix}#{ctx._aux_counter}")
+
+
+def _seq_run_slots(ctx, seq: list, circular: bool):
+    """Per-index start flags and run lengths of maximal consecutive-1 runs."""
+
+    z3 = ctx.z3
+    n = len(seq)
+    if n == 0:
+        return [], []
+    occ = []
+    for item in seq:
+        if isinstance(item, bool):
+            occ.append(z3.BoolVal(item))
+        elif isinstance(item, int):
+            occ.append(z3.BoolVal(item == 1))
+        else:
+            occ.append(item == 1)
+
+    runlen = [ctx.new_int("run#l") for _ in range(n)]
+    is_start = []
+    if circular:
+        all_one = z3.And(occ) if occ else z3.BoolVal(False)
+        ext_occ = occ + occ
+        ext_len = [ctx.new_int("run#el") for _ in range(2 * n)]
+        ctx.add_aux(ext_len[-1] == z3.If(ext_occ[-1], 1, 0))
+        for i in range(2 * n - 2, -1, -1):
+            ctx.add_aux(ext_len[i] == z3.If(ext_occ[i], 1 + ext_len[i + 1], 0))
+        for j in range(n):
+            pred = occ[(j - 1) % n]
+            start_j = z3.If(all_one, z3.BoolVal(j == 0), z3.And(occ[j], z3.Not(pred)))
+            is_start.append(start_j)
+            ctx.add_aux(runlen[j] == z3.If(all_one, n if j == 0 else 0, ext_len[j]))
+    else:
+        for j in range(n):
+            pred_zero = z3.BoolVal(True) if j == 0 else z3.Not(occ[j - 1])
+            is_start.append(z3.And(occ[j], pred_zero))
+        ctx.add_aux(runlen[-1] == z3.If(occ[-1], 1, 0))
+        for j in range(n - 2, -1, -1):
+            ctx.add_aux(runlen[j] == z3.If(occ[j], 1 + runlen[j + 1], 0))
+    return is_start, runlen
+
+
+def _match_slots_to_clues(ctx, present, lengths, clues: list[int], extra: bool):
+    """Bipartite assignment: clue lengths (with -1 wildcards) vs present slots."""
+
+    z3 = ctx.z3
+    if not clues:
+        if extra:
+            return z3.BoolVal(True)
+        parts = [z3.Not(flag) for flag in present]
+        return z3.And(parts) if parts else z3.BoolVal(True)
+    if not present:
+        return z3.BoolVal(False)
+    matches = []
+    parts = []
+    for i, clue in enumerate(clues):
+        row = []
+        for j, _slot in enumerate(present):
+            flag = _new_bool(ctx, "run#m")
+            row.append(flag)
+            ok_len = z3.BoolVal(True) if clue == -1 else (lengths[j] == clue)
+            parts.append(z3.Implies(flag, z3.And(present[j], ok_len)))
+        matches.append(row)
+        parts.append(z3.Sum([z3.If(flag, 1, 0) for flag in row]) == 1)
+    for j, slot in enumerate(present):
+        taken = [matches[i][j] for i in range(len(clues))]
+        total = z3.Sum([z3.If(flag, 1, 0) for flag in taken])
+        parts.append(total <= 1)
+        if not extra:
+            parts.append(z3.Implies(slot, total == 1))
+    return z3.And(parts)
+
+
 def _fn_runs(ctx, args, pos):
     """The 0/1 sequence's maximal runs of 1 have exactly the given lengths.
 
     ``lengths`` is an ordered list of concrete integers (typically read from
-    ``param(...)``); a single ``0`` means "no filled cell at all".
+    ``param(...)``); a single ``0`` means "no filled cell at all". A length of
+    ``-1`` is a wildcard (``?``): some run of any positive length.
     """
 
     if len(args) != 2:
         raise CompileError("runs(list, lengths) takes two arguments", pos.line, pos.col)
     z3 = ctx.z3
     seq = flatten_scalars(args[0])
-    raw = to_numeric(args[1])
-    if not isinstance(raw, list):
-        raw = [raw]
-    lengths = [_as_int(item, "runs") for item in raw]
-    lengths = [n for n in lengths if n > 0]
+    lengths = _parse_run_clues(args[1], "runs", pos)
     n = len(seq)
     if not lengths:
         return z3.And([item == 0 for item in seq]) if seq else z3.BoolVal(True)
-    if sum(lengths) + len(lengths) - 1 > n:
+    min_sum = sum(1 if L == -1 else L for L in lengths)
+    if min_sum + len(lengths) - 1 > n:
         return z3.BoolVal(False)
+    Li = []
+    for L in lengths:
+        if L > 0:
+            Li.append(L)
+        else:
+            v = ctx.new_int("runs#L")
+            ctx.add_aux(v >= 1)
+            ctx.add_aux(v <= n)
+            Li.append(v)
     starts = [ctx.new_int("runs#s") for _ in lengths]
     parts = [starts[0] >= 0]
     for i in range(1, len(lengths)):
-        parts.append(starts[i] >= starts[i - 1] + lengths[i - 1] + 1)
-    parts.append(starts[-1] + lengths[-1] <= n)
+        parts.append(starts[i] >= starts[i - 1] + Li[i - 1] + 1)
+    parts.append(starts[-1] + Li[-1] <= n)
     for j, item in enumerate(seq):
-        covered = [
-            z3.And(starts[i] <= j, j < starts[i] + lengths[i]) for i in range(len(lengths))
-        ]
+        covered = [z3.And(starts[i] <= j, j < starts[i] + Li[i]) for i in range(len(lengths))]
         parts.append((item == 1) == z3.Or(covered))
     return z3.And(parts)
+
+
+def _fn_runs_set(ctx, args, pos, *, circular: bool = False):
+    label = "runs_cycle" if circular else "runs_set"
+    if len(args) not in (2, 3):
+        raise CompileError(
+            f"{label}(list, lengths[, extra]) takes two or three arguments", pos.line, pos.col
+        )
+    seq = flatten_scalars(args[0])
+    clues = _parse_run_clues(args[1], label, pos)
+    extra = _as_compile_bool(args[2], label, pos) if len(args) == 3 else False
+    z3 = ctx.z3
+    if not seq:
+        return z3.BoolVal(not clues)
+    present, lengths = _seq_run_slots(ctx, seq, circular)
+    return _match_slots_to_clues(ctx, present, lengths, clues, extra)
+
+
+def _fn_runs_cycle(ctx, args, pos):
+    """Unordered circular run lengths of a 0/1 ring (Tapa 8-neighbourhood)."""
+
+    return _fn_runs_set(ctx, args, pos, circular=True)
+
+
+def _fn_values_set(ctx, args, pos):
+    """Positive values in ``list`` equal ``lengths`` as a multiset (0 ignored)."""
+
+    if len(args) not in (2, 3):
+        raise CompileError(
+            "values_set(list, lengths[, extra]) takes two or three arguments", pos.line, pos.col
+        )
+    items = flatten_scalars(args[0])
+    clues = _parse_run_clues(args[1], "values_set", pos)
+    extra = _as_compile_bool(args[2], "values_set", pos) if len(args) == 3 else False
+    z3 = ctx.z3
+    present = []
+    lengths = []
+    for item in items:
+        if isinstance(item, int):
+            present.append(z3.BoolVal(item > 0))
+            lengths.append(item)
+        else:
+            present.append(item > 0)
+            lengths.append(item)
+    return _match_slots_to_clues(ctx, present, lengths, clues, extra)
 
 
 def _expect_edge_var(value, name: str, pos) -> VarValue:
@@ -1210,7 +1484,19 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     ),
     "runs": BuiltinFunction(
         "runs", _fn_runs, signature="runs(list, lengths)",
-        doc="The 0/1 sequence's maximal runs of 1 match the ordered lengths.",
+        doc="The 0/1 sequence's maximal runs of 1 match the ordered lengths. -1 = ? wildcard.",
+    ),
+    "runs_set": BuiltinFunction(
+        "runs_set", _fn_runs_set, signature="runs_set(list, lengths[, extra])",
+        doc="Maximal 1-run lengths equal lengths as a multiset. -1 = ?; extra=true allows leftover runs (*).",
+    ),
+    "runs_cycle": BuiltinFunction(
+        "runs_cycle", _fn_runs_cycle, signature="runs_cycle(list, lengths[, extra])",
+        doc="Circular unordered run lengths of a 0/1 ring (Tapa 8-neighbourhood). -1 = ?.",
+    ),
+    "values_set": BuiltinFunction(
+        "values_set", _fn_values_set, signature="values_set(list, lengths[, extra])",
+        doc="Positive values in the list equal lengths as a multiset (zeros ignored). -1 = ?.",
     ),
     "region_of": BuiltinFunction(
         "region_of", _fn_region_of, broadcast=True, signature="region_of(point)",
@@ -1283,6 +1569,28 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
         "cc_root", _make_cc_root(_CC4, "cc_root"), signature="cc_root(var, cell)",
         doc="Whether the cell is the representative of its component.",
     ),
+    "cc_count_in": BuiltinFunction(
+        "cc_count_in", _make_cc_count_in(_CC4, "cc_count_in"),
+        signature="cc_count_in(var, value, region)",
+        doc="Number of 4-CC of `value` when cells outside the region are walls.",
+    ),
+    "cc_size_in": BuiltinFunction(
+        "cc_size_in", _make_cc_size_in(_CC4, "cc_size_in"),
+        signature="cc_size_in(var, cell, region)",
+        doc="Size of cell's 4-CC under region-masked connectivity (0 if cell not in region).",
+    ),
+    "cc_width": BuiltinFunction(
+        "cc_width", _make_cc_width(_CC4, "cc_width"), signature="cc_width(var)",
+        doc="Per-cell bounding-box width of the same-value 4-CC (O(N²)).",
+    ),
+    "cc_height": BuiltinFunction(
+        "cc_height", _make_cc_height(_CC4, "cc_height"), signature="cc_height(var)",
+        doc="Per-cell bounding-box height of the same-value 4-CC (O(N²)).",
+    ),
+    "cc_is_rect": BuiltinFunction(
+        "cc_is_rect", _fn_cc_is_rect, signature="cc_is_rect(var, cell)",
+        doc="True iff the cell's 4-CC fills its bounding box (size == width * height).",
+    ),
     "cc8_id": BuiltinFunction(
         "cc8_id", _make_cc_id(_CC8, "cc8_id"), signature="cc8_id(var)",
         doc="Per-cell id of the 8-connected component of equal-valued cells.",
@@ -1298,6 +1606,16 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     "cc8_root": BuiltinFunction(
         "cc8_root", _make_cc_root(_CC8, "cc8_root"), signature="cc8_root(var, cell)",
         doc="Whether the cell represents its 8-connected component.",
+    ),
+    "cc8_count_in": BuiltinFunction(
+        "cc8_count_in", _make_cc_count_in(_CC8, "cc8_count_in"),
+        signature="cc8_count_in(var, value, region)",
+        doc="Number of 8-CC of `value` when cells outside the region are walls.",
+    ),
+    "cc8_size_in": BuiltinFunction(
+        "cc8_size_in", _make_cc_size_in(_CC8, "cc8_size_in"),
+        signature="cc8_size_in(var, cell, region)",
+        doc="Size of cell's 8-CC under region-masked connectivity (0 if cell not in region).",
     ),
     "drop_covers": BuiltinFunction(
         "drop_covers", _fn_drop_covers, signature="drop_covers(var, start_row)",

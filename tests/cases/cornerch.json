@@ -1,0 +1,24 @@
+{
+  "puzzle": "cornerch",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "cornerch",
+      "rows": 4,
+      "cols": 4,
+      "clues": {
+        "n": {
+          "0,0": 16
+        }
+      },
+      "answer": {
+        "x": [
+          "....",
+          "....",
+          "....",
+          "...."
+        ]
+      }
+    }
+  ]
+}

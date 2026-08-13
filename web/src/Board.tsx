@@ -3,7 +3,7 @@
  * gestures into edits according to the active layer's editor kind.
  */
 
-import { useRef } from "react";
+import { useRef, type RefObject } from "react";
 import { cycleValues, editorOf } from "./editors";
 import {
   cellCentre,
@@ -31,13 +31,15 @@ export interface BoardProps {
   draft: string;
   onEdit: (layer: LayerSpec, key: string, value: number | null) => void;
   onSelect: (selection: Selection | null) => void;
+  svgRef?: RefObject<SVGSVGElement | null>;
 }
 
 type Drag = { kind: "paint" | "toggle"; value: number | null } | null;
 
 export function Board(props: BoardProps) {
   const { spec, instance, result, viewport, visible, activeLayer, brush, selection, draft } = props;
-  const svgRef = useRef<SVGSVGElement>(null);
+  const localSvg = useRef<SVGSVGElement>(null);
+  const svgRef = props.svgRef ?? localSvg;
   const dragRef = useRef<Drag>(null);
 
   const v = viewport;

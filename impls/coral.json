@@ -22,6 +22,23 @@
   ],
   "layers": [
     {
+      "id": "outside",
+      "label": "行列段长",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left",
+          "bottom",
+          "right"
+        ],
+        "mode": "list"
+      }
+    },
+    {
       "id": "shade",
       "label": "涂黑",
       "element": "shade",
@@ -34,6 +51,13 @@
       }
     }
   ],
-  "params": {},
-  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 留白连通到边界。盘外「无序」段长集合需集合匹配（runs 只支持有序），未编码。"
+  "params": {
+    "defaults": {
+      "top": [],
+      "left": [],
+      "bottom": [],
+      "right": []
+    }
+  },
+  "notes": "完全实现：涂黑连通 + 无全黑2x2 + 留白连通到边界 + 盘外无序段长（runs_set；? 为 -1）。"
 }

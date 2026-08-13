@@ -22,6 +22,21 @@
   ],
   "layers": [
     {
+      "id": "outside",
+      "label": "行列段长",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "list"
+      }
+    },
+    {
       "id": "shade",
       "label": "涂黑",
       "element": "shade",
@@ -34,6 +49,11 @@
       }
     }
   ],
-  "params": {},
-  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 盘外段长（param left/top，依次匹配）。问号「?」与星号「*」通配提示未编码。"
+  "params": {
+    "defaults": {
+      "top": [],
+      "left": []
+    }
+  },
+  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 盘外有序段长（? 为 -1）。星号 *（任意个额外段）未编码。"
 }

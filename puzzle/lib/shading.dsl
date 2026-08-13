@@ -62,6 +62,33 @@ def around_black_clue(x, c):
     for p in clue_cells(c):
         n_around(x, p, 1) == at(c, p)
 
+def nb_bit(x, p, dr, dc):
+    let q = shift(p, dr, dc)
+    if q.size == 0:
+        return 0
+    return at(x, q)
+
+def around8_shade_bits(x, p):
+    # Clockwise 8-neighbourhood occupancy, missing cells count as 0.
+    return [nb_bit(x, p, -1, 0), nb_bit(x, p, -1, 1), nb_bit(x, p, 0, 1), nb_bit(x, p, 1, 1), nb_bit(x, p, 1, 0), nb_bit(x, p, 1, -1), nb_bit(x, p, 0, -1), nb_bit(x, p, -1, -1)]
+
+def clue_lengths4(n, n2, n3, n4, p):
+    let lens = [at(n, p)]
+    if has_value(n2, p):
+        let lens = lens and [at(n2, p)]
+    if has_value(n3, p):
+        let lens = lens and [at(n3, p)]
+    if has_value(n4, p):
+        let lens = lens and [at(n4, p)]
+    return lens
+
+def tapa_clue(x, n, n2, n3, n4, p):
+    let bits = around8_shade_bits(x, p)
+    if not has_value(n2, p) and at(n, p) < 0:
+        runs_cycle(bits, 0) or runs_cycle(bits, 0 - 1)
+    else:
+        runs_cycle(bits, clue_lengths4(n, n2, n3, n4, p))
+
 def adj8_black_clue(x, c):
     # 数字表示与此格接触的（至多）八格中涂黑格的个数
     for p in clue_cells(c):
@@ -190,6 +217,20 @@ def all_dominoes(x, v):
     # 这同时保证了不同骨牌之间互不正交相邻。
     for p in cells():
         eq(x, p, v) => n_adj4(x, p, v) == 1
+
+def square_groups(x, v):
+    # Every `v` 4-component is a square (filled bounding box, width == height).
+    let w = cc_width(x)
+    let h = cc_height(x)
+    for p in cells():
+        eq(x, p, v) => cc_is_rect(x, p) and at(w, p) == at(h, p)
+
+def straight_groups(x, v):
+    # Every `v` 4-component is a straight bar (bounding box width or height is 1).
+    let w = cc_width(x)
+    let h = cc_height(x)
+    for p in cells():
+        eq(x, p, v) => at(w, p) == 1 or at(h, p) == 1
 
 def groups_of_size(x, v, k):
     # 每一组连通的 `v` 格恰好 k 格。

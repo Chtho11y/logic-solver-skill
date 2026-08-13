@@ -3,6 +3,5 @@ import "shading"
 
 wall_rule(x)
 
-# 「区域内恰好两组」的必要条件：每区域至少两个涂黑格。
 for reg in regions:
-    num_eq(x[reg], 1) >= 2
+    cc_count_in(x, 1, reg) == 2

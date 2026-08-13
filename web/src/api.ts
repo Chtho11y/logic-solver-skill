@@ -50,13 +50,17 @@ export const api = {
     ),
 
   /**
-   * Solve an instance. `source` overrides the bundled DSL program, which is
-   * what the in-app rule editor uses to try out a custom rule.
+   * Solve an instance. `source` overrides the bundled DSL. `spec` lets a
+   * custom / mixed rule run without an `impls/` file on disk.
    */
-  solve: (instance: Instance, options: { source?: string; timeoutMs?: number } = {}) =>
+  solve: (
+    instance: Instance,
+    options: { source?: string; spec?: PuzzleSpec; timeoutMs?: number } = {},
+  ) =>
     post<SolveResult>("/solve", {
       instance,
       source: options.source,
+      spec: options.spec,
       timeoutMs: options.timeoutMs ?? 60000,
     }),
 };

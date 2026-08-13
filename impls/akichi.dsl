@@ -5,3 +5,10 @@ import "regions"
 
 island_rule(x)
 no_white_crossing_3_regions(x)
+
+for p in clue_cells(n):
+    let reg = region_of(p)
+    let mx = 0
+    for q in reg:
+        let mx = max(mx, ite(is_white(x, q), cc_size_in(x, q, reg), 0))
+    mx == at(n, p)

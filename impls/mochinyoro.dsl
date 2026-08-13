@@ -8,3 +8,6 @@ connected8(x, 0)
 is_rect_group(x, 0)
 group_size_clue(x, n)
 clues_in_distinct_groups(x, n)
+
+for p in cells():
+    is_black(x, p) => not cc_is_rect(x, p)

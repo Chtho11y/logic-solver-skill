@@ -24,6 +24,24 @@
       "kind": "cell",
       "type": "constant",
       "doc": "八邻域连续涂黑段长度（可多个）"
+    },
+    {
+      "name": "n2",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第二段长"
+    },
+    {
+      "name": "n3",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第三段长"
+    },
+    {
+      "name": "n4",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "第四段长"
     }
   ],
   "layers": [
@@ -35,7 +53,7 @@
       "role": "input",
       "var": "n",
       "options": {
-        "min": 0
+        "min": -1
       }
     },
     {
@@ -52,5 +70,5 @@
     }
   ],
   "params": {},
-  "notes": "部分实现：涂黑连通 + 无全黑2x2 + 提示格留白。Tapa 的环形八邻域多段长度（无序、支持问号）未编码。"
+  "notes": "完全实现：涂黑连通 + 无全黑2x2 + 提示格留白 + 八邻域环形无序段长（runs_cycle；? 为 -1；单独? 允许 0 段）。"
 }

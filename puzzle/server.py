@@ -11,7 +11,8 @@ Endpoints (all JSON):
 ``/api/elements``       GET     the generic drawing-element catalogue
 ``/api/puzzles``        GET     implemented puzzle specs (with layers)
 ``/api/puzzles/<key>``  GET     one spec, its DSL source and sample instance
-``/api/solve``          POST    ``{"instance": {...}}`` -> solved values
+``/api/solve``          POST    ``{"instance": {...}, "source"?: str, "spec"?: {...}}``
+                                ``spec`` runs a custom/mixed rule with no ``impls/`` file.
 ======================  ======  ===========================================
 
 Static files from ``web/dist`` (the built front-end) are served at ``/`` when

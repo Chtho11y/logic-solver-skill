@@ -1,11 +1,11 @@
 {
   "puzzle": "cornerch",
-  "rows": 6,
-  "cols": 6,
+  "rows": 4,
+  "cols": 4,
   "title": "cornerch",
   "clues": {
     "n": {
-      "0,0": 36
+      "0,0": 16
     }
   }
 }

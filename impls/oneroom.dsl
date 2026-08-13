@@ -6,6 +6,9 @@ import "regions"
 island_rule(x)
 region_black_count(x, n)
 
+for reg in regions:
+    cc_count_in(x, 0, reg) <= 1
+
 for ra in regions:
     for rb in regions:
         if region_id(ra[0]) < region_id(rb[0]):

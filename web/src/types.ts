@@ -14,22 +14,11 @@ export type LayerRole = "input" | "output";
 /** Point keys are the serialised form used by the API: "r,c" or "H,r,c". */
 export type PointKey = string;
 
-export type ElementId =
-  | "number"
-  | "text"
-  | "shade"
-  | "circle"
-  | "square"
-  | "triangle"
-  | "star"
-  | "cross"
-  | "dot"
-  | "arrow"
-  | "edgeline"
-  | "link"
-  | "diagonal"
-  | "region"
-  | "outside";
+/**
+ * Catalogue ids (`number`, `shade`, `link`, …) plus any custom element id
+ * declared on a spec layer. Unknown ids fall back to a numbered marker.
+ */
+export type ElementId = string;
 
 export interface ElementType {
   id: ElementId;

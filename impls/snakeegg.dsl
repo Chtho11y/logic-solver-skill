@@ -5,7 +5,15 @@ import "shading"
 snake_shape(x, 1)
 group_size_clue(x, n)
 
-# 黑圈是蛇的端点。
 for p in clue_cells(o):
     is_black(x, p)
     n_adj4(x, p, 1) == 1
+
+if has_param("eggs"):
+    let eggs = param("eggs")
+    if eggs.size > 0:
+        let sz = cc_size(x)
+        let items = []
+        for p in cells():
+            let items = items and [ite(is_white(x, p) and cc_root(x, p), at(sz, p), 0)]
+        values_set(items, eggs)

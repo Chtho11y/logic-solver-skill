@@ -1,143 +1,176 @@
 ---
 name: puzzle-rules
-description: 'Look up grid-puzzle rules by name (中文/English/pzplus key) or identify a puzzle from a rule description, and implement new rules end-to-end — z3 solver in the puzzle DSL plus the front-end editor/solution layers. Use whenever the user mentions a logic-puzzle name (数独/数墙/Nurikabe/Masyu/…), asks what a rule means, asks to add or fix a solver under impls/, or asks for a custom/new puzzle rule.'
+description: >-
+  Look up grid-puzzle rules (中文/English/pzplus key), implement a solver in the
+  puzzle DSL, compose mixed/custom rules from generic layers + DSL, and export
+  the board/answer (SVG/PNG/JSON). Use whenever the user names a logic puzzle,
+  asks to add/fix impls/, invents a custom rule, wants a specialized editor
+  look, or wants a board/answer screenshot or file dump.
 ---
 
-# Puzzle rules: identify, implement, render
+# Puzzle rules — fastest path
 
-This repository solves ~236 grid-puzzle rules (catalogued in `rules.txt`) with a
-constraint DSL lowered to z3, and renders them with a puzzle-agnostic layer
-front-end. **Always start with the `puzzle-rules` tool** — never grep
-`rules.txt` by hand and never guess a rule's wording.
-
-All commands run from the repository root and accept `--json`.
-
-## 1. Name ⇄ rule
+Speed first. **Do not grep `rules.txt`.** Start with:
 
 ```bash
-python -m tools.puzzle_rules find 数墙            # name (any language) -> rule
-python -m tools.puzzle_rules find nurikabe
-python -m tools.puzzle_rules identify "涂黑格互不相邻且留白连通"   # rule text -> candidates
-python -m tools.puzzle_rules show nurikabe        # rule + spec + variables + layers + DSL
-python -m tools.puzzle_rules list --category 回路I
-python -m tools.puzzle_rules categories           # coverage per category
-python -m tools.puzzle_rules todo                 # rules with no solver yet
+python -m tools.puzzle_rules find <name>          # 中文 / English / key
+python -m tools.puzzle_rules identify "规则原文"  # paraphrase → candidates
+python -m tools.puzzle_rules show <key>           # rule + spec + layers + DSL
+python -m tools.puzzle_rules elements             # drawing primitives
+python -m tools.puzzle_rules lib                  # shading/loops/fill/…
+python -m tools.puzzle_rules builtins
 ```
 
-`find` matches key / English / Chinese and falls back to rule text; `identify`
-ranks by shared rule wording, so a paraphrase still resolves. A leading `✓`
-means a solver already exists.
+`--json` on every command. A leading `✓` means a solver file already exists.
 
-## 2. Architecture in one screen
+**Never add puzzle-specific React.** The UI draws **layers**, not puzzle types.
+A mixed or custom rule is a new spec (variables + layers) plus a DSL file.
 
-| Path | Role |
+---
+
+## 0. Pick a recipe (do not invent a fourth)
+
+| Goal | Recipe |
 | --- | --- |
-| `rules.txt` | The rule catalogue (tab separated, 8 columns). Source of truth for names. |
-| `puzzle/models.py`, `puzzle/grid.py` | Board geometry: `cell (r,c)`, `corner (r,c)`, `edge ("H"\|"V", r, c)`. |
-| `puzzle/dsl/` | Lexer → parser → compiler → z3 solver. Grammar in `puzzle/dsl/GRAMMAR.md`. |
-| `puzzle/lib/*.dsl` | Shared templates: `core`, `shading`, `regions`, `loops`, `fill`, `outside`. |
-| `puzzle/elements.py` | The generic drawing elements (number/shade/circle/arrow/link/…). |
-| `puzzle/spec.py` | `PuzzleSpec` (variables + layers) and `Instance` (board data). |
-| `puzzle/runner.py`, `puzzle/server.py` | Solve one instance; JSON HTTP API. |
-| `impls/<key>.json` + `<key>.dsl` | One rule: spec + constraints. |
-| `impls/samples/<key>.json` | Sample instance used as the regression test. |
-| `web/src/` | React + Vite front-end; renders **layers**, never puzzles. |
+| Look up / explain a named puzzle | `find` / `show` only |
+| New catalogue rule (in `rules.txt`) | **A** clone closest implemented key |
+| Mix two existing rules | **B** union of layers + one DSL |
+| User-invented rule | **C** custom spec + DSL, reuse elements |
+| New picture that no element covers | **D** one generic element, then C |
+| Board / answer dump | **E** UI export or JSON pack (no new renderer) |
 
-Edge convention: `("H", r, c)` is the edge **above** cell `(r,c)`; `("V", r, c)`
-is the edge **left of** cell `(r,c)`. On the cell lattice an edge stands for the
-link between the two cells it separates, so `"H"` is a *vertical* link.
+Coverage and leftover gaps: `IMPLEMENTATION_STATUS.md`. Tests: `tests/cases/<key>.json` (accept-only unless `"unique": true`).
 
-## 3. Implementing a new rule
+---
+
+## A. Catalogue rule (clone, don’t start from zero)
 
 ```bash
-python -m tools.puzzle_rules show <key>        # 1. read the exact rule text
-python -m tools.puzzle_rules lib               # 2. see which templates already exist
-python -m tools.puzzle_rules builtins          #    ... and the DSL builtins
-python -m tools.scaffold new <key> --rows 8 --cols 8   # 3. create the three stub files
-# 4. edit impls/<key>.json (variables + layers) and impls/<key>.dsl (constraints)
-python -m tools.check compile <key>            # 5. fast syntax/shape check
-# 6. add a hand-checked board to tools/samples.py, then
-python -m tools.samples && python -m tools.check solve <key>
+python -m tools.puzzle_rules show <closest-key> --json
+python -m tools.scaffold new <key> --rows 8 --cols 8   # stubs; en/zh/rule from rules.txt
 ```
 
-### Choosing variables
+1. Copy **variables + layers** from the closest `impls/<close>.json` (Yajilin-like → `yajilin` / `simpleloop`; shading → `nurikabe`; fill → `sudoku` / `fillomino`; regions → `shikaku` / `country`).
+2. Write `impls/<key>.dsl`. `import` a lib; don’t re-derive `loop`/`cc_count`.
+3. Small sample via `write_sample` / `impls/samples/<key>.json` (4×4).
+4. `python -u -m tools.check compile <key>` then `solve <key> --timeout 120000`.
+5. Dump SAT answer into `tests/cases/<key>.json` (`unique` unset; answer = decision vars only).
 
-| Rule shape | Variables |
-| --- | --- |
-| 涂黑 (shading) | `x` cell normal `domain [0,1]`, 1 = 涂黑 |
-| 填数 | `x` cell normal with the value range |
-| 提示数字/圆圈/箭头 | a **constant** cell variable per clue kind (`n`, `o`, `d`, …) |
-| 分区 (solve a partition) | a `cc` cell variable; use `c.id` / `c.size` / `c.border` |
-| 回路 / 路径 | `e` edge normal `domain [0,1]` |
-| 已画好的区域 | set `"usesRegions": true`; read them with `regions` / `region_of` |
+Circles: **1=white, 2=black**. Directions: UP=0 DOWN=1 LEFT=2 RIGHT=3.
+`x[p]` is a list — use `at(x, p)` for a scalar.
 
-Auxiliary variables are fine (LITS uses `t` for the tetromino type, Nanro uses a
-0/1 `f` "is filled" flag). Mark a constant that must exist on *every* cell with
-`"dense": true` (Hitori's printed numbers).
+---
 
-### DSL rules of thumb
+## B. Mixed rules (two puzzles on one board)
 
-* `x[p]` yields a **list**; use `at(x, p)` whenever you need a scalar, because
-  `and` between two lists *merges* them instead of conjoining.
-* Compile-time values (`region_id`, `row_of`, `has_value`, constants, `.size`)
-  are plain Python — `if` over them constant-folds and costs nothing.
-* Accumulate with `let total = total + …` inside `for`; `let` rebinds the
-  nearest enclosing binding, so accumulators survive loop iterations.
-* Connectivity: `cc_count(x, v) <= 1` (one group), `cc_id` / `cc_size` /
-  `cc_root`, and the `cc8_*` diagonal variants.
-* Loops: `loop(e)` on the corner lattice (Slitherlink), `cloop(e)` through cell
-  centres (Masyu); then `on_loop`, `turns`, `goes_straight`, `cdeg`,
-  `region_crossings`.
-* Outside clues live in `params`: `param("top")[c]`; use the `outside` lib’s
-  `row_count` / `col_runs` etc. — they tolerate missing/short lists (−1 = 无提示).
-* `import "shading"` etc. pulls in a template module; `def` helpers are hoisted,
-  so order does not matter.
+No frontend composer. One spec, many layers.
 
-### Verify before claiming success
+1. `show` both keys. Union **variables** (rename clashes: `n` vs `n2`). Union **layers** (unique `id`s).
+2. One shade / one loop variable if both rules paint the same thing — don’t stack two `shade` output layers on two vars.
+3. DSL: `import` both libs, concatenate constraints. Shared cells (e.g. Yajilin black + Nurikabe island) are **one** `x`.
+4. Same compile/solve/fixture path as A.
 
-`python -m tools.check compile` must stay at 45/45 (or higher) and
-`python -m tools.check solve` at 25/25 (or higher). A sample that solves proves
-the encoding is *satisfiable*; also eyeball the printed board against the rule.
+The UI already stacks any layer list. Mixed look = mixed spec.
 
-## 4. Front-end: layers, not puzzles
+---
 
-A puzzle spec lists **layers**; each layer binds a generic element to a variable:
+## C. Custom / invented rule (elements + DSL)
+
+Skip `rules.txt`. `tools.scaffold new <key>` still works (warns). Put `en`/`zh`/`rule` on the spec yourself.
+
+**Reuse an existing element.** Check `python -m tools.puzzle_rules elements` before drawing anything.
+
+Layer JSON:
 
 ```json
-{ "id": "clue", "label": "岛屿数字", "element": "number",
+{ "id": "clue", "label": "数字", "element": "number",
   "target": "cell", "role": "input", "var": "n" }
 ```
 
-* `element` — one of `python -m tools.puzzle_rules elements`
-  (`number`, `text`, `shade`, `circle`, `square`, `triangle`, `star`, `cross`,
-  `dot`, `arrow`, `edgeline`, `link`, `diagonal`, `region`, `outside`, plus the
-  special pictures `tree`, `tent`, `ship`, `wave`, `bulb`).
-* `target` — `cell` / `corner` / `edge` / `outside`.
-* `role` — `input` (part of the statement, editable) or `output` (the solution).
-* `palette` maps integer values to colours, so the same element serves many rules.
-* Layers toggle independently in the UI, which is how the board is inspected
-  layer by layer.
+`role`: `input` = statement (editable), `output` = solution (filled after SAT).
+Unknown `element` ids render as a numbered disc; set `options.cycle` and/or
+`options.editor` (`cycle`/`int`/`paint`/`toggle`/`direction`/`text`) so they are editable.
 
-**Never add puzzle-specific code to `web/src`.** To support a new rule, reuse an
-existing element; only if a genuinely new visual primitive is needed, add it to
-`puzzle/elements.py`, draw it in `web/src/glyphs.tsx` (`glyph()`), and — if it
-is not a per-point marker — give it a case in `web/src/render.tsx` and an
-editor kind in `web/src/editors.ts` (`EDITOR_OF` / `cycleValues`). Cell-marker
-glyphs get board+palette support automatically.
+**Try without writing files:** UI footer “DSL” textarea + 求解. API:
 
-Run the stack with:
-
-```bash
-python -m puzzle.server --port 8000     # JSON API (+ web/dist when built)
-cd web && npm install && npm run dev    # Vite dev server, proxies /api
+```http
+POST /api/solve
+{ "instance": { "puzzle": "<key>", "rows": 4, "cols": 4, "clues": {}, "regions": {}, "params": {} },
+  "spec": { "key": "<key>", "variables": [...], "layers": [...], "source": "import \"shading\"\n..." },
+  "source": "..." }
 ```
 
-## 5. Custom rules the user invents
+`spec` in the body means **no `impls/` file required**. Persist to `impls/<key>.json` + `.dsl` once it SAT-solves.
 
-Same flow, with two shortcuts:
+---
 
-* Pick a `key` that is not in `rules.txt`; `tools.scaffold new` warns but works,
-  and the spec's own `en` / `zh` / `rule` fields carry the description.
-* The API accepts `{"instance": …, "source": "<dsl>"}`, so a rule can be tried
-  from the UI without touching `impls/` — copy it into `impls/<key>.dsl` once it
-  works.
+## D. New visual primitive (only if C’s fallback is wrong)
+
+Four files, in this order — still **generic**, never `if (puzzle === …)`:
+
+1. `puzzle/elements.py` — `ElementType` (id, targets, values, editor)
+2. `web/src/glyphs.tsx` — `glyph()` case (cell markers)
+3. `web/src/editors.ts` — `EDITOR_OF` + `DEFAULT_CYCLE` (if not `options.editor`)
+4. `web/src/render.tsx` — only if it is not a per-point marker (shade/region/link/edgeline)
+
+Then C. Do not touch `App.tsx` / `Board.tsx` for a single puzzle.
+
+---
+
+## E. Board export, answer, screenshot
+
+Answers already draw on `role: "output"` layers after 求解 (layer chips tagged **解**; hide with 👁).
+
+In the UI toolbar:
+
+| Button | File |
+| --- | --- |
+| 导出 SVG | vector of **currently visible** layers (clues + answer if solved) |
+| 导出 PNG | same, raster screenshot |
+| 导出 JSON | `{ spec, instance, answer, status }` pack |
+
+Hide output layers before export to dump the **empty puzzle**; leave them on for the **solved** picture.
+
+Agent-side pack (no browser):
+
+```text
+impls/<key>.json          spec (layers)
+impls/<key>.dsl           solver
+impls/samples/<key>.json  board
+tests/cases/<key>.json    board + answer values
+```
+
+`POST /api/solve` → `values` is the answer map (same shape as `clues`).
+
+---
+
+## Verify (do not claim success early)
+
+```bash
+python -u -m tools.check compile <key>
+python -u -m tools.check solve <key> --timeout 120000
+python -m unittest tests.test_solve
+```
+
+SAT on a sample means satisfiable, not “matches the rule”. Eyeball the exported PNG against the wording from `show`. Constraints must be a **sound** relaxation (never exclude a true solution). Partial encodings: `notes` + `unencodedClues`.
+
+---
+
+## Architecture (when you need a path)
+
+| Path | Role |
+| --- | --- |
+| `rules.txt` | Names / wording (8-column catalogue) |
+| `puzzle/dsl/` | Lexer → z3. Grammar: `puzzle/dsl/GRAMMAR.md` |
+| `puzzle/lib/*.dsl` | Templates (`shading` `loops` `fill` `regions` `outside` + `fill2` `loops2` `paths2` `place2`) |
+| `puzzle/elements.py` | Generic drawing elements |
+| `impls/<key>.json` `.dsl` | One rule |
+| `web/src/` | Layer renderer; puzzle-agnostic |
+| `puzzle/server.py` | JSON API (`/api/solve` accepts `spec` + `source`) |
+
+Edge `("H", r, c)` is **above** cell `(r,c)`; `("V", r, c)` is **left**. On the cell lattice that edge is the link between the two cells, so `"H"` is a vertical link.
+
+```bash
+python -m puzzle.server --port 8000
+cd web && npm install && npm run dev
+```

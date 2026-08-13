@@ -3,10 +3,11 @@
  * Everything is layer/element driven — no puzzle-specific code lives here.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "./api";
 import { Board } from "./Board";
 import { editorOf } from "./editors";
+import { downloadJson, downloadPng, downloadSvg } from "./export";
 import { makeViewport } from "./geometry";
 import {
   clearLayer,
@@ -35,6 +36,8 @@ export function App() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [z3, setZ3] = useState(true);
+  const [dslText, setDslText] = useState("");
+  const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
     api.puzzles().then(setPuzzles).catch(console.error);
@@ -55,6 +58,7 @@ export function App() {
     setResult(null);
     setSelection(null);
     setDraft("");
+    setDslText(data.puzzle.source ?? "");
     const firstInput = data.puzzle.layers.find((layer) => layer.role === "input");
     setActiveId(firstInput?.id ?? data.puzzle.layers[0]?.id ?? "");
   }
@@ -151,7 +155,8 @@ export function App() {
     setSelection(null);
     setBusy(true);
     try {
-      setResult(await api.solve(instance));
+      const packed = spec ? { ...spec, source: dslText } : undefined;
+      setResult(await api.solve(instance, { source: dslText || undefined, spec: packed }));
     } catch (error) {
       setResult({ status: "error", message: String(error), constraints: 0, debug: [] });
     } finally {
@@ -182,6 +187,25 @@ export function App() {
     }
     return makeViewport(instance.rows, instance.cols, 40, pad);
   }, [instance, spec]);
+
+  const fileStem = spec && instance ? `${spec.key}-${instance.rows}x${instance.cols}` : "board";
+
+  function exportSvg() {
+    if (svgRef.current) downloadSvg(svgRef.current, `${fileStem}.svg`);
+  }
+  function exportPng() {
+    if (svgRef.current) void downloadPng(svgRef.current, `${fileStem}.png`);
+  }
+  function exportJson() {
+    if (!spec || !instance) return;
+    downloadJson(`${fileStem}.json`, {
+      puzzle: spec.key,
+      spec: { ...spec, source: dslText },
+      instance,
+      answer: result?.values ?? null,
+      status: result?.status ?? null,
+    });
+  }
 
   const groups = useMemo(() => {
     const byCategory = new Map<string, PuzzleSpec[]>();
@@ -230,6 +254,13 @@ export function App() {
         <button className="solve" onClick={solve} disabled={!instance || busy || !z3}>
           {busy ? "求解中…" : "求解"}
         </button>
+        {instance && spec && (
+          <>
+            <button className="ghost" onClick={exportSvg} title="当前盘面（含可见图层与答案）">导出 SVG</button>
+            <button className="ghost" onClick={exportPng} title="当前盘面截图">导出 PNG</button>
+            <button className="ghost" onClick={exportJson} title="spec + 盘面 + 答案 JSON">导出 JSON</button>
+          </>
+        )}
         {result && (
           <span className={`status status-${result.status}`}>
             {result.status === "sat" ? "✓ 有解" : result.status === "unsat" ? "✗ 无解" : result.status}
@@ -269,24 +300,37 @@ export function App() {
             draft={draft}
             onEdit={edit}
             onSelect={select}
+            svgRef={svgRef}
           />
         ) : (
           <div className="empty">从上方选择一个谜题开始</div>
         )}
       </main>
 
-      {rule && (
+      {spec && (
         <footer className="rulebar">
+          {rule && (
+            <details>
+              <summary>
+                {rule.zh} / {rule.en} · {rule.category}
+                {activeLayer && editorOf(activeLayer) && (
+                  <span className="layer-hint"> — 当前图层: {activeLayer.label}</span>
+                )}
+              </summary>
+              <p>{rule.rule}</p>
+              {spec.notes && <p className="notes">{spec.notes}</p>}
+              {result?.message && result.status !== "sat" && <p className="notes">{result.message}</p>}
+            </details>
+          )}
           <details>
-            <summary>
-              {rule.zh} / {rule.en} · {rule.category}
-              {activeLayer && editorOf(activeLayer) && (
-                <span className="layer-hint"> — 当前图层: {activeLayer.label}</span>
-              )}
-            </summary>
-            <p>{rule.rule}</p>
-            {spec?.notes && <p className="notes">{spec.notes}</p>}
-            {result?.message && result.status !== "sat" && <p className="notes">{result.message}</p>}
+            <summary>DSL（求解时用此源码，可改后直接求）</summary>
+            <textarea
+              className="dsl-edit"
+              spellCheck={false}
+              value={dslText}
+              onChange={(e) => setDslText(e.target.value)}
+              rows={10}
+            />
           </details>
         </footer>
       )}

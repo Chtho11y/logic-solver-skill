@@ -35,8 +35,16 @@ export const EDITOR_OF: Record<string, EditorKind> = {
   bulb: "cycle",
 };
 
+const EDITOR_KINDS = new Set<EditorKind>([
+  "paint", "cycle", "int", "text", "toggle", "direction", "outside", "none",
+]);
+
 export function editorOf(layer: LayerSpec): EditorKind {
-  return EDITOR_OF[layer.element] ?? "none";
+  const override = layer.options?.editor;
+  if (typeof override === "string" && EDITOR_KINDS.has(override as EditorKind)) {
+    return override as EditorKind;
+  }
+  return EDITOR_OF[layer.element] ?? "cycle";
 }
 
 const DEFAULT_CYCLE: Record<string, number[]> = {

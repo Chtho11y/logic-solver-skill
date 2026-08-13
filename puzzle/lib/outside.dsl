@@ -56,6 +56,19 @@ def row_runs(x, side):
         if not no_clue(k):
             runs(x[i], k)
 
+def col_runs_set(x, side):
+    # 盘面外的数字表示此列中连续涂黑段长的无序多重集
+    for j in cols:
+        let k = side_clue(side, col_of(j[0]))
+        if not no_clue(k):
+            runs_set(x[j], k)
+
+def row_runs_set(x, side):
+    for i in rows:
+        let k = side_clue(side, row_of(i[0]))
+        if not no_clue(k):
+            runs_set(x[i], k)
+
 
 # -- weighted sums (Kakurasu / Box) ------------------------------------------
 

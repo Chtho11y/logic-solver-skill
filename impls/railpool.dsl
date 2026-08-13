@@ -10,7 +10,8 @@ for p in clue_cells(n):
     for q in clue_cells(n):
         if before(p, q):
             if same_region(p, q):
-                at(n, p) != at(n, q)
+                if at(n, p) > 0 and at(n, q) > 0:
+                    at(n, p) != at(n, q)
 
 for p in cells():
     let reg = region_of(p)
@@ -26,14 +27,31 @@ for p in cells():
         link_right(e, p) == 1 and turns(e, p) => length_in_region(n, reg, arm_used_len(e, p, RIGHT))
 
 for p in clue_cells(n):
-    segment_hits_region(e, region_of(p), at(n, p))
+    if at(n, p) > 0:
+        segment_hits_region(e, region_of(p), at(n, p))
+    else:
+        region_has_any_segment(e, region_of(p))
 
 def length_in_region(n, reg, L):
-    let ok = false
+    let exact = false
+    let wild = false
     for q in reg:
         if has_value(n, q):
-            let ok = ok or (L == at(n, q))
-    return ok
+            if at(n, q) < 0:
+                let wild = true
+            else:
+                let exact = exact or (L == at(n, q))
+    return exact or wild
+
+def region_has_any_segment(e, reg):
+    let hit = false
+    for p in reg:
+        let hit = hit or (on_loop(e, p) and goes_straight(e, p))
+        let hit = hit or (turns(e, p) and link_up(e, p) == 1)
+        let hit = hit or (turns(e, p) and link_down(e, p) == 1)
+        let hit = hit or (turns(e, p) and link_left(e, p) == 1)
+        let hit = hit or (turns(e, p) and link_right(e, p) == 1)
+    return hit
 
 def segment_hits_region(e, reg, L):
     let hit = false

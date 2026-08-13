@@ -68,10 +68,18 @@ def solve_instance(
 
 
 def solve_payload(payload: dict) -> dict[str, Any]:
-    """Solve a raw ``{"instance": {...}}`` request coming from the UI."""
+    """Solve a raw ``{"instance": {...}}`` request coming from the UI.
+
+    Optional ``spec`` lets a custom / mixed rule run without an ``impls/`` file.
+    Optional ``source`` overrides the DSL (in-app editor, or a one-off program).
+    """
 
     instance = Instance.from_json(payload["instance"])
-    spec = load_spec(instance.puzzle)
+    raw_spec = payload.get("spec")
+    if isinstance(raw_spec, dict):
+        spec = PuzzleSpec.from_json(raw_spec, source=payload.get("source") or "")
+    else:
+        spec = load_spec(instance.puzzle)
     return solve_instance(
         spec,
         instance,

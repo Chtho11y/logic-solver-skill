@@ -5,3 +5,8 @@ import "shading"
 connected8(x, 0)
 clue_cells_white(x, n)
 group_size_clue(x, n)
+
+let sz = cc_size(x)
+for p in cells():
+    is_white(x, p) and at(sz, p) % 2 == 0 => cc_is_rect(x, p)
+    is_white(x, p) and at(sz, p) % 2 == 1 => not cc_is_rect(x, p)

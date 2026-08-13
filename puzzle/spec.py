@@ -142,7 +142,7 @@ class PuzzleSpec:
             variables=tuple(VarSpec.from_json(v) for v in data.get("variables", ())),
             layers=tuple(LayerSpec.from_json(v) for v in data.get("layers", ())),
             params=dict(data.get("params", {})),
-            source=source,
+            source=source or data.get("source", ""),
             notes=data.get("notes", ""),
         )
 

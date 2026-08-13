@@ -255,6 +255,23 @@ def around8_single(e, p, n):
         else:
             around8_trans(e, p) == 2
 
+def around8_bits(e, p):
+    return [nb_on(e, p, -1, 0), nb_on(e, p, -1, 1), nb_on(e, p, 0, 1), nb_on(e, p, 1, 1), nb_on(e, p, 1, 0), nb_on(e, p, 1, -1), nb_on(e, p, 0, -1), nb_on(e, p, -1, -1)]
+
+def tapaloop_clue(e, n, n2, n3, n4, p):
+    let bits = around8_bits(e, p)
+    if not has_value(n2, p) and at(n, p) < 0:
+        runs_cycle(bits, 0) or runs_cycle(bits, 0 - 1)
+    else:
+        let lens = [at(n, p)]
+        if has_value(n2, p):
+            let lens = lens and [at(n2, p)]
+        if has_value(n3, p):
+            let lens = lens and [at(n3, p)]
+        if has_value(n4, p):
+            let lens = lens and [at(n4, p)]
+        runs_cycle(bits, lens)
+
 
 # -- water / ice along-loop local --------------------------------------------
 

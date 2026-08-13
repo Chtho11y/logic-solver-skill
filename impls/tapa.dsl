@@ -3,5 +3,7 @@
 import "shading"
 
 wall_rule(x)
-# 提示格自身永远不涂黑。
 clue_cells_white(x, n)
+
+for p in clue_cells(n):
+    tapa_clue(x, n, n2, n3, n4, p)

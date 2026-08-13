@@ -1,12 +1,12 @@
 {
   "puzzle": "circlesquare",
-  "rows": 6,
-  "cols": 6,
+  "rows": 4,
+  "cols": 4,
   "title": "方圆",
   "clues": {
     "o": {
       "0,0": 2,
-      "2,2": 1
+      "0,3": 1
     }
   }
 }

@@ -3,7 +3,7 @@
 import "shading"
 
 groups_of_size(x, 1, 3)
-width_one(x, 1)
+straight_groups(x, 1)
 clue_cells_white(x, n)
 adj_black_clue(x, n)
 connected(x, 0)

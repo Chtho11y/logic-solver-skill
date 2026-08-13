@@ -4,11 +4,12 @@ import "shading"
 
 wall_rule(x)
 
-# 两组等面积 ⟹ 区域内涂黑格数为偶数且至少为 2。
 for reg in regions:
-    num_eq(x[reg], 1) >= 2
-    num_eq(x[reg], 1) % 2 == 0
+    cc_count_in(x, 1, reg) == 2
+    cc8_count_in(x, 1, reg) == 2
+    let nb = num_eq(x[reg], 1)
+    for p in reg:
+        is_black(x, p) => cc_size_in(x, p, reg) * 2 == nb
 
-# 数字是「一组」的面积，故区域总涂黑数为其两倍。
 for p in clue_cells(n):
     num_eq(x[region_of(p)], 1) == 2 * at(n, p)

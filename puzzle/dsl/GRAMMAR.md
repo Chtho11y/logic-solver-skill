@@ -242,7 +242,10 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `count_true(list)` | 列表中成立的布尔个数 |
 | `num_eq(list, value)` | 列表中等于 value 的量的个数 |
 | `at_most(list, k)` / `at_least(list, k)` / `exactly(list, k)` | 计数约束 |
-| `runs(list, lengths)` | 0/1 序列的极大连续 1 段长度依次等于 `lengths` |
+| `runs(list, lengths)` | 0/1 序列的极大连续 1 段长度**依次**等于 `lengths`；`-1` 表示 `?`（任一段长 ≥1） |
+| `runs_set(list, lengths[, extra])` | 段长作为**多重集**等于 `lengths`（二分图匹配，不是排序后 zip）。`-1` = `?`；`extra=true` 允许未被线索匹配的剩余段（`*`） |
+| `runs_cycle(list, lengths[, extra])` | 把 `list` 当成环做无序段长匹配（Tapa 八邻域）；全 1 视为一段长度为 n |
+| `values_set(list, lengths[, extra])` | `list` 中的正值作为多重集等于 `lengths`（忽略 0）；`-1` = `?` |
 
 ### 6.6 同值连通分量（Connectivity）
 
@@ -254,7 +257,12 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `cc_size(var)` | 每格所在分量的格数（O(N²)，谨慎使用） |
 | `cc_count(var, value)` | 取值为 value 的分量个数；`== 1` 即「全部连通」 |
 | `cc_root(var, cell)` | 该格是否为其分量的代表元 |
+| `cc_count_in(var, value, region)` | 把 `region` 外的格当墙后，取值为 value 的 4-连通分量个数 |
+| `cc_size_in(var, cell, region)` | 上述遮罩连通下 `cell` 所在分量的格数（cell 不在 region 内则为 0） |
+| `cc_width(var)` / `cc_height(var)` | 每格所在 4-CC 外接框的宽/高（O(N²)） |
+| `cc_is_rect(var, cell)` | 该格所在 4-CC 是否填满外接框（`size == width * height`） |
 | `cc8_id` / `cc8_size` / `cc8_count` / `cc8_root` | 上述的 8-连通（含对角）版本 |
+| `cc8_count_in` / `cc8_size_in` | 区域遮罩的 8-连通版本 |
 
 ### 6.7 回路与路径（Loops）
 
@@ -464,12 +472,13 @@ print(row(0))
 | `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` |
 | `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
 | `fill` | `latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、箭头辅助 |
-| `outside` | `row_count` / `col_count`、`row_runs` / `col_runs`、`row_index_sum` / `col_index_sum` |
+| `outside` | `row_count` / `col_count`、`row_runs` / `col_runs`、`row_runs_set` / `col_runs_set`、`row_index_sum` / `col_index_sum` |
 
 ### 常见陷阱
 
 1. `x[p]` 是**列表**，而 `and` 在两个列表上是**合并**而非逻辑与。需要标量时用 `at(x, p)`。
 2. 守卫不阻止 `let` 执行。想要“条件性累加”时，条件必须是编译期常量
    （`region_id` / `row_of` / `has_value` / 常量变量的值 / `.size` 都是）。
-3. `cc_size` 是 O(N²) 编码，大盘面谨慎；`cc_count` 便宜得多。
-4. `loop` / `cloop` 会为每个节点生成 id/距离辅助量，同一变量多次调用会复用缓存。
+3. `cc_size` / `cc_width` / `cc_height` 是 O(N²) 编码，大盘面谨慎；`cc_count` 便宜得多。
+4. `runs` 是**有序**段长；无序用 `runs_set`，环形用 `runs_cycle`。长度 `-1` 表示 `?`；`runs_set(..., extra=true)` 才允许多余未匹配段（`*`）。`*` 插在有序 `runs` 中间仍未编码。
+5. `loop` / `cloop` 会为每个节点生成 id/距离辅助量，同一变量多次调用会复用缓存。

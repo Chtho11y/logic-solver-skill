@@ -147,8 +147,18 @@ export function glyph(
           </g>
         </g>
       );
-    default:
-      return null;
+    default: {
+      const { fill, stroke } = bwFill(value, color);
+      return (
+        <g>
+          <circle cx={cx} cy={cy} r={s * 0.28} fill={fill} stroke={stroke} strokeWidth={s * 0.05} />
+          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central"
+            fontSize={s * 0.28} fontWeight={700} fill={value === 2 ? "#fff" : INK}>
+            {value}
+          </text>
+        </g>
+      );
+    }
   }
 }
 
