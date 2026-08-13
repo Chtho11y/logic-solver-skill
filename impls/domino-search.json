@@ -1,0 +1,56 @@
+{
+  "key": "domino-search",
+  "en": "Domino Search",
+  "zh": "多米诺搜寻",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "把盘面分成若干个两格区域，使得所有由给出的列表里的数字组成的（无序）数对都在恰好一个区域内同时出现。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "格内数字",
+      "dense": true
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {
+    "defaults": {
+      "tiles": [
+        1,
+        2
+      ]
+    }
+  },
+  "notes": "param tiles 为数字列表；其中数字组成的每个无序数对恰好出现一次。"
+}

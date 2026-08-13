@@ -1,0 +1,50 @@
+{
+  "key": "meadows",
+  "en": "Meadows",
+  "zh": "裁方块",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干正方形区域，使得每个区域恰好包含一个黑圈。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "黑圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "每个正方形恰好一个黑圈。"
+}

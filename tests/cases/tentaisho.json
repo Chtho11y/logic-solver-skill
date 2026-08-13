@@ -1,0 +1,23 @@
+{
+  "puzzle": "tentaisho",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "3x3 一星系",
+      "rows": 3,
+      "cols": 3,
+      "clues": {
+        "o": {
+          "1,1": 1
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0 0",
+          "0 0 0",
+          "0 0 0"
+        ]
+      }
+    }
+  ]
+}

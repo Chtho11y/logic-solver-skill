@@ -1,0 +1,11 @@
+{
+  "puzzle": "tatamibari",
+  "rows": 2,
+  "cols": 3,
+  "title": "2x3 横榻榻米",
+  "clues": {
+    "s": {
+      "0,1": 1
+    }
+  }
+}

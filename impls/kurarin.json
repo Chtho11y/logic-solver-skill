@@ -1,0 +1,57 @@
+{
+  "key": "kurarin",
+  "en": "Kurarin",
+  "zh": "黑暗回路",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "在盘面内涂黑一些格子，使得留白的格子形成一条横平竖直不交叉的回路。盘面内的点提示了其所接触的（至多）四格中涂黑格和留白格哪种更多：白色表示留白格更多，黑色表示涂黑格更多，灰色表示涂黑格和留白格一样多。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "0 = 留白, 1 = 涂黑"
+    },
+    {
+      "name": "c",
+      "kind": "corner",
+      "type": "constant",
+      "doc": "1=留白多 2=涂黑多 3=一样多"
+    }
+  ],
+  "layers": [
+    {
+      "id": "dots",
+      "label": "格点提示",
+      "element": "number",
+      "target": "corner",
+      "role": "input",
+      "var": "c",
+      "options": {
+        "min": 1,
+        "max": 3
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "提示在格点上，与 creek 相同。留白必须形成单条回路。"
+}

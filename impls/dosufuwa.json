@@ -1,0 +1,65 @@
+{
+  "key": "dosufuwa",
+  "en": "Dosun-Fuwari",
+  "zh": "气球铅球",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在每个区域中放置一个气球（○）和一个铅球（●）。铅球只能放在盘面的底部，黑色单元格的上面，或者另一个铅球的上面。气球只能放在盘面的顶部，黑色单元格的下面，或者另一个气球的下面。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        2
+      ],
+      "doc": "0=空 1=气球 2=铅球"
+    },
+    {
+      "name": "w",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 黑色单元格"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "shade",
+      "label": "黑色单元格",
+      "element": "shade",
+      "target": "cell",
+      "role": "input",
+      "var": "w",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "circles",
+      "label": "气球/铅球",
+      "element": "circle",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733"
+      }
+    }
+  ],
+  "params": {},
+  "notes": "x: 1=气球○ 2=铅球●。铅球下落、气球上浮，可叠在同类或黑格上。"
+}

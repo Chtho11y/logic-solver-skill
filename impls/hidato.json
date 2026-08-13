@@ -1,0 +1,52 @@
+{
+  "key": "hidato",
+  "en": "Hidato",
+  "zh": "一笔画",
+  "category": "路径II",
+  "subcategory": "",
+  "rule": "在每个空格里填数，使得1~N的每个数分别在盘面里出现恰好一次，其中N是盘面的总格数。每一对连续的数字必须在接触的格子里。有一些数字可能已经放入了盘面。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        36
+      ],
+      "doc": "1..N"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "已给数字"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "answer",
+      "label": "填数",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {},
+  "notes": "domain 上限 36，默认盘面不超过 6x6。数字八邻域相连。"
+}

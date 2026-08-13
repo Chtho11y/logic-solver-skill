@@ -1,0 +1,48 @@
+{
+  "key": "aho",
+  "en": "Aho-ni-Narikire",
+  "zh": "逢三变傻",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干区域，使得每个区域恰好包含一个提示格。圆圈里的数字表示其所在区域的面积。如果区域面积是3的倍数，那么该区域必须是L形（一个大长方形从一角去掉长宽都较小的长方形得到的形状）；如果区域面积不是3的倍数，那么该区域必须是长方形。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "面积为 3 的倍数时用恰好一个 2x2 缺一角刻画 L 形。"
+}

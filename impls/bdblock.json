@@ -1,0 +1,65 @@
+{
+  "key": "bdblock",
+  "en": "Border Block",
+  "zh": "边界区块",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域有且仅有一种数字，相同的数字都在同一个区域。黑点表示从这个顶点恰好延伸出三条区域的边界线。所有可能的黑点都已给出。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域内数字"
+    },
+    {
+      "name": "o",
+      "kind": "corner",
+      "type": "constant",
+      "doc": "1 = 黑点（恰三条界）"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "dot",
+      "label": "黑点",
+      "element": "dot",
+      "target": "corner",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#232733"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

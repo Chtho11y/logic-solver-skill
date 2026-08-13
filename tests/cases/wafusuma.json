@@ -1,0 +1,23 @@
+{
+  "puzzle": "wafusuma",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x2 三加一",
+      "rows": 2,
+      "cols": 2,
+      "clues": {
+        "k": {
+          "H,1,1": 4,
+          "V,1,1": 4
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0",
+          "0 3"
+        ]
+      }
+    }
+  ]
+}

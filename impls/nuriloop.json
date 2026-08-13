@@ -1,0 +1,62 @@
+{
+  "key": "nuriloop",
+  "en": "Nurikabe Loop",
+  "zh": "数墙回路",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过一些空格中心且不和自身交叉的回路。每一组连通的未被回路经过的格必须恰好包含一个数字。数字表示其所在的未被回路经过的连通组格数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "y",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 不在回路上（辅助）"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "未经过连通组格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "y 为未经过标记，不绘制。"
+}

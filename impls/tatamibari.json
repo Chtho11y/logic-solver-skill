@@ -1,0 +1,49 @@
+{
+  "key": "tatamibari",
+  "en": "Tatamibari",
+  "zh": "榻榻米",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干长方形区域，使得每个区域恰好包含一个符号。每个顶点不能同时是四个长方形的一角。符号表示了其所在的长方形的长宽关系：横线表示宽大于高，竖线表示高大于宽，加号表示两者相等。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "s",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=横线 2=竖线 3=加号"
+    }
+  ],
+  "layers": [
+    {
+      "id": "symbol",
+      "label": "符号",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "s",
+      "options": {
+        "min": 1,
+        "max": 3
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "s: 1=横线(宽>高) 2=竖线(高>宽) 3=加号(正方形)。"
+}

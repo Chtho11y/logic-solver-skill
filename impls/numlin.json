@@ -1,0 +1,70 @@
+{
+  "key": "numlin",
+  "en": "Numberlink",
+  "zh": "数连",
+  "category": "路径I",
+  "subcategory": "",
+  "rule": "从每个数字画一条横平竖直的路径，穿过若干个相邻格中心后连到另一个相同的数字。路径不能和自身或互相交叉，包括在端点交叉。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 路径"
+    },
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "0=空 其余=路径编号"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "端点数字"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "端点数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "answer",
+      "label": "路径编号",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    },
+    {
+      "id": "loop",
+      "label": "路径",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "每对相同数字一条不交叉路径。x 为路径编号（0=不经过）。domain 上限 20。"
+}

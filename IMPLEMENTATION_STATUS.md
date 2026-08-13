@@ -96,13 +96,13 @@
 
 | 分类 | 条数 | keys |
 |---|---:|---|
-| 放置 | 11 | `pentatouch kissing magnets gaps pentopia dosufuwa statuepark pencils tren kinkonkan moonlight` |
+| 放置 | 8 | `pentatouch kissing pentopia statuepark pencils tren kinkonkan moonlight` |
 | 填写 | 30 | `bosanowa gokigen simplegako blind fuzuli doppelblock renban goishi kakuro easyasabc hanare r roma toichika japanesesums wagiri makaro yajirushi cojun tateyoko arrowflow scrabble kropki-pairs skyscrapers consecutiveq snail magic kropki hebi ubahn` |
-| 分区 | 30 | `meadows fivecells fourcells pentominous tetrominous domino-search squarejam cbblock heteromino slashpack symmarea subomino wafusuma kramma tentaisho sashigane mirrorbk bdblock nikoji dbchoco sendai lohkous lapaz tatamibari narrow snakepit compass aho voxas heavydots` |
+| 分区 | 15 | `pentominous tetrominous cbblock heteromino slashpack symmarea subomino mirrorbk nikoji dbchoco sendai lohkous narrow voxas heavydots` |
 | 回路I | 15 | `lineofsight waterwalk firewalk disloop icewalk orbital wbloop reflect slalom kouchoku crossstitch bhaibahan tapaloop angleloop nagare` |
-| 路径I | 15 | `wblink numlin walllogic hashi coffeemilk kaero bonsan sato forestwalk yosenabe rectslider pmemory firefly icebarn herugolf` |
-| 回路II | 16 | `alternate ringring yajilin-regions koburin pipelink maxi nuriloop trainstations barns vertigo nothing mukkonn doubleornothing railpool nagenawa kurarin` |
-| 路径II | 8 | `haisu rassi hidato keywest mintonette curvedata icelom anglers` |
+| 路径I | 14 | `wblink walllogic hashi coffeemilk kaero bonsan sato forestwalk yosenabe rectslider pmemory firefly icebarn herugolf` |
+| 回路II | 9 | `ringring pipelink maxi trainstations barns vertigo doubleornothing railpool nagenawa` |
+| 路径II | 7 | `haisu rassi keywest mintonette curvedata icelom anglers` |
 
 涂黑II 的 `binairo`、涂黑III 11 条、回路I 中较易的 10 条已实现（见第 8 节）。
 
@@ -121,8 +121,27 @@
 | `slalom` / `nagare` | 有向回路 + 关卡次序 / 风向 |
 | `kouchoku` / `angleloop` / `crossstitch` | 非正交线段、夹角、双顶点回路 |
 | `tapaloop` | 八邻域多段无序（同 tapa） |
+| `maxi` | 区域内单次经过的最长段（多次进出） |
+| `trainstations` | 仅十字格自交；按数字顺序走访且数字格不转弯 |
+| `barns` | 冰格自交且不转弯；粗线墙 |
+| `vertigo` | 任意自交 + 全程同向转弯 |
+| `doubleornothing` | 双回路；加号格交叉或都不经过 |
+| `railpool` | 区域内直线段长度的无序集合 |
 | `pentatouch` / `kissing` / `pentopia` / `statuepark` | 给定多连块目录 + 旋转翻转放置 |
 | `pencils` / `tren` / `kinkonkan` / `moonlight` | 复合放置（笔迹、滑动车、镜面反射、星云照明） |
+| `hashi` | 岛屿间 1/2 桥、禁止交叉、全图连通；无“互相看见的岛屿”原语 |
+| `pentominous` / `tetrominous` / `heteromino` / `subomino` | 多连块形状目录 / 平移全等 / 一形能否放入另一形 |
+| `slashpack` | 格内对角线把盘面剖成区域 |
+| `symmarea` | 码牌 + 每区 180° 对称但中心未知（需枚举格心/边心/顶点） |
+| `mirrorbk` | 镜子轴对称的两区 |
+| `cbblock` | 每区两个虚线块、非矩形、邻区不全等 |
+| `nikoji` | 同字母区域平移全等（含字母相对位置） |
+| `dbchoco` | 灰白两块相邻且全等 |
+| `sendai` | 市内再分且与同形同向市相邻 |
+| `lohkous` | 区域内横纵段长的无序集合 |
+| `narrow` | 非矩形 + 同符号不同形 + 禁止同符 2×2 |
+| `voxas` | 面积 2/3 的矩形 + 区界圆点表示面积/朝向关系 |
+| `heavydots` | 顶点伸出 3/4 条界，且与已标点相邻的未标点有额外禁止 |
 
 ---
 
@@ -172,10 +191,10 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 ## 7. 后续建议顺序
 
-1. **回路II / 路径** 中与 Yajilin、Simple Loop、Hashi、Numberlink 同构的条目（`yajilin-regions` `koburin` `nuriloop` `alternate` `nothing` `kurarin` `hashi` `numlin`）。
-2. **分区 30 条** —— `shikaku`/`fillomino` 范式。
-3. **填写 30 条** —— 先补摩天楼可见性、Kakuro 和式。
-4. **放置** 中不含多连块目录的（`magnets` `gaps` `dosufuwa`）；带形状目录的等全等原语后再做。
+1. **填写 30 条** —— 先补摩天楼可见性、Kakuro 和式、Kropki。
+2. **路径I** 其余条目（`hashi` 见 §4.1；滑动/反射类更难）。
+3. **分区** 剩余形状目录 / 镜像 / 全等（见 §4.1）。
+4. **放置** 中带形状目录的（`pentatouch` 等）等全等原语后再做。
 
 ---
 
@@ -209,3 +228,64 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 - `loops.dsl`：`nearest_loop_dist` / `arm_used_len` / `full_straight_len`
 - `shading.dsl`：`half_filled_lines` / `lines_all_unique`
 - `drop_covers`（垒石刚体下落；与全等无关）
+
+### 8.4 回路II 易项 + Hidato
+
+完整：`yajilin-regions` `koburin` `nuriloop` `nothing` `kurarin` `mukkonn` `hidato`  
+部分：`alternate`（仅回路边直接相连的圆圈异色；沿回路隔格的连续同色圆圈未编码）
+
+| key | 机制 |
+|---|---|
+| `yajilin-regions` | `loop_visits_all_but` + `no_adjacent` + `region_black_count` |
+| `koburin` | 数字格不涂黑、不在回路上；其余格回路 xor 涂黑；`n_adj4` |
+| `nuriloop` | `cloop`；辅助 `y`=不在回路上（声明于 variables、不进 layers）；岛大小同数墙 |
+| `nothing` | 区域全经过或全不经过；进出 0 或 2；未经过区域不相邻 |
+| `kurarin` | 留白单回路（连通 + 每格恰 2 个留白邻 + `cc_count==1`）；格点 `c` 1/2/3 用 `cell_of` 多数。不用 `cycle_shape`（`no2x2` 会禁掉合法 4 循环）。角键 `"1,1"` 表示顶点 (r,c) |
+| `mukkonn` | 每格至多一个三角形；`link_dir => arm_len == n` |
+| `hidato` | 填 1..N 各一次（N=`rows.size * cols.size`）；`distinct(x)`；相邻数字八邻域 |
+| `alternate` | `link_between(e,p,q)==1 =>` 圆圈异色（非“所有正交相邻圆圈异色”） |
+
+暂缓（自交 / 多矩形回路 / 无序段长 / 有向转弯）：`ringring` `pipelink` `maxi` `trainstations` `barns` `vertigo` `doubleornothing` `railpool` `nagenawa`。
+
+### 8.5 放置易项
+
+完整：`magnets` `gaps` `dosufuwa`
+
+| key | 机制 |
+|---|---|
+| `magnets` | 骨牌区域空或一对 `+/-`；正交相邻不能同号；left/top=正号数，right/bottom=负号数 |
+| `gaps` | 每行每列两星；八邻不相接；盘外数字=两星之间空格数（不含星本身） |
+| `dosufuwa` | 每区一气球(1)一铅球(2)；铅球在盘底/黑格上/铅球上；气球在盘顶/黑格下/气球下 |
+
+暂缓：带多连块目录或复合机关的放置（见 §4.1）。
+
+### 8.6 路径I：数连
+
+完整：`numlin` — 端点 `cdeg==1` 且 `x=n`；其余格要么不经过（x=0, 度 0）要么度 2；邻接边推出同号；`cc_count(x, n)==1`。盘外边强制为 0。
+
+`hashi` 暂缓（见 §4.1）。
+
+### 8.7 分区易项
+
+完整：`fourcells` `fivecells` `meadows` `squarejam` `tatamibari` `tentaisho` `kramma` `aho` `domino-search` `lapaz` `compass` `sashigane` `snakepit` `wafusuma` `bdblock`
+
+| key | 机制 |
+|---|---|
+| `fourcells` / `fivecells` | `all_regions_size` + `c.border` 四边计数 |
+| `meadows` | 正方形 + 每区一黑圈 |
+| `squarejam` | 正方形 + 禁止四区共顶点 + 数字=边长 |
+| `tatamibari` | 长方形 + 每区一符号 + 禁止四区共顶点；`s` 1=宽>高 2=高>宽 3=正方形 |
+| `tentaisho` | 每区一圆点；绕该格心 180°。圆点只写在格子中心 |
+| `kramma` | 贯通横竖切割；每区至少一圈且同色 |
+| `aho` | 每区一数字=面积；`size%3==0` 则恰一个 2×2 缺一角（L），否则长方形 |
+| `domino-search` | 全区骨牌；`param("tiles")` 的每个无序数对恰出现一次 |
+| `lapaz` | 黑不相邻；白格骨牌；横向数字=该行黑数，竖向=该列黑数 |
+| `compass` | 每区一叉；`nu/nd/nl/nr` = 区内严格更上/下/左/右的格数 |
+| `sashigane` | 宽 1、恰两端点、恰一转弯；圈在转弯、箭在端点指向转弯 |
+| `snakepit` | 码牌邻区面积不同 + 蛇（宽 1、≥2 格、恰两端、无 2×2）；圈=端、灰≠端 |
+| `wafusuma` | 邻区面积不同；格线数字=两侧面积和且必须跨区 |
+| `bdblock` | 同数字同区、异数字异区、每区至少一数字；黑点顶点恰 3 条界且全部给出 |
+
+库追加（`regions.dsl`）：`region_width` / `region_height` / `regions_are_squares` / `no_four_meet` / `region_border_clue` / `region_deg` / `same_reg_dir` / `region_notch_count` / `region_end_count` / `region_above` 等方向计数。
+
+暂缓：形状目录、镜像、两色巧克力全等、斜线剖分等（见 §4.1）。

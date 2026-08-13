@@ -1,0 +1,48 @@
+{
+  "key": "wafusuma",
+  "en": "Wafusuma",
+  "zh": "和障",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得任意两个相邻的区域面积都不同。格线上圆圈里的数字必须介于两个不同区域之间，并表示这两个区域的面积之和。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "k",
+      "kind": "edge",
+      "type": "constant",
+      "doc": "两区面积和"
+    }
+  ],
+  "layers": [
+    {
+      "id": "sum",
+      "label": "面积和",
+      "element": "number",
+      "target": "edge",
+      "role": "input",
+      "var": "k",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

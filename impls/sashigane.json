@@ -1,0 +1,81 @@
+{
+  "key": "sashigane",
+  "en": "Sashigane",
+  "zh": "曲尺分割",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个宽度为一的L形区域。圆圈必须在所在区域内转弯的位置，而箭头则必须在区域的一端，指向转弯的位置。圆圈里的数字表示其所在区域的面积。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "转弯圆圈"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "端点箭头 0-3"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "区域面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "转弯",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "面积",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

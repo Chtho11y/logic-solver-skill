@@ -1,0 +1,70 @@
+{
+  "key": "lapaz",
+  "en": "La Paz",
+  "zh": "拉巴斯",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "涂黑一些格子，使得涂黑的格子之间不相邻，并将剩下的格子划分成1×2区域。数字格不能涂黑。在横向1×2区域中的数字表示与其同行的涂黑格个数，在竖向1×2区域中的数字表示与其同列的涂黑格个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 涂黑"
+    },
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "行列黑格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue",
+      "label": "黑格数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "shade",
+      "label": "涂黑",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#232733",
+        "2": "#7f8ea3"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

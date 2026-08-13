@@ -1,0 +1,55 @@
+{
+  "key": "gaps",
+  "en": "Gaps",
+  "zh": "空隙",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在一些格子里放置一颗星，使得每行和每列都分别有两颗星。任意两颗星不能放在互相接触的格子内。盘面外的数字表示此行或此列内两颗星之间的空格数（不包括两颗星本身）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 星"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "两星间距",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "stars",
+      "label": "星星",
+      "element": "star",
+      "target": "cell",
+      "role": "output",
+      "var": "x"
+    }
+  ],
+  "params": {
+    "defaults": {
+      "top": [],
+      "left": []
+    }
+  },
+  "notes": "每行每列两星，八邻域不相接。盘外数字不含两星本身。"
+}

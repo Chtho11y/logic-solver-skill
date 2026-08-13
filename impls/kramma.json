@@ -1,0 +1,50 @@
+{
+  "key": "kramma",
+  "en": "KaitoRamma",
+  "zh": "快刀乱麻",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，其中每一条分割线必须完全横平竖直，且两端都在盘面边界上。每个区域至少包含一个圆圈，而且所有同一区域的圆圈必须同色。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1=白圈 2=黑圈"
+    }
+  ],
+  "layers": [
+    {
+      "id": "circle",
+      "label": "圆圈",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#ffffff",
+        "2": "#232733",
+        "3": "#9aa4b2"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "分割线为贯通盘面的横平竖直线。"
+}

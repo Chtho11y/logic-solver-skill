@@ -1,0 +1,22 @@
+{
+  "puzzle": "tatamibari",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "2x3 横榻榻米",
+      "rows": 2,
+      "cols": 3,
+      "clues": {
+        "s": {
+          "0,1": 1
+        }
+      },
+      "answer": {
+        "c": [
+          "0 0 0",
+          "0 0 0"
+        ]
+      }
+    }
+  ]
+}

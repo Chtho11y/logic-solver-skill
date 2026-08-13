@@ -1,0 +1,71 @@
+{
+  "key": "magnets",
+  "en": "Magnets",
+  "zh": "磁铁",
+  "category": "放置",
+  "subcategory": "放置",
+  "rule": "在主盘面内一些两格的区域里放置一个加号和一个减号（每格一个符号），使得任意两个相邻的格子里不包含相同的符号。盘面外的数字表示此行或此列内加号或减号的个数。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        2
+      ],
+      "doc": "0=空 1=+ 2=-"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "outside",
+      "label": "正/负号个数",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "bottom",
+          "left",
+          "right"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "signs",
+      "label": "磁铁",
+      "element": "shade",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "1": "#c0392b",
+        "2": "#2980b9"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "top": [],
+      "bottom": [],
+      "left": [],
+      "right": []
+    }
+  },
+  "notes": "left/top = 正号个数；right/bottom = 负号个数。区域均为骨牌。"
+}

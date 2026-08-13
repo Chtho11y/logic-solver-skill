@@ -1,0 +1,11 @@
+{
+  "puzzle": "lapaz",
+  "rows": 3,
+  "cols": 3,
+  "title": "3x3 一黑",
+  "clues": {
+    "n": {
+      "0,0": 0
+    }
+  }
+}

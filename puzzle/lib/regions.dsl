@@ -136,3 +136,92 @@ def regions_are_rectangles(c):
     for w in slide(2, 2):
         for p in w:
             num_eq(c[w], at(c, p)) != 3
+
+def region_width(c, p):
+    # Cells of p's region that share p's row (equals the rectangle's width).
+    let total = 0
+    for q in cells():
+        if row_of(q) == row_of(p):
+            let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def region_height(c, p):
+    let total = 0
+    for q in cells():
+        if col_of(q) == col_of(p):
+            let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def regions_are_squares(c):
+    regions_are_rectangles(c)
+    for p in cells():
+        region_width(c, p) == region_height(c, p)
+
+def no_four_meet(c):
+    # No lattice vertex is a corner of four distinct regions (a 2x2 of 4 ids).
+    for w in slide(2, 2):
+        let shared = false
+        for p in w:
+            for q in w:
+                if before(p, q):
+                    let shared = shared or (at(c, p) == at(c, q))
+        shared
+
+def region_border_clue(c, k):
+    # 数字 = 此格四边中属于区域边界的边数（盘面外缘也算边界）
+    for p in clue_cells(k):
+        num_eq(c.border[edge_of(p)], 1) == at(k, p)
+
+def region_deg(c, p):
+    # Orthogonal neighbours that belong to the same solved region as p.
+    let total = 0
+    for q in adj4(p):
+        let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def same_reg_dir(c, p, d):
+    let q = step(p, d)
+    if q.size == 0:
+        return false
+    return at(c, q) == at(c, p)
+
+def region_notch_count(c, p):
+    # 2x2 windows that contain exactly three cells of p's region (concave corners).
+    let total = 0
+    for w in slide(2, 2):
+        let total = total + b2i(num_eq(c[w], at(c, p)) == 3)
+    return total
+
+def region_end_count(c, p):
+    let total = 0
+    for q in cells():
+        let total = total + b2i(at(c, q) == at(c, p) and region_deg(c, q) == 1)
+    return total
+
+def region_above(c, p):
+    let total = 0
+    for q in cells():
+        if row_of(q) < row_of(p):
+            let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def region_below(c, p):
+    let total = 0
+    for q in cells():
+        if row_of(q) > row_of(p):
+            let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def region_left_of(c, p):
+    let total = 0
+    for q in cells():
+        if col_of(q) < col_of(p):
+            let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def region_right_of(c, p):
+    let total = 0
+    for q in cells():
+        if col_of(q) > col_of(p):
+            let total = total + b2i(at(c, q) == at(c, p))
+    return total

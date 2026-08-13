@@ -1,0 +1,49 @@
+{
+  "key": "tentaisho",
+  "en": "Galaxies",
+  "zh": "星系",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域包含恰好一个圆点。圆点不能在区域边界上。所有区域必须满足180°旋转对称，其中圆点必须在区域的对称中心。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "o",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "星系中心（格心）"
+    }
+  ],
+  "layers": [
+    {
+      "id": "dot",
+      "label": "圆点",
+      "element": "circle",
+      "target": "cell",
+      "role": "input",
+      "var": "o",
+      "palette": {
+        "1": "#232733",
+        "2": "#232733"
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "圆点写在格子中心；格线/格点上的圆心未建模。"
+}

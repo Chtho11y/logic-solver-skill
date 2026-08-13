@@ -1,0 +1,12 @@
+{
+  "puzzle": "wafusuma",
+  "rows": 2,
+  "cols": 2,
+  "title": "2x2 三加一",
+  "clues": {
+    "k": {
+      "H,1,1": 4,
+      "V,1,1": 4
+    }
+  }
+}

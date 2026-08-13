@@ -1,0 +1,113 @@
+{
+  "key": "compass",
+  "en": "Compass",
+  "zh": "指南针",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个区域，使得每个区域恰好包含一个有叉的格子（代表指南针）。指南针里上/下/左/右侧的数字表示此区域内严格比指南针更加靠上/下/左/右的格子数（无视垂直方向的偏差，比如说“更加靠上”等于“处于更高的一行”）。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "k",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 指南针"
+    },
+    {
+      "name": "nu",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "上方格数"
+    },
+    {
+      "name": "nd",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "下方格数"
+    },
+    {
+      "name": "nl",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "左方格数"
+    },
+    {
+      "name": "nr",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "右方格数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "mark",
+      "label": "指南针",
+      "element": "cross",
+      "target": "cell",
+      "role": "input",
+      "var": "k"
+    },
+    {
+      "id": "nu",
+      "label": "上",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "nu",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "nd",
+      "label": "下",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "nd",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "nl",
+      "label": "左",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "nl",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "nr",
+      "label": "右",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "nr",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

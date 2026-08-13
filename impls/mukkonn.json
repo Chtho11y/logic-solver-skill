@@ -1,0 +1,66 @@
+{
+  "key": "mukkonn",
+  "en": "Mukkonn Enn",
+  "zh": "四向回路",
+  "category": "回路II",
+  "subcategory": "",
+  "rule": "画一条横平竖直地经过所有格子中心的回路。当回路从带数字的三角形离开一个单元格时，它必须沿直线前进该数字所指示的单元格数，然后转弯。未被回路经过的数字没有意义。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "e",
+      "kind": "edge",
+      "type": "normal",
+      "domain": [
+        0,
+        1
+      ],
+      "doc": "1 = 回路"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "直行格数"
+    },
+    {
+      "name": "d",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "三角形方向"
+    }
+  ],
+  "layers": [
+    {
+      "id": "arrow",
+      "label": "箭头",
+      "element": "arrow",
+      "target": "cell",
+      "role": "input",
+      "var": "d"
+    },
+    {
+      "id": "clue",
+      "label": "数字提示",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "loop",
+      "label": "回路",
+      "element": "link",
+      "target": "edge",
+      "role": "output",
+      "var": "e"
+    }
+  ],
+  "params": {},
+  "notes": "每格至多一个三角形（d+n）。"
+}
