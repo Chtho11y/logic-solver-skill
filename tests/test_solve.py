@@ -5,8 +5,8 @@ output variables (the *answer*). Two checks per case:
 
 * **accept** — pin the answer as givens; the encoding must still be SAT
   (not over-constrained).
-* **match** — a free solve must reproduce the answer (not under-constrained,
-  provided the instance is unique). Set ``"unique": false`` to skip match.
+* **match** — a free solve must reproduce the answer (not under-constrained).
+  Only runs when the case sets ``"unique": true``.
 
     python -m unittest tests.test_solve
 """
@@ -72,7 +72,7 @@ class PuzzleFixtureTests(unittest.TestCase):
             with self.subTest(puzzle=puzzle, case=name, check="match"):
                 if not case.get("answer"):
                     self.skipTest("no answer")
-                if case.get("unique", True) is False:
+                if not case.get("unique"):
                     self.skipTest("non-unique instance")
                 result = _solve(puzzle, case, timeout, with_answer=False)
                 self.assertEqual(

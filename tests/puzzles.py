@@ -11,7 +11,8 @@ A fixture file looks like::
           "rows": 5,
           "cols": 5,
           "clues": {"n": ["2 . 2", ". . .", "2 . 2"]},
-          "answer": {"x": [".#.", "#.#", ".#."]}
+          "answer": {"x": [".#.", "#.#", ".#."]},
+          "unique": true
         }
       ]
     }
