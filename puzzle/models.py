@@ -58,6 +58,11 @@ class VarType(Enum):
         raise ValueError(f"unknown variable type {text!r} (use normal/cc/constant)")
 
 
+# P1 step 1: adapters land with this False (Int encoding unchanged).
+# P1 step 2 flips it so domain-(0,1) NORMAL vars become z3.Bool.
+ENABLE_BOOLEAN_VARS = True
+
+
 @dataclass
 class Variable:
     """One solvable (or constant) quantity per point of ``kind``."""
@@ -70,6 +75,18 @@ class Variable:
 
     def with_givens(self, givens: dict[Point, int]) -> "Variable":
         return Variable(self.name, self.kind, self.var_type, self.domain, dict(givens))
+
+    @property
+    def is_boolean(self) -> bool:
+        """Whether this variable can be stored as ``z3.Bool``.
+
+        P1 step 1 keeps the flag off so the adapter layer can land with a
+        byte-identical baseline. Flip :data:`ENABLE_BOOLEAN_VARS` to enable.
+        """
+
+        if not ENABLE_BOOLEAN_VARS:
+            return False
+        return self.var_type is VarType.NORMAL and self.domain == (0, 1)
 
 
 @dataclass(frozen=True)

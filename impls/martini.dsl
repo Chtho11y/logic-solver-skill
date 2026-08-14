@@ -18,8 +18,4 @@ for p in clue_cells(o):
 let ids = cc_id(x)
 for p in clue_cells(n):
     is_white(x, p)
-    let total = 0
-    for q in clue_cells(o):
-        if at(o, q) == 1:
-            let total = total + b2i(at(ids, p) == at(ids, q))
-    total == at(n, p)
+    count_where(clue_cells(o), fn (q) -> at(o, q) == 1 and at(ids, p) == at(ids, q)) == at(n, p)

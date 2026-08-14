@@ -19,18 +19,7 @@ for p in clue_cells(o):
     for q in clue_cells(o):
         if before(p, q):
             if row_of(p) == row_of(q) or col_of(p) == col_of(q):
-                let blocked = 0
-                for r in clue_cells(o):
-                    if row_of(p) == row_of(q):
-                        if row_of(r) == row_of(p):
-                            if (col_of(p) - col_of(r)) * (col_of(q) - col_of(r)) < 0:
-                                let blocked = blocked + b2i(at(x, r) > at(x, p) and at(x, p) + 1 == at(x, q))
-                                let blocked = blocked + b2i(at(x, r) > at(x, q) and at(x, q) + 1 == at(x, p))
-                    if col_of(p) == col_of(q):
-                        if col_of(r) == col_of(p):
-                            if (row_of(p) - row_of(r)) * (row_of(q) - row_of(r)) < 0:
-                                let blocked = blocked + b2i(at(x, r) > at(x, p) and at(x, p) + 1 == at(x, q))
-                                let blocked = blocked + b2i(at(x, r) > at(x, q) and at(x, q) + 1 == at(x, p))
+                let blocked = count_where(clue_cells(o), fn (r) -> ((row_of(p) == row_of(q) and row_of(r) == row_of(p) and (col_of(p) - col_of(r)) * (col_of(q) - col_of(r)) < 0) or (col_of(p) == col_of(q) and col_of(r) == col_of(p) and (row_of(p) - row_of(r)) * (row_of(q) - row_of(r)) < 0)) and ((at(x, r) > at(x, p) and at(x, p) + 1 == at(x, q)) or (at(x, r) > at(x, q) and at(x, q) + 1 == at(x, p))))
                 at(x, p) + 1 == at(x, q) => blocked == 0
                 at(x, q) + 1 == at(x, p) => blocked == 0
             else:

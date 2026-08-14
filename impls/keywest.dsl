@@ -22,9 +22,7 @@ for p in cells():
             else:
                 link_between(e, p, q) == 0
 
-let npos = 0
-for p in clue_cells(o):
-    let npos = npos + b2i(at(x, p) > 0)
+let npos = count_where(clue_cells(o), fn (p) -> at(x, p) > 0)
 npos != 0 => connect_links(e)
 for p in cells():
     npos == 0 => cdeg(e, p) == 0

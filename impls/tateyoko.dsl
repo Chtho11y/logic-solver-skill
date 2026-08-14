@@ -10,49 +10,29 @@ for p in cells():
         at(x, p) >= 1
         at(x, p) <= 2
 
-def hlen(p):
+def run_len(p, axis):
+    # Prefix machine along both ends of a row (axis 0, value 1) or column (axis 1, value 2).
+    let v = ite(axis == 0, 1, 2)
     let n = 1
     let alive = true
-    for q in dir(p, LEFT):
-        let n = n + b2i(alive and at(x, q) == 1)
-        let alive = alive and at(x, q) == 1
+    for q in line_from(p, ite(axis == 0, LEFT, UP)):
+        let n = n + b2i(alive and at(x, q) == v)
+        let alive = alive and at(x, q) == v
     let alive2 = true
-    for q in dir(p, RIGHT):
-        let n = n + b2i(alive2 and at(x, q) == 1)
-        let alive2 = alive2 and at(x, q) == 1
-    return n
-
-def vlen(p):
-    let n = 1
-    let alive = true
-    for q in dir(p, UP):
-        let n = n + b2i(alive and at(x, q) == 2)
-        let alive = alive and at(x, q) == 2
-    let alive2 = true
-    for q in dir(p, DOWN):
-        let n = n + b2i(alive2 and at(x, q) == 2)
-        let alive2 = alive2 and at(x, q) == 2
+    for q in line_from(p, ite(axis == 0, RIGHT, DOWN)):
+        let n = n + b2i(alive2 and at(x, q) == v)
+        let alive2 = alive2 and at(x, q) == v
     return n
 
 for p in clue_cells(n):
     if has_value(b, p):
         let k = 0
-        let q = step(p, LEFT)
-        if q.size > 0:
-            let k = k + b2i(at(x, q) == 1)
-        let q = step(p, RIGHT)
-        if q.size > 0:
-            let k = k + b2i(at(x, q) == 1)
-        let q = step(p, UP)
-        if q.size > 0:
-            let k = k + b2i(at(x, q) == 2)
-        let q = step(p, DOWN)
-        if q.size > 0:
-            let k = k + b2i(at(x, q) == 2)
+        for d in dirs4:
+            let k = k + b2i(nb(x, p, d) == ite(is_horizontal(d), 1, 2))
         k == at(n, p)
     else:
-        at(x, p) == 1 => hlen(p) == at(n, p)
-        at(x, p) == 2 => vlen(p) == at(n, p)
+        at(x, p) == 1 => run_len(p, 0) == at(n, p)
+        at(x, p) == 2 => run_len(p, 1) == at(n, p)
 
 for p in clue_cells(n):
     for q in clue_cells(n):

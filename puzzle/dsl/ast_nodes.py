@@ -77,7 +77,15 @@ class Binary(Node):
     right: "Expr" = None  # type: ignore[assignment]
 
 
-Expr = Union[Num, Bool, Str, Name, ListLit, Index, Member, Call, Unary, Binary]
+@dataclass
+class Lambda(Node):
+    """``fn (a, b) -> expr`` — anonymous function with a captured scope."""
+
+    params: list[str] = field(default_factory=list)
+    body: "Expr" = None  # type: ignore[assignment]
+
+
+Expr = Union[Num, Bool, Str, Name, ListLit, Index, Member, Call, Unary, Binary, Lambda]
 
 
 # -- statements ---------------------------------------------------------------
@@ -139,7 +147,23 @@ class ImportStmt(Node):
     path: str = ""
 
 
-Stmt = Union[LetStmt, ExprStmt, IfStmt, ForStmt, DefStmt, ReturnStmt, ImportStmt]
+@dataclass
+class MetaStmt(Node):
+    """``meta: body`` -- sequential compile-time solving (see META_SOLVE_PLAN)."""
+
+    body: list["Stmt"] = field(default_factory=list)
+
+
+@dataclass
+class ScopeStmt(Node):
+    """``scope: body`` -- solver push/pop; does not introduce a DSL scope."""
+
+    body: list["Stmt"] = field(default_factory=list)
+
+
+Stmt = Union[
+    LetStmt, ExprStmt, IfStmt, ForStmt, DefStmt, ReturnStmt, ImportStmt, MetaStmt, ScopeStmt
+]
 
 
 @dataclass

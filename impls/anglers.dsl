@@ -17,17 +17,8 @@ for p in cells():
 for p in clue_cells(n):
     at(x, p) == cell_idx(p) + 1
     cc_count(x, at(x, p)) == 1
-    let fishes = 0
-    let sz = 0
-    for q in cells():
-        let sz = sz + b2i(at(x, q) == at(x, p))
-        if has_value(o, q):
-            let fishes = fishes + b2i(at(x, q) == at(x, p))
-    fishes == 1
-    sz == at(n, p)
+    count_where(clue_cells(o), fn (q) -> at(x, q) == at(x, p)) == 1
+    count_where(cells(), fn (q) -> at(x, q) == at(x, p)) == at(n, p)
 
 for p in clue_cells(o):
-    let nums = 0
-    for q in clue_cells(n):
-        let nums = nums + b2i(at(x, p) == at(x, q))
-    nums == 1
+    count_where(clue_cells(n), fn (q) -> at(x, p) == at(x, q)) == 1

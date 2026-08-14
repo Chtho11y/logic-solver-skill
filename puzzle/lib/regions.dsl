@@ -36,11 +36,7 @@ def cross_region_pairs(f):
 
 def in_region_count(x, p, v):
     # How many orthogonal neighbours of `p` inside p's own region hold `v`.
-    let total = 0
-    for q in adj4(p):
-        if same_region(p, q):
-            let total = total + b2i(at(x, q) == v)
-    return total
+    return count_where(adj4(p), fn (q) -> same_region(p, q) and at(x, q) == v)
 
 def ordered_pairs_in(x, reg, v):
     # Ordered count of adjacent (p, q) pairs inside `reg` that both hold `v`;
@@ -82,10 +78,7 @@ def span_stops_at_3(x, p, d):
 
 def count_in_region(f, reg):
     # Sum of `f(p)` (a 0/1 expression) over the cells of `reg`.
-    let total = 0
-    for p in reg:
-        let total = total + b2i(f(p))
-    return total
+    return count_where(reg, fn (p) -> f(p) == 1)
 
 
 # -- solved partitions (CC variables) ----------------------------------------
@@ -118,10 +111,7 @@ def one_clue_per_region(c, k):
         num_eq_cells_with_clue(c, k, p) == 1
 
 def num_eq_cells_with_clue(c, k, p):
-    let total = 0
-    for q in clue_cells(k):
-        let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(clue_cells(k), fn (q) -> at(c, q) == at(c, p))
 
 def at_most_one_clue_per_region(c, k):
     for p in cells():
@@ -139,18 +129,10 @@ def regions_are_rectangles(c):
 
 def region_width(c, p):
     # Cells of p's region that share p's row (equals the rectangle's width).
-    let total = 0
-    for q in cells():
-        if row_of(q) == row_of(p):
-            let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(cells(), fn (q) -> row_of(q) == row_of(p) and at(c, q) == at(c, p))
 
 def region_height(c, p):
-    let total = 0
-    for q in cells():
-        if col_of(q) == col_of(p):
-            let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(cells(), fn (q) -> col_of(q) == col_of(p) and at(c, q) == at(c, p))
 
 def regions_are_squares(c):
     regions_are_rectangles(c)
@@ -174,54 +156,28 @@ def region_border_clue(c, k):
 
 def region_deg(c, p):
     # Orthogonal neighbours that belong to the same solved region as p.
-    let total = 0
-    for q in adj4(p):
-        let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(adj4(p), fn (q) -> at(c, q) == at(c, p))
 
 def same_reg_dir(c, p, d):
-    let q = step(p, d)
-    if q.size == 0:
+    if not in_grid(p, dr_of(d), dc_of(d)):
         return false
-    return at(c, q) == at(c, p)
+    return at(c, step(p, d)) == at(c, p)
 
 def region_notch_count(c, p):
     # 2x2 windows that contain exactly three cells of p's region (concave corners).
-    let total = 0
-    for w in slide(2, 2):
-        let total = total + b2i(num_eq(c[w], at(c, p)) == 3)
-    return total
+    return count_where(slide(2, 2), fn (w) -> num_eq(c[w], at(c, p)) == 3)
 
 def region_end_count(c, p):
-    let total = 0
-    for q in cells():
-        let total = total + b2i(at(c, q) == at(c, p) and region_deg(c, q) == 1)
-    return total
+    return count_where(cells(), fn (q) -> at(c, q) == at(c, p) and region_deg(c, q) == 1)
 
 def region_above(c, p):
-    let total = 0
-    for q in cells():
-        if row_of(q) < row_of(p):
-            let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(cells(), fn (q) -> row_of(q) < row_of(p) and at(c, q) == at(c, p))
 
 def region_below(c, p):
-    let total = 0
-    for q in cells():
-        if row_of(q) > row_of(p):
-            let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(cells(), fn (q) -> row_of(q) > row_of(p) and at(c, q) == at(c, p))
 
 def region_left_of(c, p):
-    let total = 0
-    for q in cells():
-        if col_of(q) < col_of(p):
-            let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(cells(), fn (q) -> col_of(q) < col_of(p) and at(c, q) == at(c, p))
 
 def region_right_of(c, p):
-    let total = 0
-    for q in cells():
-        if col_of(q) > col_of(p):
-            let total = total + b2i(at(c, q) == at(c, p))
-    return total
+    return count_where(cells(), fn (q) -> col_of(q) > col_of(p) and at(c, q) == at(c, p))

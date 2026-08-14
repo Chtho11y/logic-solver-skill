@@ -21,5 +21,5 @@ for p in clue_cells(n):
     if at(n, p) == 1:
         for d in [UP, DOWN, LEFT, RIGHT]:
             let q = step(p, d)
-            if q.size != 0:
+            if in_grid(p, dr_of(d), dc_of(d)):
                 turns(e, p) and link_dir(e, p, d) == 1 => not turns(e, q)

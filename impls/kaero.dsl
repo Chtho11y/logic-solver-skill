@@ -16,20 +16,11 @@ for p in cells():
 
 for p in clue_cells(n):
     cc_count(x, at(x, p)) == 1
-    let tips = 0
-    for q in cells():
-        let tips = tips + b2i(at(x, q) == at(x, p) and cdeg(e, q) <= 1)
+    let tips = count_where(cells(), fn (q) -> at(x, q) == at(x, p) and cdeg(e, q) <= 1)
     (cdeg(e, p) == 0 and tips == 1) or (cdeg(e, p) == 1 and tips == 2)
 
 for q in cells():
-    let ty = 0
-    for p in clue_cells(n):
-        let is_dest = false
-        if row_of(q) == row_of(p) and col_of(q) == col_of(p):
-            let is_dest = cdeg(e, p) == 0
-        else:
-            let is_dest = cdeg(e, p) == 1 and at(x, q) == at(x, p) and cdeg(e, q) == 1
-        let ty = ty + b2i(is_dest) * at(n, p)
+    let ty = sum_where(clue_cells(n), fn (p) -> ite(row_of(q) == row_of(p) and col_of(q) == col_of(p), cdeg(e, p) == 0, cdeg(e, p) == 1 and at(x, q) == at(x, p) and cdeg(e, q) == 1), fn (p) -> at(n, p))
     at(f, q) == ty
 
 for p in cells():
@@ -41,7 +32,5 @@ for p in cells():
                 at(f, p) != 0 and at(f, q) != 0 => at(f, p) != at(f, q)
 
 for reg in regions:
-    let any = 0
-    for p in reg:
-        let any = any + b2i(at(f, p) != 0)
+    let any = count_where(reg, fn (p) -> at(f, p) != 0)
     any >= 1

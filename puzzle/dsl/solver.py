@@ -48,6 +48,7 @@ class SolveResult:
     error_line: int | None = None
     # Debug lines emitted by print() during compilation.
     debug: list[str] = field(default_factory=list)
+    witnesses: list[tuple[str, int]] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -73,13 +74,15 @@ def solve(
     params: dict | None = None,
     loader: Callable[[str], str] | None = None,
     timeout_ms: int | None = None,
+    run_meta: bool = False,
 ) -> SolveResult:
     """Compile ``source`` and solve it; return a structured result.
 
     ``logic`` selects the z3 backend: ``"AUTO"`` (default) uses the general
     ``z3.Solver()``; any other value is passed to ``z3.SolverFor(logic)`` to
     pick a specialized logic engine. ``params`` feeds ``param("name")`` and
-    ``loader`` resolves ``import "module"``.
+    ``loader`` resolves ``import "module"``. ``run_meta`` executes ``meta:``
+    blocks during compilation (default off).
     """
 
     try:
@@ -91,15 +94,29 @@ def solve(
         )
 
     from .compiler import compile_source
+    from .session import Z3Session
 
+    session = Z3Session(z3, timeout_ms=timeout_ms, seed=1) if run_meta else None
     try:
-        compiled = compile_source(source, grid, variables, regions, z3, params, loader)
+        compiled = compile_source(
+            source,
+            grid,
+            variables,
+            regions,
+            z3,
+            params,
+            loader,
+            session=session,
+            run_meta=run_meta,
+            timeout_ms=timeout_ms,
+        )
     except DSLError as exc:
         return SolveResult(STATUS_ERROR, str(exc), error_line=exc.line)
     except Exception as exc:  # defensive: never crash the UI thread
         return SolveResult(STATUS_ERROR, f"internal compile error: {exc}")
 
     debug = list(compiled.debug)
+    witnesses = list(compiled.witnesses)
     if logic and logic != "AUTO":
         try:
             solver = z3.SolverFor(logic)
@@ -130,6 +147,9 @@ def solve(
                     out[point] = int(z3var)
                     continue
                 evaluated = model.eval(z3var, model_completion=True)
+                if z3.is_bool(evaluated) or (z3.is_expr(z3var) and z3.is_bool(z3var)):
+                    out[point] = 1 if z3.is_true(evaluated) else 0
+                    continue
                 try:
                     out[point] = int(evaluated.as_long())
                 except Exception:
@@ -149,14 +169,25 @@ def solve(
             values=values,
             kinds=kinds,
             debug=debug,
+            witnesses=witnesses,
         )
 
     if check == z3.unsat:
         return SolveResult(
-            STATUS_UNSAT, "Unsatisfiable — no model exists.", constraint_count=count, debug=debug
+            STATUS_UNSAT,
+            "Unsatisfiable — no model exists.",
+            constraint_count=count,
+            debug=debug,
+            witnesses=witnesses,
         )
 
-    return SolveResult(STATUS_UNKNOWN, "Solver returned unknown.", constraint_count=count, debug=debug)
+    return SolveResult(
+        STATUS_UNKNOWN,
+        "Solver returned unknown.",
+        constraint_count=count,
+        debug=debug,
+        witnesses=witnesses,
+    )
 
 
 def compile_only(
@@ -226,6 +257,10 @@ def format_model(result: SolveResult, max_points: int = 200) -> str:
             lines.append(f"  {_format_point(point)} = {point_values[point]}")
         if len(ordered) > max_points:
             lines.append(f"  … ({len(ordered) - max_points} more)")
+    if result.witnesses:
+        lines.append("\nwitnesses:")
+        for tag, value in result.witnesses:
+            lines.append(f"  {tag} = {value}")
     return "\n".join(lines) + _format_debug(result.debug)
 
 

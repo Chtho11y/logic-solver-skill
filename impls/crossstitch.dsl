@@ -5,21 +5,20 @@
 
 import "loops2"
 
+def stroke_at_corner(x, p, v):
+    let backslash = (row_of(v) == row_of(p) and col_of(v) == col_of(p)) or (row_of(v) == row_of(p) + 1 and col_of(v) == col_of(p) + 1)
+    let slash = (row_of(v) == row_of(p) and col_of(v) == col_of(p) + 1) or (row_of(v) == row_of(p) + 1 and col_of(v) == col_of(p))
+    return (backslash and (at(x, p) == 1 or at(x, p) == 3)) or (slash and (at(x, p) == 2 or at(x, p) == 3))
+
+def corner_degree(x, v):
+    return count_where(cell_of(v), fn (p) -> stroke_at_corner(x, p, v))
+
 for p in cells():
     if marked(w, p):
         at(x, p) == 0
 
 for v in corners():
-    let d = 0
-    for p in cell_of(v):
-        if row_of(v) == row_of(p) and col_of(v) == col_of(p):
-            let d = d + b2i(at(x, p) == 1 or at(x, p) == 3)
-        if row_of(v) == row_of(p) + 1 and col_of(v) == col_of(p) + 1:
-            let d = d + b2i(at(x, p) == 1 or at(x, p) == 3)
-        if row_of(v) == row_of(p) and col_of(v) == col_of(p) + 1:
-            let d = d + b2i(at(x, p) == 2 or at(x, p) == 3)
-        if row_of(v) == row_of(p) + 1 and col_of(v) == col_of(p):
-            let d = d + b2i(at(x, p) == 2 or at(x, p) == 3)
+    let d = corner_degree(x, v)
     d == 0 or d == 2
 
 for p in cells():
@@ -37,17 +36,4 @@ for p in clue_cells(n):
             let total = total + b2i(alive and at(x, q) == 3)
         total == at(n, p)
     else:
-        let used = 0
-        for v in corner_of(p):
-            let dd = 0
-            for q in cell_of(v):
-                if row_of(v) == row_of(q) and col_of(v) == col_of(q):
-                    let dd = dd + b2i(at(x, q) == 1 or at(x, q) == 3)
-                if row_of(v) == row_of(q) + 1 and col_of(v) == col_of(q) + 1:
-                    let dd = dd + b2i(at(x, q) == 1 or at(x, q) == 3)
-                if row_of(v) == row_of(q) and col_of(v) == col_of(q) + 1:
-                    let dd = dd + b2i(at(x, q) == 2 or at(x, q) == 3)
-                if row_of(v) == row_of(q) + 1 and col_of(v) == col_of(q):
-                    let dd = dd + b2i(at(x, q) == 2 or at(x, q) == 3)
-            let used = used + b2i(dd == 2)
-        used == at(n, p)
+        count_where(corner_of(p), fn (v) -> corner_degree(x, v) == 2) == at(n, p)

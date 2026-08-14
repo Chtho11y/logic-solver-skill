@@ -20,21 +20,9 @@ for v in corners():
             deg == 4
     else:
         let near = false
-        let u = shift(v, -1, 0)
-        if u.size == 1:
-            if has_value(o, u):
-                let near = true
-        let u = shift(v, 1, 0)
-        if u.size == 1:
-            if has_value(o, u):
-                let near = true
-        let u = shift(v, 0, -1)
-        if u.size == 1:
-            if has_value(o, u):
-                let near = true
-        let u = shift(v, 0, 1)
-        if u.size == 1:
-            if has_value(o, u):
-                let near = true
+        for d in dirs4:
+            if in_grid(v, dr_of(d), dc_of(d)):
+                if has_value(o, shift(v, dr_of(d), dc_of(d))):
+                    let near = true
         if near:
             deg != 3 and deg != 4

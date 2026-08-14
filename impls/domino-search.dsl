@@ -11,8 +11,5 @@ if has_param("tiles"):
             if a <= b:
                 let cnt = 0
                 for p in cells():
-                    for q in adj4(p):
-                        if before(p, q):
-                            let match = (at(n, p) == a and at(n, q) == b) or (at(n, p) == b and at(n, q) == a)
-                            let cnt = cnt + b2i(at(c, p) == at(c, q) and match)
+                    let cnt = cnt + count_where(adj4(p), fn (q) -> before(p, q) and at(c, p) == at(c, q) and ((at(n, p) == a and at(n, q) == b) or (at(n, p) == b and at(n, q) == a)))
                 cnt == 1

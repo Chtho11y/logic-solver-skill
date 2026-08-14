@@ -7,20 +7,18 @@ for p in cells():
     at(a, p) == 8 or at(a, p) <= 3
 
 def h_pair(p, q):
-    let mid_arr = 0
+    let mid_arr = count_where(row(row_of(p)), fn (s) -> col_of(p) < col_of(s) and col_of(s) < col_of(q) and at(a, s) != 8)
     let gap = 0
     for s in row(row_of(p)):
         if col_of(p) < col_of(s) and col_of(s) < col_of(q):
-            let mid_arr = mid_arr + b2i(at(a, s) != 8)
             let gap = gap + 1
     return b2i(at(a, p) == RIGHT and at(a, q) == LEFT and mid_arr == 0 and gap >= 1)
 
 def v_pair(p, q):
-    let mid_arr = 0
+    let mid_arr = count_where(col(col_of(p)), fn (s) -> row_of(p) < row_of(s) and row_of(s) < row_of(q) and at(a, s) != 8)
     let gap = 0
     for s in col(col_of(p)):
         if row_of(p) < row_of(s) and row_of(s) < row_of(q):
-            let mid_arr = mid_arr + b2i(at(a, s) != 8)
             let gap = gap + 1
     return b2i(at(a, p) == DOWN and at(a, q) == UP and mid_arr == 0 and gap >= 1)
 

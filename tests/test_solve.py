@@ -25,6 +25,14 @@ from puzzle.runner import solve_instance
 from puzzle.spec import Instance, load_spec
 
 from tests.puzzles import expected_values, instance_payload, iter_cases
+from tools.baseline import (
+    instance_for,
+    iter_corruptions,
+    pin_assignment,
+    unencoded_clues,
+    _output_var_names,
+)
+from tools.uniqueness import uniqueness_program
 
 
 def _solve(puzzle: str, case: dict, timeout_ms: int, *, with_answer: bool = False):
@@ -91,6 +99,94 @@ class PuzzleFixtureTests(unittest.TestCase):
                             f"expected:\n{_dump(want, rows, cols)}\n"
                             f"got:\n{_dump(actual, rows, cols)}"
                         )
+
+
+class PuzzleUniqueTests(unittest.TestCase):
+    def test_unique_flag_is_unique(self) -> None:
+        for puzzle, case, timeout in iter_cases():
+            name = case.get("name", "")
+            with self.subTest(puzzle=puzzle, case=name, check="unique"):
+                if not case.get("unique"):
+                    self.skipTest("unique not declared")
+                if not case.get("answer"):
+                    self.skipTest("no answer")
+                if unencoded_clues(puzzle):
+                    self.skipTest("partial encoding")
+                spec = load_spec(puzzle)
+                inst = Instance.from_json(instance_payload(puzzle, case, with_answer=False))
+                names = _output_var_names(spec)
+                if not names:
+                    self.skipTest("no output variables")
+                source = uniqueness_program(spec.source, names)
+                result = solve_instance(
+                    spec, inst, timeout_ms=timeout, source=source, run_meta=True
+                )
+                self.assertEqual(
+                    result["status"],
+                    "sat",
+                    f"{puzzle}/{name} uniqueness: "
+                    f"{result.get('message', '')[:200]}",
+                )
+
+
+# P0-5: a complete but wrong assignment must be UNSAT. Complements the
+# uniqueness check (PuzzleUniqueTests / tests.test_meta). Partial encodings
+# (nonempty unencodedClues) warn instead of failing.
+REJECT_KEYS = (
+    "nurikabe",
+    "hitori",
+    "slither",
+    "sudoku",
+    "fillomino",
+    "masyu",
+    "akari",
+    "starbattle",
+    "yajilin",
+    "kurodoko",
+    "context",
+    "shikaku",
+)
+
+
+class PuzzleRejectTests(unittest.TestCase):
+    def test_wrong_answer_is_rejected(self) -> None:
+        timeout = int(os.environ.get("PUZZLE_TIMEOUT_MS", "120000"))
+        for puzzle in REJECT_KEYS:
+            with self.subTest(puzzle=puzzle, check="reject"):
+                spec = load_spec(puzzle)
+                instance, case, _source = instance_for(puzzle)
+                if instance is None:
+                    self.skipTest("no sample or fixture")
+                if case is not None and case.get("answer"):
+                    assignment = expected_values(case)
+                else:
+                    result = solve_instance(spec, instance, timeout_ms=timeout)
+                    self.assertEqual(
+                        result["status"],
+                        "sat",
+                        f"{puzzle} free-solve {result['status']}: "
+                        f"{result.get('message', '')[:200]}",
+                    )
+                    assignment = result.get("values") or {}
+                last = "none"
+                detail = "no flippable output cell"
+                for values, name, key, old, new in iter_corruptions(spec, assignment):
+                    pinned = pin_assignment(instance, spec, values)
+                    rejected = solve_instance(spec, pinned, timeout_ms=timeout)
+                    last = rejected["status"]
+                    detail = f"flipped {name}[{key}] {old}->{new}"
+                    if last == "unsat":
+                        break
+                else:
+                    if last == "none":
+                        self.skipTest(detail)
+                    if unencoded_clues(puzzle):
+                        print(f"WARNING {puzzle} reject stayed {last} ({detail})")
+                        continue
+                    self.fail(
+                        f"{puzzle} accepted every one-cell corruption "
+                        f"(last {last}, {detail})"
+                    )
 
 
 if __name__ == "__main__":

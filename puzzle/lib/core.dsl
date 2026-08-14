@@ -70,11 +70,11 @@ def no_diag_adjacent(x, v):
 
 def connected(x, v):
     # All cells holding `v` form (at most) one orthogonally connected group.
-    return cc_count(x, v) <= 1
+    return is_connected(x, v)
 
 def connected8(x, v):
     # ... one diagonally connected group.
-    return cc8_count(x, v) <= 1
+    return is_connected8(x, v)
 
 def group_count(x, v, n):
     return cc_count(x, v) == n
@@ -106,11 +106,5 @@ def before(p, q):
 
 def step(p, d):
     # The neighbour of `p` in direction d (UP/DOWN/LEFT/RIGHT); empty at the
-    # board edge, so guard with `.size == 0`.
-    if d == UP:
-        return shift(p, -1, 0)
-    if d == DOWN:
-        return shift(p, 1, 0)
-    if d == LEFT:
-        return shift(p, 0, -1)
-    return shift(p, 0, 1)
+    # board edge, so guard with `in_grid` / `.size == 0`.
+    return shift(p, dr_of(d), dc_of(d))

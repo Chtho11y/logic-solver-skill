@@ -10,16 +10,13 @@ for p in cells():
 
 for p in cells():
     if is_root(c, p):
-        let blocks = 0
-        for reg in regions:
-            let here = false
-            for q in reg:
-                let here = here or (at(c, q) == at(c, p))
-            let blocks = blocks + b2i(here)
-        blocks == 2
+        count_where(regions, fn (reg) -> block_in(c, p, reg)) == 2
         region_notch_count(c, p) >= 1
 
 for p in cells():
     for q in adj4(p):
         if before(p, q):
             at(c, p) != at(c, q) and at(c.size, p) == at(c.size, q) => not freely_congruent(c, p, q)
+
+def block_in(c, p, reg):
+    return any_where(reg, fn (q) -> at(c, q) == at(c, p))

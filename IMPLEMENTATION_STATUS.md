@@ -216,13 +216,53 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 ### 已知遗留问题
 
-- 部分实现的条目**不具备唯一解**；作为解题器不会漏解，作为出题器会有多解。
-- `verify.py` 只验证「样例可满足」，**尚未**验证「解唯一」或「已知真题得到已知解」。
 - 基线 46 条仍未纳入本轮审计。
+- 唯一性判定已落地（见 §7）。`verify.py` 会报告 unique/multiple（`unencodedClues` 非空则跳过，多解不视为 FAIL）。`tests/cases` 仅在 `"unique": true` 时强制唯一；**不要**批量打开该字段。
 
 ---
 
-## 7. 后续建议
+## 7. 唯一性现状（PM-4）
+
+生成：`python -u -m tools.uniqueness`（超时 30s/次求解，z3 4.16.0）。原始表：`docs/baseline/uniqueness.json`。
+
+判定模板：求一解 → `exclude` → 再求，期望第二次 UNSAT。范围是输出层的 NORMAL/CC 变量（`unique_over`）。实例选取与 P0 基线相同：**优先 fixture，否则样例**。部分实现（`unencodedClues` 非空）跳过——松弛编码预期多解，不作为失败。
+
+| 结果 | 条数 | 含义 |
+|---|---:|---|
+| **multiple** | **125** | 当前盘面在编码下至少两解（约束过松，或盘面本身多解） |
+| **unique** | **71** | 当前盘面唯一。**不等于**规则已完全编码：过小的 fixture/样例即使松弛也可能碰巧唯一 |
+| skip | 17 | `unencodedClues` 非空，未判定 |
+| timeout | 2 | 30s 内 `solve()` 返回 unknown：`parquet` `tetrochain` |
+| error | 19 | 无样例也无 fixture（多为基线 C 类）：`aquapelago araf battleship canal cbanana creek kurotto lightshadow lits meander mochikoro nanro nurimisaki paintarea putteria shimaguni sukoro tents tilepaint` |
+| 合计 | 234 | 全部 `impls/*.json` |
+
+这是预期产出，不是回归失败：B 类松弛与过小盘面都会表现为多解。收紧编码或换成真正的唯一真题后，应把对应 case 的 `"unique"` **逐条**打开。
+
+**当前盘面唯一（71）**：`anglers barns bdblock bosnianroad box chainedb chocona clouds compass context cornerch cts curvedata domino-search dotchi easyasabc fillomino firefly fivecells fourcells haisu hashi heavydots herugolf heteromino icebarn japanesesums kakuro kropki-pairs kuroclone lohkous magic maxi meadows mirrorbk mochinyoro nagenawa nikoji nonogram nuribou nurikabe orbital pencils pentominous pipelink railpool rassi rectslider reflect ringring sashigane scrabble shikaku simplegako skyscrapers slither snakepit squarejam subomino sudoku symmarea tapaloop tatamibari tateyoko tentaisho tetrominous tren vertigo voxas wafusuma walllogic`
+
+**当前盘面多解（125）**：`aho akari akichi alternate antmill aqre aquarium arrowflow ayeheya balance batten bhaibahan binairo blind bonsan bosanowa castle cave cbblock circlesquare cocktail coffeemilk cojun consecutiveq coral country crossstitch detour disco disloop dominion doppelblock dosufuwa dotchi2 doubleback doubleornothing evolmino firewalk forestwalk fuzuli gaps geradeweg goishi gokigen hanare hebi heyawake hidato hinge hitori icewalk interbd isowatari kaero keywest koburin kramma kropki kurarin kurodoko lapaz lineofsight lookair magnets makaro martini masyu midloop mines mintonette moonsun mrtile mukkonn myopia nagare nanameguri narrow norinori norinuri nothing nothree numlin nuriloop nuritwin oasis oneroom pmemory ququ r renban ripple roma sansaroad sato scrin sendai shakashaka simpleloop snail snake snakeegg starbattle stostone suguru sumiwake swslither tapa tasquare tawa teri tetrochaink toichika trainstations ubahn usoone waterwalk wblink wbloop wittgen yajikazu yajilin yajilin-regions yajirushi yinyang yosenabe`
+
+**跳过（17）**：`dbchoco diamond go guidearrow icelom kinkonkan kissing moonlight nurimaze pentatouch pentopia sashikabe shugaku slalom slashpack statuepark wagiri`
+
+DSL：`import "meta"` / `assert_unique(v)`；`solve_instance(..., run_meta=True)`。`run_meta` 默认关闭，现有 234 个实现的编译路径不变。
+
+### 7.1 P2 / P3（匿名函数、安全取值、线族）
+
+语言：`fn (args) -> expr` 闭包（逐层拷贝作用域；`def` 仍不捕获）；聚合 `count_where` / `sum_where` / `any_where` / `all_where`；`at_or` / `nb` / `nb_at` / `in_grid`；`dirs4`/`dirs8`、`dr_of`/`dc_of`/`opp`/`rot90`/`tr`；`line`/`lines`/`rev`/`line_from`/`side_of`。说明见 `puzzle/dsl/GRAMMAR.md`。
+
+库：累加器与邻格判空已改写（`core.step`、`shading`/`regions`/`outside`/`loops`/`loops2`/`paths2`/`place2`/`fill2`）。前缀状态机（`see_count`、`vis_count` 体、`seg_len` 等）未动。`color_adjacent_pairs` 仍用手写越界守卫（`nb` 缺省 0 无法表示「值为 0 的邻对」）。
+
+实现：优先 5 个之后继续清了其余可安全替换的累加器 / `in_grid`（前缀状态机如 `akari`/`hebi`/`blind`/`tren` 滑动空隙仍手写）。该清理相对 P1s2 基线约束数仍为 0 变化。
+
+### 7.2 P4A（连通性 API 分层）
+
+L1：`is_connected` / `is_connected8` 为单流编码（根供给 = 开启格数；空集算连通；不进 `valuecc` memo）。`connected` / `connected8` 转调 L1。L2–L5 正式名 `component_count` / `same_component` / `component_size` / `component_id`，`cc_*` 为 `alias_of`。L3/L5 仍用 canonical id。反向索引：`docs/baseline/connectivity_api.json`。
+
+验收：`tests.test_fn.ConnectedTests` + `tests.test_meta`；55 个 L1 调用 key 编译无错；有 fixture 答案的 26 个 accept 仍为 sat（零翻转）。相对 P1s2，L1 key 的约束数上升（小盘面上流约束条数多于原先共享的 `cc_count<=1`；同时用 L2/L4 的 key 会叠两套编码）。`sudoku` / `yajilin` 约束数未动。
+
+---
+
+## 8. 后续建议
 
 1. **仅剩的完全跳过（D=2）**：为 `kouchoku` / `angleloop` 增加**非正交几何**（任意方向的点对线段、夹角、垂直才可交叉）。在现有正交格线模型上补约束只会排除真解，不建议硬编。
 2. **收紧 B 类部分实现**，按缺口类型而不是按分类：
@@ -237,11 +277,11 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 ---
 
-## 8. 本轮补全（填写 / 路径 / 放置+分区 / 回路 remaining）
+## 9. 本轮补全（填写 / 路径 / 放置+分区 / 回路 remaining）
 
 测试为 `tests/cases/*.json` 的盘面+答案；`unique` 默认关闭，只做 **accept**。本轮处理旧稿 §4 中全部剩余 key：**96 条编码，2 条因非正交几何跳过**。
 
-### 8.1 填写（30/30，无跳过）
+### 9.1 填写（30/30，无跳过）
 
 完整 29：`bosanowa gokigen simplegako blind fuzuli doppelblock renban goishi kakuro easyasabc hanare r roma toichika japanesesums makaro yajirushi cojun tateyoko arrowflow scrabble kropki-pairs skyscrapers consecutiveq snail magic kropki hebi ubahn`
 
@@ -249,7 +289,7 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 库：`puzzle/lib/fill2.dsl`（含 `spiral()`、`dir()` 射线序）。
 
-### 8.2 路径 I+II remaining（21/21，无跳过）
+### 9.2 路径 I+II remaining（21/21，无跳过）
 
 `numlin` / `hidato` 此前已完成，不计入这 21。
 
@@ -259,7 +299,7 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 库：`puzzle/lib/paths2.dsl`。
 
-### 8.3 放置+分区 remaining（23/23，无跳过）
+### 9.3 放置+分区 remaining（23/23，无跳过）
 
 完整 15：`pencils tren pentominous tetrominous heteromino cbblock symmarea subomino mirrorbk nikoji sendai lohkous narrow voxas heavydots`
 
@@ -267,7 +307,7 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 库：`puzzle/lib/place2.dsl`。
 
-### 8.4 回路 I+II remaining（22/24 已编码，2 跳过）
+### 9.4 回路 I+II remaining（22/24 已编码，2 跳过）
 
 完整 9：`lineofsight orbital reflect ringring pipelink barns doubleornothing nagenawa tapaloop`
 
@@ -279,7 +319,7 @@ starbattle sudoku suguru sukoro tents tilepaint yajilin yinyang
 
 库：`puzzle/lib/loops2.dsl`。
 
-### 8.5 此前各轮（仍计入 A/B 总数，供对照）
+### 9.5 此前各轮（仍计入 A/B 总数，供对照）
 
 这些不是本轮新写，但属于回滚后的重做产物，已计入 §1。
 

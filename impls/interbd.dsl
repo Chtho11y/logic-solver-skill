@@ -19,10 +19,7 @@ for p in clue_cells(k):
 
 # 每个留白格都属于某个提示所在的连通组
 for p in cells():
-    let hit = false
-    for q in clue_cells(k):
-        let hit = hit or (at(ids, p) == at(ids, q))
-    is_white(x, p) => hit
+    is_white(x, p) => any_where(clue_cells(k), fn (q) -> at(ids, p) == at(ids, q))
 
 # 每个涂黑格至少邻接两个不同留白组
 for p in cells():

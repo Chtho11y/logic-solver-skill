@@ -16,11 +16,10 @@ for reg in regions:
     if reg.size == 1:
         cdeg(e, reg[0]) == 0
     else:
-        let ends = 0
+        let ends = count_where(reg, fn (p) -> cdeg(e, p) == 1)
         let links = 0
         for p in reg:
             cdeg(e, p) == 1 or cdeg(e, p) == 2
-            let ends = ends + b2i(cdeg(e, p) == 1)
             for q in adj4(p):
                 if same_region(p, q):
                     if before(p, q):

@@ -33,16 +33,10 @@ for p in clue_cells(n):
     entry_index(x, p) == at(n, p)
 
 def has_next(x, p):
-    let ok = false
-    for q in adj4(p):
-        let ok = ok or (at(x, q) == at(x, p) + 1)
-    return ok
+    return any_where(adj4(p), fn (q) -> at(x, q) == at(x, p) + 1)
+
+def is_entry_cell(x, q):
+    return at(x, q) == 1 or any_where(adj4(q), fn (r) -> at(x, r) == at(x, q) - 1 and not same_region(q, r))
 
 def entry_index(x, p):
-    let total = 0
-    for q in region_of(p):
-        let is_entry = at(x, q) == 1
-        for r in adj4(q):
-            let is_entry = is_entry or (at(x, r) == at(x, q) - 1 and not same_region(q, r))
-        let total = total + b2i(is_entry and at(x, q) <= at(x, p))
-    return total
+    return count_where(region_of(p), fn (q) -> is_entry_cell(x, q) and at(x, q) <= at(x, p))

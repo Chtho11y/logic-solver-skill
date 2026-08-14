@@ -7,7 +7,4 @@ import "regions"
 rectangular_loops(e)
 
 for p in clue_cells(n):
-    let total = 0
-    for q in region_of(p):
-        let total = total + b2i(on_drawn_rect(e, q))
-    total == at(n, p)
+    count_where(region_of(p), fn (q) -> on_drawn_rect(e, q)) == at(n, p)

@@ -10,9 +10,7 @@ for v in clue_cells(o):
     if around.size == 4:
         let n = 0
         for p in around:
-            for q in around:
-                if before(p, q):
-                    let n = n + b2i(abs(at(x, p) - at(x, q)) == 1)
+            let n = n + count_where(around, fn (q) -> before(p, q) and abs(at(x, p) - at(x, q)) == 1)
         if at(o, v) == 1:
             n == 1
         if at(o, v) == 2:

@@ -16,7 +16,4 @@ for p in clue_cells(o):
     cc_count(x, at(x, p)) == 1
 
 for p in cells():
-    let ok = false
-    for q in clue_cells(o):
-        let ok = ok or (at(x, p) == cell_idx(q) + 1)
-    ok
+    any_where(clue_cells(o), fn (q) -> at(x, p) == cell_idx(q) + 1)

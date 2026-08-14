@@ -12,11 +12,10 @@ for p in clue_cells(t):
 for p in cells():
     (at(a, p) > 0) == (at(x, p) == 1)
     for code, dr, dc in [[1, -1, 0], [2, 1, 0], [3, 0, -1], [4, 0, 1]]:
-        let q = step_rc(p, dr, dc)
-        if q.size == 0:
+        if not in_grid(p, dr, dc):
             at(a, p) != code
         else:
-            if not has_value(t, q):
+            if not has_value(t, shift(p, dr, dc)):
                 at(a, p) != code
 
 # 每棵树恰好被一顶帐篷选中。
@@ -29,13 +28,9 @@ for p in cells():
 row_count(x, 1, "left")
 col_count(x, 1, "top")
 
-def step_rc(p, dr, dc):
-    return shift(p, dr, dc)
-
 def tree_tents(a, p):
     let total = 0
     for code, dr, dc in [[2, -1, 0], [1, 1, 0], [4, 0, -1], [3, 0, 1]]:
-        let q = shift(p, dr, dc)
-        if q.size == 1:
-            let total = total + b2i(at(a, q) == code)
+        if in_grid(p, dr, dc):
+            let total = total + b2i(at(a, shift(p, dr, dc)) == code)
     return total

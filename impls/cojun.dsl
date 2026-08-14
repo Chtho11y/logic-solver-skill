@@ -8,6 +8,6 @@ adjacent_differ(x)
 
 for p in cells():
     let q = shift(p, 1, 0)
-    if q.size > 0:
+    if in_grid(p, 1, 0):
         if same_region(p, q):
             at(x, p) > at(x, q)

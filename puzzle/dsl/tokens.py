@@ -21,7 +21,7 @@ T_EOF = "EOF"
 KEYWORDS = frozenset(
     {
         "if", "elif", "else", "for", "in", "let", "and", "or", "not",
-        "true", "false", "def", "return", "import",
+        "true", "false", "def", "return", "import", "meta", "scope", "fn",
     }
 )
 
@@ -29,7 +29,7 @@ KEYWORDS = frozenset(
 # ``&&`` / ``||`` are symbolic aliases for ``and`` / ``or``; ``^`` is xor and
 # ``!`` is not (``!=`` is matched first because two-char ops have priority).
 # ``=>`` is implies (matched before single ``=``/``>``); ``.`` is member access.
-_TWO_CHAR_OPS = ("==", "!=", "<=", ">=", "&&", "||", "=>")
+_TWO_CHAR_OPS = ("==", "!=", "<=", ">=", "&&", "||", "=>", "->")
 _ONE_CHAR_OPS = "+-*/%<>=()[],:^!."
 OPERATORS = frozenset(list(_TWO_CHAR_OPS) + list(_ONE_CHAR_OPS))
 TWO_CHAR_OPS = _TWO_CHAR_OPS

@@ -16,48 +16,22 @@ for ed in edges():
     let used = used + at(e, ed)
 connect_links(e) or used == 0
 
-for i in rows:
-    let k = side_clue("left", row_of(i[0]))
-    if not no_clue(k):
-        if is_list(k):
-            if k.size >= 1:
-                let cross = 0
-                let tee = 0
-                let straight = 0
-                let turn = 0
-                for p in i:
-                    let cross = cross + b2i(cdeg(e, p) == 4)
-                    let tee = tee + b2i(cdeg(e, p) == 3)
-                    let straight = straight + b2i(cdeg(e, p) == 2 and goes_straight(e, p))
-                    let turn = turn + b2i(cdeg(e, p) == 2 and turns(e, p))
+for axis in [0, 1]:
+    let side = side_of(axis, 0)
+    for ln in lines(axis):
+        let k = side_clue(side, ite(axis == 0, row_of(ln[0]), col_of(ln[0])))
+        if not no_clue(k):
+            if is_list(k):
                 if k.size >= 1:
-                    cross == k[0]
-                if k.size >= 2:
-                    tee == k[1]
-                if k.size >= 3:
-                    straight == k[2]
-                if k.size >= 4:
-                    turn == k[3]
-
-for j in cols:
-    let k = side_clue("top", col_of(j[0]))
-    if not no_clue(k):
-        if is_list(k):
-            if k.size >= 1:
-                let cross = 0
-                let tee = 0
-                let straight = 0
-                let turn = 0
-                for p in j:
-                    let cross = cross + b2i(cdeg(e, p) == 4)
-                    let tee = tee + b2i(cdeg(e, p) == 3)
-                    let straight = straight + b2i(cdeg(e, p) == 2 and goes_straight(e, p))
-                    let turn = turn + b2i(cdeg(e, p) == 2 and turns(e, p))
-                if k.size >= 1:
-                    cross == k[0]
-                if k.size >= 2:
-                    tee == k[1]
-                if k.size >= 3:
-                    straight == k[2]
-                if k.size >= 4:
-                    turn == k[3]
+                    let cross = count_where(ln, fn (p) -> cdeg(e, p) == 4)
+                    let tee = count_where(ln, fn (p) -> cdeg(e, p) == 3)
+                    let straight = count_where(ln, fn (p) -> cdeg(e, p) == 2 and goes_straight(e, p))
+                    let turn = count_where(ln, fn (p) -> cdeg(e, p) == 2 and turns(e, p))
+                    if k.size >= 1:
+                        cross == k[0]
+                    if k.size >= 2:
+                        tee == k[1]
+                    if k.size >= 3:
+                        straight == k[2]
+                    if k.size >= 4:
+                        turn == k[3]

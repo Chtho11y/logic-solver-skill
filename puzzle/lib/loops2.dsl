@@ -15,17 +15,13 @@ def marked(c, p):
 
 def no_outer_links(e):
     for p in cells():
-        let up = shift(p, -1, 0)
-        let down = shift(p, 1, 0)
-        let left = shift(p, 0, -1)
-        let right = shift(p, 0, 1)
-        if up.size == 0:
+        if not in_grid(p, -1, 0):
             link_up(e, p) == 0
-        if down.size == 0:
+        if not in_grid(p, 1, 0):
             link_down(e, p) == 0
-        if left.size == 0:
+        if not in_grid(p, 0, -1):
             link_left(e, p) == 0
-        if right.size == 0:
+        if not in_grid(p, 0, 1):
             link_right(e, p) == 0
 
 def on_track(e, p):
@@ -222,10 +218,9 @@ def rectangular_loops(e):
 # -- 8-neighbour on-loop occupancy (Tapa-like Loop) --------------------------
 
 def nb_on(e, p, dr, dc):
-    let q = shift(p, dr, dc)
-    if q.size == 0:
+    if not in_grid(p, dr, dc):
         return 0
-    return b2i(on_loop(e, q))
+    return b2i(on_loop(e, shift(p, dr, dc)))
 
 def around8_sum(e, p):
     let s = nb_on(e, p, -1, 0) + nb_on(e, p, -1, 1) + nb_on(e, p, 0, 1) + nb_on(e, p, 1, 1)

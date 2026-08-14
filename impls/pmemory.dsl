@@ -17,9 +17,7 @@ for p in cells():
     else:
         (cdeg(e, p) == 0 and at(x, p) == 0) or (cdeg(e, p) == 2 and at(x, p) >= 1)
 
-let L = 0
-for p in cells():
-    let L = L + b2i(cdeg(e, p) > 0)
+let L = count_where(cells(), fn (p) -> cdeg(e, p) > 0)
 
 if ncirc == 2:
     let a = clue_cells(o)[0]
@@ -45,9 +43,7 @@ for reg in regions:
         if has_value(g, p):
             let ng = ng + 1
     if ng > 0:
-        let vis = 0
-        for p in reg:
-            let vis = vis + b2i(cdeg(e, p) > 0)
+        let vis = count_where(reg, fn (p) -> cdeg(e, p) > 0)
         vis >= 1
 
 for a in regions:

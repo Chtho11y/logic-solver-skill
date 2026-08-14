@@ -128,6 +128,12 @@ def _child_nodes(node):
         yield node.base
     elif isinstance(node, ast.ListLit):
         yield from node.items
+    elif isinstance(node, ast.Lambda):
+        yield node.body
+    elif isinstance(node, ast.MetaStmt):
+        yield from node.body
+    elif isinstance(node, ast.ScopeStmt):
+        yield from node.body
 
 
 def walk_nodes(node):

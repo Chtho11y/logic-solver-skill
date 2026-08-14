@@ -47,7 +47,7 @@ for p in clue_cells(n):
 for p in cells():
     for d in [UP, DOWN, LEFT, RIGHT]:
         let q = step(p, d)
-        if q.size > 0:
+        if in_grid(p, dr_of(d), dc_of(d)):
             let extra = 0
             let alive = true
             for s in dir(q, d):

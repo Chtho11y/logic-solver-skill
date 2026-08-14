@@ -16,22 +16,13 @@ for p in cells():
 for p in clue_cells(o):
     if at(o, p) == 3:
         at(u, p) == cell_idx(p) + 1
-        let blacks = 0
-        let whites = 0
-        let grays = 0
-        for q in clue_cells(o):
-            let same = at(u, p) == at(u, q)
-            let whites = whites + b2i(same and at(o, q) == 1)
-            let blacks = blacks + b2i(same and at(o, q) == 2)
-            let grays = grays + b2i(same and at(o, q) == 3)
+        let whites = count_where(clue_cells(o), fn (q) -> at(u, p) == at(u, q) and at(o, q) == 1)
+        let blacks = count_where(clue_cells(o), fn (q) -> at(u, p) == at(u, q) and at(o, q) == 2)
+        let grays = count_where(clue_cells(o), fn (q) -> at(u, p) == at(u, q) and at(o, q) == 3)
         grays == 1
         blacks == whites
     else:
-        let hit = false
-        for q in clue_cells(o):
-            if at(o, q) == 3:
-                let hit = hit or (at(u, p) == at(u, q))
-        hit
+        any_where(clue_cells(o), fn (q) -> at(o, q) == 3 and at(u, p) == at(u, q))
 
 for p in clue_cells(o):
     for q in clue_cells(o):

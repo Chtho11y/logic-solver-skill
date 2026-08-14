@@ -15,8 +15,7 @@ for p in cells():
         color_pairs_in(c, g, p, 0) >= nw - 1
         let touch = false
         for q in cells():
-            for r in adj4(q):
-                let touch = touch or (at(c, q) == at(c, p) and at(c, r) == at(c, p) and at(g, q) != at(g, r))
+            let touch = touch or any_where(adj4(q), fn (r) -> at(c, q) == at(c, p) and at(c, r) == at(c, p) and at(g, q) != at(g, r))
         touch
 
 for p in clue_cells(n):

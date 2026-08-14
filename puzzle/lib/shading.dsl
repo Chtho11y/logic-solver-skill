@@ -63,10 +63,7 @@ def around_black_clue(x, c):
         n_around(x, p, 1) == at(c, p)
 
 def nb_bit(x, p, dr, dc):
-    let q = shift(p, dr, dc)
-    if q.size == 0:
-        return 0
-    return at(x, q)
+    return nb_at(x, p, dr, dc)
 
 def around8_shade_bits(x, p):
     # Clockwise 8-neighbourhood occupancy, missing cells count as 0.
@@ -156,10 +153,7 @@ def clues_in_distinct_groups(x, c):
 # -- acyclicity ---------------------------------------------------------------
 
 def color_count(x, v):
-    let total = 0
-    for p in cells():
-        let total = total + b2i(eq(x, p, v))
-    return total
+    return count_where(cells(), fn (p) -> eq(x, p, v))
 
 def color_adjacent_pairs(x, v):
     # Unordered count of orthogonally adjacent pairs both holding `v`.

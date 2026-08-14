@@ -10,15 +10,8 @@ for p in cells():
             at(c, p) != at(c, q)
 
 for p in clue_cells(n):
-    let cities = 0
-    for q in region_of(p):
-        let cities = cities + b2i(is_root(c, q))
-    cities == at(n, p)
+    count_where(region_of(p), fn (q) -> is_root(c, q)) == at(n, p)
 
 for p in cells():
     if is_root(c, p):
-        let found = false
-        for q in cells():
-            if is_root(c, q):
-                let found = found or ((row_of(p) != row_of(q) or col_of(p) != col_of(q)) and regions_touch(c, p, q) and translation_congruent(c, p, q))
-        found
+        any_where(cells(), fn (q) -> is_root(c, q) and (row_of(p) != row_of(q) or col_of(p) != col_of(q)) and regions_touch(c, p, q) and translation_congruent(c, p, q))

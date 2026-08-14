@@ -107,6 +107,10 @@ class _Parser:
             return self._for_stmt()
         if self._check(T_KEYWORD, "def"):
             return self._def_stmt()
+        if self._check(T_KEYWORD, "meta"):
+            return self._block_stmt("meta", ast.MetaStmt)
+        if self._check(T_KEYWORD, "scope"):
+            return self._block_stmt("scope", ast.ScopeStmt)
         stmt = self._simple_stmt()
         if not self._check(T_EOF):
             self._expect(T_NEWLINE)
@@ -160,6 +164,12 @@ class _Parser:
         self._expect(T_OP, ":")
         body = self._suite()
         return ast.ForStmt(line=kw.line, col=kw.col, vars=names, iterable=iterable, body=body)
+
+    def _block_stmt(self, keyword: str, node_type):
+        kw = self._expect(T_KEYWORD, keyword)
+        self._expect(T_OP, ":")
+        body = self._suite()
+        return node_type(line=kw.line, col=kw.col, body=body)
 
     def _name_list(self) -> list[str]:
         """Parse one or more comma-separated target names."""
@@ -305,6 +315,17 @@ class _Parser:
                 break
         return node
 
+    def _lambda(self) -> ast.Lambda:
+        kw = self._expect(T_KEYWORD, "fn")
+        self._expect(T_OP, "(")
+        params: list[str] = []
+        if not self._check(T_OP, ")"):
+            params = self._name_list()
+        self._expect(T_OP, ")")
+        self._expect(T_OP, "->")
+        body = self._expression()
+        return ast.Lambda(line=kw.line, col=kw.col, params=params, body=body)
+
     def _call_args(self) -> list[ast.Expr]:
         args: list[ast.Expr] = []
         if self._check(T_OP, ")"):
@@ -325,6 +346,8 @@ class _Parser:
         if token.type == T_KEYWORD and token.value in ("true", "false"):
             self._advance()
             return ast.Bool(line=token.line, col=token.col, value=token.value == "true")
+        if token.type == T_KEYWORD and token.value == "fn":
+            return self._lambda()
         if token.type == T_NAME:
             self._advance()
             return ast.Name(line=token.line, col=token.col, ident=token.value)

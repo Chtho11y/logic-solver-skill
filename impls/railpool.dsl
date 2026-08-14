@@ -21,10 +21,8 @@ for p in cells():
             let has = true
     if has:
         on_loop(e, p) and goes_straight(e, p) => length_in_region(n, reg, full_straight_len(e, p))
-        link_up(e, p) == 1 and turns(e, p) => length_in_region(n, reg, arm_used_len(e, p, UP))
-        link_down(e, p) == 1 and turns(e, p) => length_in_region(n, reg, arm_used_len(e, p, DOWN))
-        link_left(e, p) == 1 and turns(e, p) => length_in_region(n, reg, arm_used_len(e, p, LEFT))
-        link_right(e, p) == 1 and turns(e, p) => length_in_region(n, reg, arm_used_len(e, p, RIGHT))
+        for d in dirs4:
+            link_dir(e, p, d) == 1 and turns(e, p) => length_in_region(n, reg, arm_used_len(e, p, d))
 
 for p in clue_cells(n):
     if at(n, p) > 0:
@@ -33,32 +31,26 @@ for p in clue_cells(n):
         region_has_any_segment(e, region_of(p))
 
 def length_in_region(n, reg, L):
-    let exact = false
-    let wild = false
+    let clues = []
     for q in reg:
         if has_value(n, q):
-            if at(n, q) < 0:
-                let wild = true
-            else:
-                let exact = exact or (L == at(n, q))
-    return exact or wild
+            let clues = clues.append(q)
+    return any_where(clues, fn (q) -> at(n, q) < 0 or L == at(n, q))
+
+def cell_has_segment(e, p):
+    let hit = on_loop(e, p) and goes_straight(e, p)
+    for d in dirs4:
+        let hit = hit or (turns(e, p) and link_dir(e, p, d) == 1)
+    return hit
+
+def cell_hits_len(e, p, L):
+    let hit = on_loop(e, p) and goes_straight(e, p) and full_straight_len(e, p) == L
+    for d in dirs4:
+        let hit = hit or (turns(e, p) and link_dir(e, p, d) == 1 and arm_used_len(e, p, d) == L)
+    return hit
 
 def region_has_any_segment(e, reg):
-    let hit = false
-    for p in reg:
-        let hit = hit or (on_loop(e, p) and goes_straight(e, p))
-        let hit = hit or (turns(e, p) and link_up(e, p) == 1)
-        let hit = hit or (turns(e, p) and link_down(e, p) == 1)
-        let hit = hit or (turns(e, p) and link_left(e, p) == 1)
-        let hit = hit or (turns(e, p) and link_right(e, p) == 1)
-    return hit
+    return any_where(reg, fn (p) -> cell_has_segment(e, p))
 
 def segment_hits_region(e, reg, L):
-    let hit = false
-    for p in reg:
-        let hit = hit or (on_loop(e, p) and goes_straight(e, p) and full_straight_len(e, p) == L)
-        let hit = hit or (turns(e, p) and link_up(e, p) == 1 and arm_used_len(e, p, UP) == L)
-        let hit = hit or (turns(e, p) and link_down(e, p) == 1 and arm_used_len(e, p, DOWN) == L)
-        let hit = hit or (turns(e, p) and link_left(e, p) == 1 and arm_used_len(e, p, LEFT) == L)
-        let hit = hit or (turns(e, p) and link_right(e, p) == 1 and arm_used_len(e, p, RIGHT) == L)
-    return hit
+    return any_where(reg, fn (p) -> cell_hits_len(e, p, L))

@@ -16,6 +16,5 @@ def no_equally_spaced_triple(x):
             forbid_triple(x, p, shift(p, d, 0), shift(p, 2 * d, 0))
 
 def forbid_triple(x, p, q, r):
-    if q.size == 1:
-        if r.size == 1:
-            not (is_black(x, p) and is_black(x, q) and is_black(x, r))
+    if q.size == 1 and r.size == 1:
+        not (is_black(x, p) and is_black(x, q) and is_black(x, r))

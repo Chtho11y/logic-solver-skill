@@ -22,9 +22,7 @@ for reg in regions:
     for p in reg:
         at(t, p) == ty
 
-    let deg3 = false
-    for p in reg:
-        let deg3 = deg3 or (is_black(x, p) and in_region_count(x, p, 1) == 3)
+    let deg3 = any_where(reg, fn (p) -> is_black(x, p) and in_region_count(x, p, 1) == 3)
 
     let c3 = 0
     for w in slide(2, 2):

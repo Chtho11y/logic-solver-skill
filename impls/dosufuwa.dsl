@@ -15,8 +15,8 @@ for reg in regions:
 
 for p in cells():
     let down = shift(p, 1, 0)
-    if down.size == 1:
+    if in_grid(p, 1, 0):
         at(x, p) == 2 => has_value(w, down) or at(x, down) == 2
     let up = shift(p, -1, 0)
-    if up.size == 1:
+    if in_grid(p, -1, 0):
         at(x, p) == 1 => has_value(w, up) or at(x, up) == 1

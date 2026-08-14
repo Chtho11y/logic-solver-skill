@@ -17,7 +17,7 @@ for p in cells():
                 at(a, p) != at(a, q)
         for d in [UP, DOWN, LEFT, RIGHT]:
             let q = step(p, d)
-            if q.size == 0:
+            if not in_grid(p, dr_of(d), dc_of(d)):
                 at(a, p) != d
             else:
                 at(a, p) == d => at(dest, p) == at(dest, q)

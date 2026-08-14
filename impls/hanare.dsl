@@ -13,11 +13,10 @@ for r in rows:
     for p in r:
         for q in r:
             if col_of(p) < col_of(q):
-                let between = 0
+                let between = count_where(r, fn (s) -> col_of(p) < col_of(s) and col_of(s) < col_of(q) and at(x, s) > 0)
                 let gap = 0
                 for s in r:
                     if col_of(p) < col_of(s) and col_of(s) < col_of(q):
-                        let between = between + b2i(at(x, s) > 0)
                         let gap = gap + 1
                 at(x, p) > 0 and at(x, q) > 0 and between == 0 => gap == abs(at(x, p) - at(x, q))
 
@@ -25,10 +24,9 @@ for c in cols:
     for p in c:
         for q in c:
             if row_of(p) < row_of(q):
-                let between = 0
+                let between = count_where(c, fn (s) -> row_of(p) < row_of(s) and row_of(s) < row_of(q) and at(x, s) > 0)
                 let gap = 0
                 for s in c:
                     if row_of(p) < row_of(s) and row_of(s) < row_of(q):
-                        let between = between + b2i(at(x, s) > 0)
                         let gap = gap + 1
                 at(x, p) > 0 and at(x, q) > 0 and between == 0 => gap == abs(at(x, p) - at(x, q))

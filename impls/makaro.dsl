@@ -27,7 +27,7 @@ for p in cells():
 
 for p in clue_cells(d):
     let q = step(p, at(d, p))
-    if q.size == 0:
+    if not in_grid(p, dr_of(at(d, p)), dc_of(at(d, p))):
         false
     else:
         for n in adj4(p):

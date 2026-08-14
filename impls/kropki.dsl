@@ -7,7 +7,7 @@ latin_n(x, board_n())
 
 for p in cells():
     let q = shift(p, 0, 1)
-    if q.size > 0:
+    if in_grid(p, 0, 1):
         let e = between_v_edge(p, q)
         let consec = kropki_consec(at(x, p), at(x, q))
         let double = kropki_double(at(x, p), at(x, q))
@@ -19,7 +19,7 @@ for p in cells():
         else:
             not consec and not double
     let q2 = shift(p, 1, 0)
-    if q2.size > 0:
+    if in_grid(p, 1, 0):
         let e = between_h_edge(p, q2)
         let consec = kropki_consec(at(x, p), at(x, q2))
         let double = kropki_double(at(x, p), at(x, q2))

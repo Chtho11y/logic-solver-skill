@@ -17,11 +17,7 @@ for p in clue_cells(o):
             on_loop(e, p) and at(o, p) != at(o, q) => off_loop(e, q)
 
 for p in cells():
-    let n = 0
-    for q in region_of(p):
-        if has_value(o, q):
-            let n = n + b2i(on_loop(e, q))
-    n >= 1
+    count_where(clue_cells(o), fn (q) -> same_region(p, q) and on_loop(e, q)) >= 1
 
 for p in cells():
     for q in adj4(p):
@@ -30,9 +26,4 @@ for p in cells():
                 link_between(e, p, q) == 1 => takes_sun(e, o, p) != takes_sun(e, o, q)
 
 def takes_sun(e, o, p):
-    let hit = false
-    for q in region_of(p):
-        if has_value(o, q):
-            if at(o, q) == 1:
-                let hit = hit or on_loop(e, q)
-    return hit
+    return any_where(clue_cells(o), fn (q) -> same_region(p, q) and at(o, q) == 1 and on_loop(e, q))

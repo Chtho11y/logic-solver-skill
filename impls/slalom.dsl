@@ -20,7 +20,4 @@ for p in cells():
 
 for p in clue_cells(n):
     if has_value(o, p):
-        let total = 0
-        for q in cells():
-            let total = total + b2i(marked(g, q))
-        total == at(n, p)
+        count_where(cells(), fn (q) -> marked(g, q)) == at(n, p)

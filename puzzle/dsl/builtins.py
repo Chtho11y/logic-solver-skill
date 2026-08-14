@@ -26,7 +26,17 @@ from typing import Any, Callable
 
 from ..models import Point, PointKind
 from .errors import CompileError
-from .values import RegionValue, VarValue, flatten_scalars, sort_points, to_numeric
+from .values import (
+    RegionValue,
+    VarValue,
+    as_bool,
+    as_int,
+    as_ne,
+    as_same,
+    flatten_scalars,
+    sort_points,
+    to_numeric,
+)
 
 
 @dataclass(frozen=True)
@@ -39,6 +49,7 @@ class BuiltinFunction:
     broadcast: bool = False
     signature: str = ""
     doc: str = ""
+    alias_of: str = ""
 
     def __repr__(self) -> str:  # pragma: no cover - debug aid
         return f"<builtin {self.name}>"
@@ -72,7 +83,7 @@ def _flatten_args(args: list) -> list:
 
 
 def _fn_sum(ctx, args, pos):
-    items = _flatten_args(args)
+    items = [as_int(item, ctx.z3) for item in _flatten_args(args)]
     if not items:
         return 0
     return ctx.z3.Sum(items)
@@ -80,6 +91,8 @@ def _fn_sum(ctx, args, pos):
 
 def _fn_distinct(ctx, args, pos):
     items = _flatten_args(args)
+    if any(ctx.z3.is_expr(item) and ctx.z3.is_bool(item) for item in items):
+        raise CompileError("distinct() cannot be used on 0/1 boolean variables", pos.line, pos.col)
     if len(items) < 2:
         return ctx.z3.BoolVal(True)
     return ctx.z3.Distinct(items)
@@ -111,6 +124,56 @@ def _element_count(value: Any) -> int:
 
 def _fn_count(ctx, args, pos):
     return sum(_element_count(arg) for arg in args)
+
+
+def _pred_bool(ctx, pred, item, pos):
+    result = ctx.call(pred, [item], pos)
+    return ctx._require_bool(result, pos)
+
+
+def _fn_count_where(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("count_where(iterable, pred) takes two arguments", pos.line, pos.col)
+    items = ctx._iter_items(args[0], pos)
+    if not items:
+        return 0
+    z3 = ctx.z3
+    return z3.Sum([z3.If(_pred_bool(ctx, args[1], item, pos), 1, 0) for item in items])
+
+
+def _fn_sum_where(ctx, args, pos):
+    if len(args) != 3:
+        raise CompileError(
+            "sum_where(iterable, pred, val) takes three arguments", pos.line, pos.col
+        )
+    items = ctx._iter_items(args[0], pos)
+    if not items:
+        return 0
+    z3 = ctx.z3
+    terms = []
+    for item in items:
+        flag = _pred_bool(ctx, args[1], item, pos)
+        value = as_int(ctx.call(args[2], [item], pos), z3)
+        terms.append(z3.If(flag, value, 0))
+    return z3.Sum(terms)
+
+
+def _fn_any_where(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("any_where(iterable, pred) takes two arguments", pos.line, pos.col)
+    items = ctx._iter_items(args[0], pos)
+    if not items:
+        return ctx.z3.BoolVal(False)
+    return ctx.z3.Or([_pred_bool(ctx, args[1], item, pos) for item in items])
+
+
+def _fn_all_where(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("all_where(iterable, pred) takes two arguments", pos.line, pos.col)
+    items = ctx._iter_items(args[0], pos)
+    if not items:
+        return ctx.z3.BoolVal(True)
+    return ctx.z3.And([_pred_bool(ctx, args[1], item, pos) for item in items])
 
 
 def _fn_max(ctx, args, pos):
@@ -368,6 +431,128 @@ DIRECTIONS: dict[int, tuple[int, int]] = {
     6: (1, -1),   # DOWN-LEFT
     7: (1, 1),    # DOWN-RIGHT
 }
+
+_OPP = {0: 1, 1: 0, 2: 3, 3: 2, 4: 7, 7: 4, 5: 6, 6: 5}
+_ROT90_4 = (0, 3, 1, 2)  # clockwise: UP → RIGHT → DOWN → LEFT
+
+
+def _fn_dr_of(ctx, args, pos):
+    if len(args) != 1:
+        raise CompileError("dr_of(d) takes one argument", pos.line, pos.col)
+    code = _as_int(args[0], "dr_of")
+    if code not in DIRECTIONS:
+        raise CompileError("dr_of() direction must be 0-7", pos.line, pos.col)
+    return DIRECTIONS[code][0]
+
+
+def _fn_dc_of(ctx, args, pos):
+    if len(args) != 1:
+        raise CompileError("dc_of(d) takes one argument", pos.line, pos.col)
+    code = _as_int(args[0], "dc_of")
+    if code not in DIRECTIONS:
+        raise CompileError("dc_of() direction must be 0-7", pos.line, pos.col)
+    return DIRECTIONS[code][1]
+
+
+def _fn_opp(ctx, args, pos):
+    if len(args) != 1:
+        raise CompileError("opp(d) takes one argument", pos.line, pos.col)
+    code = _as_int(args[0], "opp")
+    if code not in _OPP:
+        raise CompileError("opp() direction must be 0-7", pos.line, pos.col)
+    return _OPP[code]
+
+
+def _fn_rot90(ctx, args, pos):
+    if len(args) not in (1, 2):
+        raise CompileError("rot90(d [, k]) takes one or two arguments", pos.line, pos.col)
+    code = _as_int(args[0], "rot90")
+    k = _as_int(args[1], "rot90") if len(args) == 2 else 1
+    if code not in (0, 1, 2, 3):
+        raise CompileError("rot90() only accepts 4-way directions (0-3)", pos.line, pos.col)
+    idx = _ROT90_4.index(code)
+    return _ROT90_4[(idx + (k % 4)) % 4]
+
+
+def _fn_is_horizontal(ctx, args, pos):
+    if len(args) != 1:
+        raise CompileError("is_horizontal(d) takes one argument", pos.line, pos.col)
+    return _as_int(args[0], "is_horizontal") in (2, 3)
+
+
+def _fn_is_vertical(ctx, args, pos):
+    if len(args) != 1:
+        raise CompileError("is_vertical(d) takes one argument", pos.line, pos.col)
+    return _as_int(args[0], "is_vertical") in (0, 1)
+
+
+def _fn_tr(ctx, args, pos):
+    if len(args) != 3:
+        raise CompileError("tr(dr, dc, t) takes three arguments", pos.line, pos.col)
+    dr = _as_int(args[0], "tr")
+    dc = _as_int(args[1], "tr")
+    t = _as_int(args[2], "tr") % 8
+    table = (
+        (dr, dc),
+        (dc, -dr),
+        (-dr, -dc),
+        (-dc, dr),
+        (dr, -dc),
+        (-dr, dc),
+        (dc, dr),
+        (-dc, -dr),
+    )
+    pair = table[t]
+    return [pair[0], pair[1]]
+
+
+def _fn_line(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("line(axis, i) takes two arguments", pos.line, pos.col)
+    axis = _as_int(args[0], "line")
+    if axis == 0:
+        return _fn_row(ctx, [args[1]], pos)
+    if axis == 1:
+        return _fn_col(ctx, [args[1]], pos)
+    raise CompileError("line() axis must be 0 (row) or 1 (col)", pos.line, pos.col)
+
+
+def _fn_lines(ctx, args, pos):
+    if len(args) != 1:
+        raise CompileError("lines(axis) takes one argument", pos.line, pos.col)
+    axis = _as_int(args[0], "lines")
+    if axis == 0:
+        return list(ctx._constants["rows"])
+    if axis == 1:
+        return list(ctx._constants["cols"])
+    raise CompileError("lines() axis must be 0 (row) or 1 (col)", pos.line, pos.col)
+
+
+def _fn_rev(ctx, args, pos):
+    if len(args) != 1:
+        raise CompileError("rev(region) takes one argument", pos.line, pos.col)
+    value = args[0]
+    if isinstance(value, RegionValue):
+        return RegionValue(kind=value.kind, points=tuple(reversed(value.points)))
+    if isinstance(value, list):
+        return list(reversed(value))
+    raise CompileError("rev() expects a region or list", pos.line, pos.col)
+
+
+def _fn_line_from(ctx, args, pos):
+    return _fn_dir(ctx, args, pos)
+
+
+def _fn_side_of(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("side_of(axis, near) takes two arguments", pos.line, pos.col)
+    axis = _as_int(args[0], "side_of")
+    near = _as_int(args[1], "side_of")
+    if axis == 0:
+        return "left" if near == 0 else "right"
+    if axis == 1:
+        return "top" if near == 0 else "bottom"
+    raise CompileError("side_of() axis must be 0 (row) or 1 (col)", pos.line, pos.col)
 
 
 def _fn_dir(ctx, args, pos):
@@ -678,7 +863,7 @@ def _fn_num_eq(ctx, args, pos):
     value = to_numeric(args[1])
     if not items:
         return 0
-    return ctx.z3.Sum([ctx.z3.If(item == value, 1, 0) for item in items])
+    return ctx.z3.Sum([ctx.z3.If(as_bool(item, value, ctx.z3), 1, 0) for item in items])
 
 
 def _fn_at_most(ctx, args, pos):
@@ -709,6 +894,100 @@ def _expect_cell_var(value, name: str, pos) -> VarValue:
     if not isinstance(value, VarValue) or value.kind is not PointKind.CELL:
         raise CompileError(f"{name}() expects a cell variable", pos.line, pos.col)
     return value
+
+
+def _as_z3_bool_flag(ctx, value):
+    if isinstance(value, bool):
+        return ctx.z3.BoolVal(value)
+    return value
+
+
+def _encode_is_connected(ctx, var: VarValue, value, deltas) -> Any:
+    """L1: at most one same-value component, including the empty set.
+
+    Single-commodity flow. Does **not** build canonical ids and must not share
+    the ``valuecc`` memo used by ``cc_*``.
+    """
+
+    z3 = ctx.z3
+    cells = sort_points(var.order)
+    if not cells:
+        return z3.BoolVal(True)
+    cell_set = set(cells)
+    on = {p: _as_z3_bool_flag(ctx, as_bool(var.quantities[p], value, z3)) for p in cells}
+    # Supply equals |S|, not |V|: each on-cell consumes 1, so a root that
+    # injects n units only conserves when every cell is on.
+    k = z3.Sum([z3.If(on[p], 1, 0) for p in cells])
+    ok = _new_bool(ctx, "isconn")
+    roots = {p: _new_bool(ctx, "isconn#root") for p in cells}
+    for p in cells:
+        ctx.add_aux(z3.Implies(ok, z3.Implies(roots[p], on[p])))
+
+    flows = {}
+    for p in cells:
+        r, c = p
+        for dr, dc in deltas:
+            q = (r + dr, c + dc)
+            if q not in cell_set or q <= p:
+                continue
+            f_pq = ctx.new_int("isconn#f")
+            f_qp = ctx.new_int("isconn#f")
+            cap = z3.If(z3.And(on[p], on[q]), k, 0)
+            for flow in (f_pq, f_qp):
+                ctx.add_aux(z3.Implies(ok, flow >= 0))
+                ctx.add_aux(z3.Implies(ok, flow <= cap))
+            flows[(p, q)] = f_pq
+            flows[(q, p)] = f_qp
+
+    any_on = z3.Or(list(on.values()))
+    root_sum = z3.Sum([z3.If(roots[p], 1, 0) for p in cells])
+    ctx.add_aux(z3.Implies(ok, root_sum <= 1))
+    ctx.add_aux(z3.Implies(ok, z3.Implies(any_on, root_sum == 1)))
+
+    for p in cells:
+        incoming = []
+        outgoing = []
+        r, c = p
+        for dr, dc in deltas:
+            q = (r + dr, c + dc)
+            if q not in cell_set:
+                continue
+            incoming.append(flows[(q, p)])
+            outgoing.append(flows[(p, q)])
+        inn = z3.Sum(incoming) if incoming else 0
+        out = z3.Sum(outgoing) if outgoing else 0
+        demand = z3.If(on[p], 1, 0)
+        supply = z3.If(roots[p], k, 0)
+        ctx.add_aux(z3.Implies(ok, inn - out + supply == demand))
+    return ok
+
+
+def _fn_is_connected(ctx, args, pos, deltas=_CC4, label="is_connected"):
+    if len(args) != 2:
+        raise CompileError(f"{label}(var, value) takes two arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], label, pos)
+    value = to_numeric(args[1])
+    key_val = value if isinstance(value, (int, bool)) else id(value)
+    return ctx.memo(
+        ("isconn", var.name, key_val, len(deltas)),
+        lambda: _encode_is_connected(ctx, var, value, deltas),
+    )
+
+
+def _fn_same_component(ctx, args, pos, deltas=_CC4, label="same_component"):
+    if len(args) != 3:
+        raise CompileError(f"{label}(var, p, q) takes three arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], label, pos)
+    _kind_p, p = _single_region(args[1], label, pos)
+    _kind_q, q = _single_region(args[2], label, pos)
+    cc = _value_cc(ctx, var, deltas)
+    if p not in cc["id"] or q not in cc["id"]:
+        raise CompileError(f"{label}() points must be cells of the variable", pos.line, pos.col)
+    return cc["id"][p] == cc["id"][q]
+
+
+def _fn_is_connected8(ctx, args, pos):
+    return _fn_is_connected(ctx, args, pos, _CC8, "is_connected8")
 
 
 def _build_value_cc(ctx, var: VarValue, deltas, cells=None) -> dict:
@@ -744,12 +1023,12 @@ def _build_value_cc(ctx, var: VarValue, deltas, cells=None) -> dict:
         ctx.add_aux((dp == 0) == (idp == lin))
         neighbours = [(r + dr, c + dc) for dr, dc in deltas if (r + dr, c + dc) in cell_set]
         parents = [
-            z3.And(var.quantities[n] == xp, ids[n] == idp, dist[n] == dp - 1)
+            z3.And(as_same(var.quantities[n], xp, z3), ids[n] == idp, dist[n] == dp - 1)
             for n in neighbours
         ]
         ctx.add_aux(z3.Implies(dp > 0, z3.Or(parents) if parents else z3.BoolVal(False)))
         for n in neighbours:
-            ctx.add_aux(z3.Implies(var.quantities[n] == xp, ids[n] == idp))
+            ctx.add_aux(z3.Implies(as_same(var.quantities[n], xp, z3), ids[n] == idp))
     return {"id": ids, "dist": dist, "cells": cells, "tag": tag}
 
 
@@ -817,7 +1096,7 @@ def _make_cc_count(deltas, label: str):
         z3 = ctx.z3
         cols = ctx.grid.cols
         terms = [
-            z3.If(z3.And(cc["id"][p] == p[0] * cols + p[1], var.quantities[p] == value), 1, 0)
+            z3.If(z3.And(cc["id"][p] == p[0] * cols + p[1], as_bool(var.quantities[p], value, z3)), 1, 0)
             for p in cc["cells"]
         ]
         return z3.Sum(terms) if terms else 0
@@ -856,7 +1135,7 @@ def _make_cc_count_in(deltas, label: str):
         z3 = ctx.z3
         cols = ctx.grid.cols
         terms = [
-            z3.If(z3.And(cc["id"][p] == p[0] * cols + p[1], var.quantities[p] == value), 1, 0)
+            z3.If(z3.And(cc["id"][p] == p[0] * cols + p[1], as_bool(var.quantities[p], value, z3)), 1, 0)
             for p in cc["cells"]
         ]
         return z3.Sum(terms) if terms else 0
@@ -965,7 +1244,7 @@ def _fn_drop_covers(ctx, args, pos):
     for p in cells:
         ctx.add_aux(drop[p] >= 0)
         ctx.add_aux(drop[p] <= max(0, rows - 1 - p[0]))
-        parts.append(z3.Implies(var.quantities[p] != 1, drop[p] == 0))
+        parts.append(z3.Implies(as_ne(var.quantities[p], 1, z3), drop[p] == 0))
     for p in cells:
         for q in cells:
             if p < q:
@@ -977,11 +1256,11 @@ def _fn_drop_covers(ctx, args, pos):
         column.sort()
         for i, p in enumerate(column):
             for q in column[i + 1:]:
-                both = z3.And(var.quantities[p] == 1, var.quantities[q] == 1)
+                both = z3.And(as_bool(var.quantities[p], 1, z3), as_bool(var.quantities[q], 1, z3))
                 parts.append(z3.Implies(both, p[0] + drop[p] < q[0] + drop[q]))
         for dest_r in range(rows):
             hits = [
-                z3.If(z3.And(var.quantities[p] == 1, p[0] + drop[p] == dest_r), 1, 0)
+                z3.If(z3.And(as_bool(var.quantities[p], 1, z3), p[0] + drop[p] == dest_r), 1, 0)
                 for p in column
             ]
             total = z3.Sum(hits) if hits else 0
@@ -1024,6 +1303,81 @@ def _fn_at(ctx, args, pos):
             f"'{var.name}' has no value at {_point_str(point)}", pos.line, pos.col
         )
     return var.quantities[point]
+
+
+def _lookup_or_default(var: VarValue, kind: PointKind, point, default):
+    if kind is not var.kind or point not in var.quantities:
+        return default
+    return var.quantities[point]
+
+
+def _fn_at_or(ctx, args, pos):
+    if len(args) != 3 or not isinstance(args[0], VarValue):
+        raise CompileError(
+            "at_or(var, point, default) takes a variable, a point and a default",
+            pos.line,
+            pos.col,
+        )
+    var, point_val, default = args
+    if isinstance(point_val, RegionValue) and len(point_val.points) == 0:
+        return default
+    kind, point = _single_region(point_val, "at_or", pos)
+    return _lookup_or_default(var, kind, point, default)
+
+
+def _fn_nb(ctx, args, pos):
+    if len(args) not in (3, 4) or not isinstance(args[0], VarValue):
+        raise CompileError(
+            "nb(var, point, d [, default]) takes a variable, a point and a direction",
+            pos.line,
+            pos.col,
+        )
+    default = args[3] if len(args) == 4 else 0
+    code = _as_int(args[2], "nb")
+    if code not in DIRECTIONS:
+        raise CompileError("nb() direction must be 0-7", pos.line, pos.col)
+    dr, dc = DIRECTIONS[code]
+    return _fn_nb_at(ctx, [args[0], args[1], dr, dc, default], pos)
+
+
+def _fn_nb_at(ctx, args, pos):
+    if len(args) not in (4, 5) or not isinstance(args[0], VarValue):
+        raise CompileError(
+            "nb_at(var, point, dr, dc [, default]) takes a variable, a point and an offset",
+            pos.line,
+            pos.col,
+        )
+    default = args[4] if len(args) == 5 else 0
+    if isinstance(args[1], RegionValue) and len(args[1].points) == 0:
+        return default
+    kind, point = _single_region(args[1], "nb_at", pos)
+    if kind is PointKind.EDGE:
+        raise CompileError("nb_at() expects a cell or corner", pos.line, pos.col)
+    dr = _as_int(args[2], "nb_at")
+    dc = _as_int(args[3], "nb_at")
+    r, c = point[0] + dr, point[1] + dc
+    ok = _cell_in(ctx.grid, r, c) if kind is PointKind.CELL else _corner_in(ctx.grid, r, c)
+    if not ok:
+        return default
+    return _lookup_or_default(args[0], kind, (r, c), default)
+
+
+def _fn_in_grid(ctx, args, pos):
+    if len(args) not in (1, 3):
+        raise CompileError("in_grid(point [, dr, dc]) takes 1 or 3 arguments", pos.line, pos.col)
+    if isinstance(args[0], RegionValue) and len(args[0].points) == 0:
+        return False
+    kind, point = _single_region(args[0], "in_grid", pos)
+    dr = _as_int(args[1], "in_grid") if len(args) == 3 else 0
+    dc = _as_int(args[2], "in_grid") if len(args) == 3 else 0
+    if kind is PointKind.EDGE:
+        if dr or dc:
+            raise CompileError("in_grid() offset applies to cell/corner", pos.line, pos.col)
+        return _edge_in(ctx.grid, point[0], point[1], point[2])
+    r, c = point[0] + dr, point[1] + dc
+    if kind is PointKind.CELL:
+        return _cell_in(ctx.grid, r, c)
+    return _corner_in(ctx.grid, r, c)
 
 
 def _parse_run_clues(raw, name: str, pos) -> list[int]:
@@ -1073,7 +1427,7 @@ def _seq_run_slots(ctx, seq: list, circular: bool):
         elif isinstance(item, int):
             occ.append(z3.BoolVal(item == 1))
         else:
-            occ.append(item == 1)
+            occ.append(as_bool(item, 1, z3))
 
     runlen = [ctx.new_int("run#l") for _ in range(n)]
     is_start = []
@@ -1165,7 +1519,7 @@ def _fn_runs(ctx, args, pos):
     parts.append(starts[-1] + Li[-1] <= n)
     for j, item in enumerate(seq):
         covered = [z3.And(starts[i] <= j, j < starts[i] + Li[i]) for i in range(len(lengths))]
-        parts.append((item == 1) == z3.Or(covered))
+        parts.append(as_bool(item, 1, z3) == z3.Or(covered))
     return z3.And(parts)
 
 
@@ -1266,7 +1620,7 @@ def _fn_deg(ctx, args, pos):
     if kind is not PointKind.CORNER:
         raise CompileError("deg() expects a corner", pos.line, pos.col)
     graph = ctx.memo(("cornergraph",), lambda: _corner_graph(ctx.grid))
-    return ctx.z3.Sum([var.quantities[e] for _, e in graph[point]])
+    return ctx.z3.Sum([as_int(var.quantities[e], ctx.z3) for _, e in graph[point]])
 
 
 def _fn_cdeg(ctx, args, pos):
@@ -1275,7 +1629,7 @@ def _fn_cdeg(ctx, args, pos):
     var = _expect_edge_var(args[0], "cdeg", pos)
     cell = _expect_cell(args[1], "cdeg", pos)
     graph, _ = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
-    return ctx.z3.Sum([var.quantities[e] for _, e in graph[cell]])
+    return ctx.z3.Sum([as_int(var.quantities[e], ctx.z3) for _, e in graph[cell]])
 
 
 def _link_connect(ctx, var: VarValue, graph: dict, cols_hint: int, tag: str):
@@ -1292,7 +1646,7 @@ def _link_connect(ctx, var: VarValue, graph: dict, cols_hint: int, tag: str):
     dist = {n: ctx.new_int(f"{tag}#d") for n in nodes}
     used = {}
     for node in nodes:
-        incident = [var.quantities[e] for _, e in graph[node]]
+        incident = [as_int(var.quantities[e], z3) for _, e in graph[node]]
         used[node] = z3.Sum(incident) > 0 if incident else z3.BoolVal(False)
     for node in nodes:
         lin = index[node]
@@ -1301,12 +1655,12 @@ def _link_connect(ctx, var: VarValue, graph: dict, cols_hint: int, tag: str):
         ctx.add_aux(dn >= 0)
         ctx.add_aux((dn == 0) == (idn == lin))
         parents = [
-            z3.And(var.quantities[e] == 1, ids[nb] == idn, dist[nb] == dn - 1)
+            z3.And(as_bool(var.quantities[e], 1, z3), ids[nb] == idn, dist[nb] == dn - 1)
             for nb, e in graph[node]
         ]
         ctx.add_aux(z3.Implies(dn > 0, z3.Or(parents) if parents else z3.BoolVal(False)))
         for nb, e in graph[node]:
-            ctx.add_aux(z3.Implies(var.quantities[e] == 1, ids[nb] == idn))
+            ctx.add_aux(z3.Implies(as_bool(var.quantities[e], 1, z3), ids[nb] == idn))
     roots = z3.Sum([z3.If(z3.And(used[n], dist[n] == 0), 1, 0) for n in nodes])
     return roots, used
 
@@ -1317,7 +1671,7 @@ def _loop_common(ctx, var, graph, tag, degrees, single):
     roots, _used = ctx.memo(key, lambda: _link_connect(ctx, var, graph, ctx.grid.cols, tag))
     parts = []
     for node, links in graph.items():
-        total = z3.Sum([var.quantities[e] for _, e in links]) if links else 0
+        total = z3.Sum([as_int(var.quantities[e], z3) for _, e in links]) if links else 0
         parts.append(z3.Or([total == d for d in degrees]))
     if single:
         parts.append(roots == 1)
@@ -1338,7 +1692,7 @@ def _fn_cloop(ctx, args, pos):
     var = _expect_edge_var(args[0], "cloop", pos)
     graph, outer = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
     for edge in outer:
-        ctx.add_aux(var.quantities[edge] == 0)
+        ctx.add_aux(as_bool(var.quantities[edge], 0, ctx.z3))
     return _loop_common(ctx, var, graph, "cloop", (0, 2), True)
 
 
@@ -1357,7 +1711,7 @@ def _fn_connect_links(ctx, args, pos):
     var = _expect_edge_var(args[0], "connect_links", pos)
     graph, outer = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
     for edge in outer:
-        ctx.add_aux(var.quantities[edge] == 0)
+        ctx.add_aux(as_bool(var.quantities[edge], 0, ctx.z3))
     roots, _ = ctx.memo(("cloop", var.name), lambda: _link_connect(ctx, var, graph, ctx.grid.cols, "cloop"))
     return roots == 1
 
@@ -1378,6 +1732,22 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     ),
     "count": BuiltinFunction(
         "count", _fn_count, signature="count(list)", doc="Number of elements (concrete integer)."
+    ),
+    "count_where": BuiltinFunction(
+        "count_where", _fn_count_where, signature="count_where(iterable, pred)",
+        doc="Sum If(pred(e), 1, 0) over a region/list. pred is fn or def.",
+    ),
+    "sum_where": BuiltinFunction(
+        "sum_where", _fn_sum_where, signature="sum_where(iterable, pred, val)",
+        doc="Sum If(pred(e), val(e), 0) over a region/list.",
+    ),
+    "any_where": BuiltinFunction(
+        "any_where", _fn_any_where, signature="any_where(iterable, pred)",
+        doc="Or of pred(e) over a region/list.",
+    ),
+    "all_where": BuiltinFunction(
+        "all_where", _fn_all_where, signature="all_where(iterable, pred)",
+        doc="And of pred(e) over a region/list.",
     ),
     "max": BuiltinFunction(
         "max", _fn_max, signature="max(list)", doc="Maximum quantity (z3 If-chain)."
@@ -1427,6 +1797,51 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     "dir": BuiltinFunction(
         "dir", _fn_dir, signature="dir(cell, value)",
         doc="All cells from a cell along direction value (0-7); use UP/DOWN/LEFT/RIGHT.",
+    ),
+    "line_from": BuiltinFunction(
+        "line_from", _fn_line_from, signature="line_from(p, d)",
+        doc="Same as dir(p, d); the line-family name for a ray.",
+    ),
+    "line": BuiltinFunction(
+        "line", _fn_line, signature="line(axis, i)",
+        doc="axis 0 = row(i), axis 1 = col(i). Order is left-to-right / top-to-bottom.",
+    ),
+    "lines": BuiltinFunction(
+        "lines", _fn_lines, signature="lines(axis)",
+        doc="All rows (axis 0) or all columns (axis 1).",
+    ),
+    "rev": BuiltinFunction(
+        "rev", _fn_rev, signature="rev(region)",
+        doc="Reverse a region or list without re-sorting. Do not merge the result with `and`.",
+    ),
+    "side_of": BuiltinFunction(
+        "side_of", _fn_side_of, signature="side_of(axis, near)",
+        doc='Outside-clue side name: axis 0 (row) → "left"/"right", axis 1 (col) → "top"/"bottom". near 0 is the start of the line.',
+    ),
+    "dr_of": BuiltinFunction(
+        "dr_of", _fn_dr_of, signature="dr_of(d)", doc="Row offset of direction d (compile-time)."
+    ),
+    "dc_of": BuiltinFunction(
+        "dc_of", _fn_dc_of, signature="dc_of(d)", doc="Column offset of direction d (compile-time)."
+    ),
+    "opp": BuiltinFunction(
+        "opp", _fn_opp, signature="opp(d)", doc="Opposite direction (0↔1, 2↔3, diagonals too)."
+    ),
+    "rot90": BuiltinFunction(
+        "rot90", _fn_rot90, signature="rot90(d [, k])",
+        doc="Rotate a 4-way direction clockwise by 90°×k (k defaults to 1).",
+    ),
+    "is_horizontal": BuiltinFunction(
+        "is_horizontal", _fn_is_horizontal, signature="is_horizontal(d)",
+        doc="True for LEFT/RIGHT (compile-time).",
+    ),
+    "is_vertical": BuiltinFunction(
+        "is_vertical", _fn_is_vertical, signature="is_vertical(d)",
+        doc="True for UP/DOWN (compile-time).",
+    ),
+    "tr": BuiltinFunction(
+        "tr", _fn_tr, signature="tr(dr, dc, t)",
+        doc="Dihedral transform t=0..7 of offset (dr, dc); returns [dr', dc'].",
     ),
     "grid": BuiltinFunction(
         "grid", _fn_grid, signature="grid(w, h)",
@@ -1481,6 +1896,22 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     "at": BuiltinFunction(
         "at", _fn_at, signature="at(var, point)",
         doc="The single quantity of a variable at one point (unwrapped scalar).",
+    ),
+    "at_or": BuiltinFunction(
+        "at_or", _fn_at_or, signature="at_or(var, point, default)",
+        doc="at(var, point) when the point is on-board and has a value, else default.",
+    ),
+    "nb": BuiltinFunction(
+        "nb", _fn_nb, signature="nb(var, point, d [, default])",
+        doc="Neighbour of point in direction d; default (0) when off-board.",
+    ),
+    "nb_at": BuiltinFunction(
+        "nb_at", _fn_nb_at, signature="nb_at(var, point, dr, dc [, default])",
+        doc="Offset neighbour; default (0) when off-board.",
+    ),
+    "in_grid": BuiltinFunction(
+        "in_grid", _fn_in_grid, signature="in_grid(point [, dr, dc])",
+        doc="Compile-time bool: the (optionally offset) point is on the board.",
     ),
     "runs": BuiltinFunction(
         "runs", _fn_runs, signature="runs(list, lengths)",
@@ -1552,18 +1983,43 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     "exactly": BuiltinFunction(
         "exactly", _fn_exactly, signature="exactly(list, k)", doc="Exactly k booleans hold."
     ),
-    # -- connectivity of equal-valued cells -----------------------------
+    # -- connectivity of equal-valued cells (L1–L5; cc_* are aliases) ---
+    "is_connected": BuiltinFunction(
+        "is_connected", _fn_is_connected, signature="is_connected(var, value)",
+        doc="L1: cells holding value form at most one 4-component (empty set counts). Flow encoding; no ids.",
+    ),
+    "is_connected8": BuiltinFunction(
+        "is_connected8", _fn_is_connected8, signature="is_connected8(var, value)",
+        doc="L1: at most one 8-connected component of that value (empty set counts).",
+    ),
+    "component_id": BuiltinFunction(
+        "component_id", _make_cc_id(_CC4, "component_id"), signature="component_id(var)",
+        doc="L5 (low-level): per-cell canonical id = min r*cols+c in the 4-component.",
+    ),
     "cc_id": BuiltinFunction(
         "cc_id", _make_cc_id(_CC4, "cc_id"), signature="cc_id(var)",
-        doc="Per-cell id of the 4-connected component of equal-valued cells.",
+        doc="Alias of component_id.", alias_of="component_id",
+    ),
+    "component_size": BuiltinFunction(
+        "component_size", _make_cc_size(_CC4, "component_size"), signature="component_size(var)",
+        doc="L4: per-cell size of the 4-connected equal-value component (O(N²)).",
     ),
     "cc_size": BuiltinFunction(
         "cc_size", _make_cc_size(_CC4, "cc_size"), signature="cc_size(var)",
-        doc="Per-cell size of that component (O(N²), use sparingly).",
+        doc="Alias of component_size.", alias_of="component_size",
+    ),
+    "component_count": BuiltinFunction(
+        "component_count", _make_cc_count(_CC4, "component_count"),
+        signature="component_count(var, value)",
+        doc="L2: number of 4-connected components whose cells hold that value.",
     ),
     "cc_count": BuiltinFunction(
         "cc_count", _make_cc_count(_CC4, "cc_count"), signature="cc_count(var, value)",
-        doc="Number of 4-connected components whose cells hold that value.",
+        doc="Alias of component_count.", alias_of="component_count",
+    ),
+    "same_component": BuiltinFunction(
+        "same_component", _fn_same_component, signature="same_component(var, p, q)",
+        doc="L3: whether two cells share a 4-connected equal-value component (uses canonical ids).",
     ),
     "cc_root": BuiltinFunction(
         "cc_root", _make_cc_root(_CC4, "cc_root"), signature="cc_root(var, cell)",
@@ -1666,10 +2122,54 @@ DEBUG_BUILTINS: dict[str, BuiltinFunction] = {
     ),
 }
 
+META_BUILTINS: dict[str, BuiltinFunction] = {
+    "solve": BuiltinFunction(
+        "solve", lambda ctx, args, pos: ctx.meta_solve(args, pos),
+        signature="solve([timeout_ms])",
+        doc="Meta: solve the constraints generated so far. Returns a snapshot with .sat / .status / .<var>.",
+    ),
+    "exclude": BuiltinFunction(
+        "exclude", lambda ctx, args, pos: ctx.meta_exclude(args, pos),
+        signature="exclude(s [, vars...])",
+        doc="Meta: constraint that the decisive variables differ from snapshot s.",
+    ),
+    "unique_over": BuiltinFunction(
+        "unique_over", lambda ctx, args, pos: ctx.meta_unique_over(args, pos),
+        signature="unique_over(v1, v2, ...)",
+        doc="Meta: restrict uniqueness / exclude() to these decisive variables.",
+    ),
+    "require": BuiltinFunction(
+        "require", lambda ctx, args, pos: ctx.meta_require(args, pos),
+        signature="require(cond, msg)",
+        doc="Meta: compile-time assertion. cond must be a Python bool.",
+    ),
+    "fail": BuiltinFunction(
+        "fail", lambda ctx, args, pos: ctx.meta_fail(args, pos),
+        signature="fail(msg)",
+        doc="Meta: abort compilation with a message.",
+    ),
+    "domain_of": BuiltinFunction(
+        "domain_of", lambda ctx, args, pos: ctx.meta_domain_of(args, pos),
+        signature="domain_of(var)",
+        doc="Compile-time list of integers in var.domain (inclusive).",
+    ),
+    "emit_witness": BuiltinFunction(
+        "emit_witness", lambda ctx, args, pos: ctx.meta_emit_witness(args, pos),
+        signature="emit_witness(tag, value)",
+        doc="Meta: record a (tag, int) witness on the solve result.",
+    ),
+    "solve_count": BuiltinFunction(
+        "solve_count", lambda ctx, args, pos: ctx.meta_solve_count(args, pos),
+        signature="solve_count()",
+        doc="Meta: how many solve() calls have run in this meta: block.",
+    ),
+}
+
 BUILTIN_FUNCTIONS: dict[str, BuiltinFunction] = {
     **AGGREGATE_BUILTINS,
     **ELEMENTWISE_BUILTINS,
     **DEBUG_BUILTINS,
+    **META_BUILTINS,
 }
 
 
@@ -1693,6 +2193,8 @@ def make_constants(grid) -> dict[str, Any]:
     cols = [RegionValue.of(PointKind.CELL, [(r, c) for r in range(grid.rows)]) for c in range(grid.cols)]
     env: dict[str, Any] = {"rows": rows, "cols": cols}
     env.update(DIRECTION_CONSTANTS)
+    env["dirs4"] = [0, 1, 2, 3]
+    env["dirs8"] = [0, 1, 2, 3, 4, 5, 6, 7]
     return env
 
 
@@ -1714,6 +2216,10 @@ def function_table() -> list[DocEntry]:
     for fn in BUILTIN_FUNCTIONS.values():
         if fn.name in DEBUG_BUILTINS:
             category = "Debug"
+        elif fn.name in META_BUILTINS:
+            category = "Meta"
+        elif fn.alias_of:
+            category = "Alias"
         elif fn.elementwise:
             category = "Element-wise"
         else:
@@ -1731,6 +2237,8 @@ def function_table() -> list[DocEntry]:
         ("UP_RIGHT", "UP_RIGHT = 5", "Diagonal up-right."),
         ("DOWN_LEFT", "DOWN_LEFT = 6", "Diagonal down-left."),
         ("DOWN_RIGHT", "DOWN_RIGHT = 7", "Diagonal down-right."),
+        ("dirs4", "dirs4", "The four orthogonal directions [UP, DOWN, LEFT, RIGHT]."),
+        ("dirs8", "dirs8", "The eight directions including diagonals."),
     ]
     for name, sig, doc in constants:
         entries.append(DocEntry(name, sig, doc, "Constant"))
@@ -1743,6 +2251,7 @@ def function_table() -> list[DocEntry]:
         ("=>", "a => b", "Implies (lowest precedence, right-associative)."),
         ("== != < <= > >=", "a == b", "Comparisons (broadcast element-wise)."),
         ("+ - * / %", "a + b", "Arithmetic (integer division/modulo when concrete)."),
+        ("fn / ->", "fn (p) -> expr", "Anonymous function. Captures enclosing bindings (unlike def)."),
         ("x[region]", "x[row(0)]", "Index a variable by a region/integer."),
     ]
     for name, sig, doc in operators:

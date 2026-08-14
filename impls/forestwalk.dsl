@@ -26,15 +26,9 @@ for p in cells():
 
 for p in cells():
     if not has_value(g, p):
-        let ok = false
-        for q in adj4(p):
-            if not has_value(g, q):
-                let ok = ok or (link_between(e, p, q) == 1 and at(u, q) == at(u, p) and at(z, q) == at(z, p) - 1)
-        at(z, p) > 0 => ok
+        at(z, p) > 0 => any_where(adj4(p), fn (q) -> not has_value(g, q) and link_between(e, p, q) == 1 and at(u, q) == at(u, p) and at(z, q) == at(z, p) - 1)
 
 for p in clue_cells(n):
     cdeg(e, p) == 2
-    let sz = 0
-    for q in cells():
-        let sz = sz + b2i(at(u, q) == at(u, p))
+    let sz = count_where(cells(), fn (q) -> at(u, q) == at(u, p))
     sz == at(n, p)

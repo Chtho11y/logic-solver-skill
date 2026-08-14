@@ -19,10 +19,7 @@ def board_n():
 
 
 def allowed_or_empty(x, p, vals):
-    let ok = b2i(at(x, p) == 0)
-    for v in vals:
-        let ok = ok + b2i(at(x, p) == v)
-    ok == 1
+    count_where(vals, fn (v) -> at(x, p) == v) + b2i(at(x, p) == 0) == 1
 
 
 def each_once(x, vals):
@@ -101,43 +98,16 @@ def reverse_col_cell(p):
 
 
 def vis_count_row_rev(x, line):
-    let vis = 0
-    let mx = 0
-    for p in line:
-        let q = reverse_row_cell(p)
-        let vis = vis + b2i(at(x, q) > mx)
-        let mx = ite(at(x, q) > mx, at(x, q), mx)
-    return vis
-
+    return vis_count(x, rev(line))
 
 def vis_count_col_rev(x, line):
-    let vis = 0
-    let mx = 0
-    for p in line:
-        let q = reverse_col_cell(p)
-        let vis = vis + b2i(at(x, q) > mx)
-        let mx = ite(at(x, q) > mx, at(x, q), mx)
-    return vis
-
+    return vis_count(x, rev(line))
 
 def first_nonzero_row_rev(x, line):
-    let seen = 0
-    let first = 0
-    for p in line:
-        let q = reverse_row_cell(p)
-        let first = ite(seen == 0, ite(at(x, q) != 0, at(x, q), 0), first)
-        let seen = ite(at(x, q) != 0, 1, seen)
-    return first
-
+    return first_nonzero(x, rev(line))
 
 def first_nonzero_col_rev(x, line):
-    let seen = 0
-    let first = 0
-    for p in line:
-        let q = reverse_col_cell(p)
-        let first = ite(seen == 0, ite(at(x, q) != 0, at(x, q), 0), first)
-        let seen = ite(at(x, q) != 0, 1, seen)
-    return first
+    return first_nonzero(x, rev(line))
 
 
 def magic_line_value(x, line):

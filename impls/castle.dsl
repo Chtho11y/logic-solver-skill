@@ -12,9 +12,7 @@ for p in cells():
 
 let ids = cc_id(y)
 for p in cells():
-    let touch = false
-    for b in boundary():
-        let touch = touch or (at(y, b) == 1 and at(ids, p) == at(ids, b))
+    let touch = any_where(boundary(), fn (b) -> at(y, b) == 1 and at(ids, p) == at(ids, b))
     off_loop(e, p) => at(ins, p) == b2i(not touch)
     on_loop(e, p) => at(ins, p) == 0
 
@@ -28,7 +26,4 @@ for p in clue_cells(o):
 for p in clue_cells(n):
     off_loop(e, p)
     if has_value(d, p):
-        let total = 0
-        for q in dir(p, at(d, p)):
-            let total = total + b2i(on_loop(e, q))
-        total == at(n, p)
+        count_where(dir(p, at(d, p)), fn (q) -> on_loop(e, q)) == at(n, p)

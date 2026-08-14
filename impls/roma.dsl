@@ -20,10 +20,10 @@ for p in cells():
     else:
         at(dist, p) >= 1
     for d in [UP, DOWN, LEFT, RIGHT]:
-        let q = step(p, d)
-        if q.size == 0:
+        if not in_grid(p, dr_of(d), dc_of(d)):
             at(a, p) != d
         else:
+            let q = step(p, d)
             if has_value(o, p):
                 if at(o, p) == 2:
                     true

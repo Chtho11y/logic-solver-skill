@@ -16,25 +16,14 @@ for p in cells():
 
 for p in clue_cells(o):
     cc_count(x, at(x, p)) == 1
-    let tips = 0
-    let sz = 0
-    for q in cells():
-        let tips = tips + b2i(at(x, q) == at(x, p) and cdeg(e, q) <= 1)
-        let sz = sz + b2i(at(x, q) == at(x, p))
+    let tips = count_where(cells(), fn (q) -> at(x, q) == at(x, p) and cdeg(e, q) <= 1)
+    let sz = count_where(cells(), fn (q) -> at(x, q) == at(x, p))
     (cdeg(e, p) == 0 and tips == 1) or (cdeg(e, p) == 1 and tips == 2)
     if has_value(n, p):
         sz == at(n, p) + 1
 
 for q in cells():
-    let dest = false
-    for p in clue_cells(o):
-        let is_dest = false
-        if row_of(q) == row_of(p) and col_of(q) == col_of(p):
-            let is_dest = cdeg(e, p) == 0
-        else:
-            let is_dest = cdeg(e, p) == 1 and at(x, q) == at(x, p) and cdeg(e, q) == 1
-        let dest = dest or is_dest
-    at(f, q) == b2i(dest)
+    at(f, q) == b2i(any_where(clue_cells(o), fn (p) -> ite(row_of(q) == row_of(p) and col_of(q) == col_of(p), cdeg(e, p) == 0, cdeg(e, p) == 1 and at(x, q) == at(x, p) and cdeg(e, q) == 1)))
 
 for p in cells():
     let q = cell(rows.size - 1 - row_of(p), cols.size - 1 - col_of(p))

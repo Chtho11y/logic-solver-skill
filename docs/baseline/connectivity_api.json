@@ -1,0 +1,178 @@
+{
+  "apis": {
+    "is_connected8": [],
+    "is_connected": [],
+    "connected8": [
+      "antmill",
+      "cocktail",
+      "cornerch",
+      "diamond",
+      "martini",
+      "mochinyoro",
+      "scrin",
+      "tetrochain",
+      "tetrochaink"
+    ],
+    "connected": [
+      "isowatari",
+      "kurarin",
+      "nanro",
+      "sansaroad",
+      "scrabble",
+      "sukoro",
+      "tasquare",
+      "wittgen"
+    ],
+    "black_connected": [
+      "aqre",
+      "lits",
+      "paintarea",
+      "yinyang"
+    ],
+    "white_connected": [
+      "cave",
+      "creek",
+      "nurimisaki",
+      "statuepark",
+      "yinyang"
+    ],
+    "island_rule": [
+      "akichi",
+      "aquapelago",
+      "ayeheya",
+      "context",
+      "heyawake",
+      "hitori",
+      "kurodoko",
+      "nothree",
+      "oasis",
+      "oneroom",
+      "sumiwake",
+      "teri",
+      "usoone",
+      "yajikazu"
+    ],
+    "wall_rule": [
+      "canal",
+      "circlesquare",
+      "coral",
+      "cts",
+      "disco",
+      "nurikabe",
+      "nuritwin",
+      "sashikabe",
+      "shugaku",
+      "tapa"
+    ],
+    "color_is_tree": [
+      "guidearrow",
+      "nurimaze",
+      "parquet"
+    ],
+    "snake_shape": [
+      "snake",
+      "snakeegg"
+    ],
+    "cycle_shape": [
+      "bosnianroad"
+    ],
+    "component_count": [],
+    "group_count": [],
+    "cc8_count_in": [
+      "nuritwin"
+    ],
+    "cc_count_in": [
+      "disco",
+      "nuritwin",
+      "oneroom"
+    ],
+    "cc8_count": [
+      "mochikoro",
+      "pentopia"
+    ],
+    "cc_count": [
+      "anglers",
+      "bonsan",
+      "chainedb",
+      "coffeemilk",
+      "curvedata",
+      "evolmino",
+      "hebi",
+      "herugolf",
+      "kaero",
+      "kurarin",
+      "lightshadow",
+      "mintonette",
+      "norinuri",
+      "numlin",
+      "nuribou",
+      "nurikabe",
+      "nuriloop",
+      "pentatouch",
+      "pentopia",
+      "ququ",
+      "rectslider",
+      "sato",
+      "shimaguni",
+      "wblink",
+      "yosenabe"
+    ],
+    "same_component": [],
+    "component_size": [],
+    "cc8_size_in": [],
+    "cc_size_in": [
+      "akichi",
+      "nuritwin"
+    ],
+    "cc8_size": [
+      "aquapelago",
+      "chainedb",
+      "mrtile"
+    ],
+    "cc_size": [
+      "cbanana",
+      "chainedb",
+      "cornerch",
+      "evolmino",
+      "hebi",
+      "kuroclone",
+      "kurotto",
+      "lightshadow",
+      "lookair",
+      "mochikoro",
+      "mrtile",
+      "norinori",
+      "nuribou",
+      "nurikabe",
+      "nuriloop",
+      "rectslider",
+      "snakeegg",
+      "tasquare"
+    ],
+    "cc_width": [],
+    "cc_height": [],
+    "cc_is_rect": [
+      "cornerch",
+      "mochinyoro"
+    ],
+    "component_id": [],
+    "cc8_id": [],
+    "cc_id": [
+      "castle",
+      "cbanana",
+      "clouds",
+      "dominion",
+      "interbd",
+      "kurotto",
+      "martini",
+      "nuribou",
+      "pentatouch",
+      "tasquare"
+    ],
+    "cc8_root": [],
+    "cc_root": [
+      "snakeegg",
+      "tasquare"
+    ]
+  }
+}

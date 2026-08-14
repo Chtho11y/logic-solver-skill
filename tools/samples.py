@@ -70,14 +70,13 @@ SAMPLES["nurikabe"] = sample(
 )
 
 SAMPLES["hitori"] = sample(
-    "hitori", 5, 5,
-    title="拉丁方数壹（解为全留白）",
+    "hitori", 4, 4,
+    title="4x4 数壹（首行一对 1）",
     clues={"n": from_grid("""
-        1 2 3 4 5
-        2 3 4 5 1
-        3 4 5 1 2
-        4 5 1 2 3
-        5 1 2 3 4
+        1 1 2 3
+        2 3 4 1
+        3 4 1 2
+        4 2 3 4
     """)},
 )
 
@@ -179,6 +178,23 @@ SAMPLES["akari"] = sample(
     "akari", 4, 4,
     title="4x4 美术馆",
     clues={"w": {"1,1": 1, "2,2": 1}, "n": {"1,1": 1}},
+)
+
+SAMPLES["yajilin"] = sample(
+    "yajilin", 4, 4,
+    title="4x4 空盘仙人指路",
+    clues={"d": {}, "n": {}},
+)
+
+SAMPLES["context"] = sample(
+    "context", 4, 4,
+    title="4x4 全 0（唯一全白）",
+    clues={"n": from_grid("""
+        0 0 0 0
+        0 0 0 0
+        0 0 0 0
+        0 0 0 0
+    """)},
 )
 
 SAMPLES["kurodoko"] = sample(

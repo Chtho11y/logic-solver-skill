@@ -14,10 +14,4 @@ for p in clue_cells(n):
 def adj_square_area(x, p):
     let ids = cc_id(x)
     let sz = cc_size(x)
-    let total = 0
-    for q in cells():
-        let touch = false
-        for a in adj4(p):
-            let touch = touch or (is_black(x, a) and at(ids, a) == at(ids, q))
-        let total = total + ite(cc_root(x, q) and is_black(x, q) and touch, at(sz, q), 0)
-    return total
+    return sum_where(cells(), fn (q) -> cc_root(x, q) and is_black(x, q) and any_where(adj4(p), fn (a) -> is_black(x, a) and at(ids, a) == at(ids, q)), fn (q) -> at(sz, q))

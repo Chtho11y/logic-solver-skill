@@ -17,21 +17,11 @@ for p in cells():
 
 for p in clue_cells(o):
     cc_count(x, at(x, p)) == 1
-    let tips = 0
-    for q in cells():
-        let tips = tips + b2i(at(x, q) == at(x, p) and cdeg(e, q) <= 1)
+    let tips = count_where(cells(), fn (q) -> at(x, q) == at(x, p) and cdeg(e, q) <= 1)
     (cdeg(e, p) == 0 and tips == 1) or (cdeg(e, p) == 1 and tips == 2)
 
 for q in cells():
-    let dest = false
-    for p in clue_cells(o):
-        let is_dest = false
-        if row_of(q) == row_of(p) and col_of(q) == col_of(p):
-            let is_dest = cdeg(e, p) == 0
-        else:
-            let is_dest = cdeg(e, p) == 1 and at(x, q) == at(x, p) and cdeg(e, q) == 1
-        let dest = dest or is_dest
-    at(f, q) == b2i(dest)
+    at(f, q) == b2i(any_where(clue_cells(o), fn (p) -> ite(row_of(q) == row_of(p) and col_of(q) == col_of(p), cdeg(e, p) == 0, cdeg(e, p) == 1 and at(x, q) == at(x, p) and cdeg(e, q) == 1)))
     at(f, q) == 1 => has_value(g, q)
 
 for reg in regions:
@@ -45,9 +35,7 @@ for reg in regions:
             if has_value(k, p):
                 let sm = 0
                 for s in clue_cells(o):
-                    let inreg = false
-                    for q in reg:
-                        let inreg = inreg or (at(f, q) == 1 and at(x, q) == at(x, s))
+                    let inreg = any_where(reg, fn (q) -> at(f, q) == 1 and at(x, q) == at(x, s))
                     if has_value(n, s):
                         let sm = sm + b2i(inreg) * at(n, s)
                 sm == at(k, p)

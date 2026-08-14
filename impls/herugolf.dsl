@@ -21,9 +21,7 @@ for p in cells():
 
 for p in clue_cells(o):
     cc_count(u, at(u, p)) == 1
-    let nh = 0
-    for q in clue_cells(h):
-        let nh = nh + b2i(at(u, q) == at(u, p))
+    let nh = count_where(clue_cells(h), fn (q) -> at(u, q) == at(u, p))
     nh == 1
 
 for p in cells():
@@ -42,22 +40,14 @@ for p in cells():
     at(r, p) > 0 and at(r, p) < at(s, p) => goes_straight(e, p)
 
 def has_pred(e, x, p):
-    let ok = false
-    for q in adj4(p):
-        let ok = ok or (link_between(e, p, q) == 1 and at(x, q) == at(x, p) - 1)
-    return ok
+    return any_where(adj4(p), fn (q) -> link_between(e, p, q) == 1 and at(x, q) == at(x, p) - 1)
 
 def has_succ_same(e, x, r, s, p):
-    let ok = false
-    for q in adj4(p):
-        let ok = ok or (link_between(e, p, q) == 1 and at(x, q) == at(x, p) + 1 and at(r, q) == at(r, p) - 1 and at(s, q) == at(s, p))
-    return ok
+    return any_where(adj4(p), fn (q) -> link_between(e, p, q) == 1 and at(x, q) == at(x, p) + 1 and at(r, q) == at(r, p) - 1 and at(s, q) == at(s, p))
 
 def has_succ_new(e, x, r, s, p):
     let ok = false
     for q in adj4(p):
-        let rev = false
-        for t in adj4(p):
-            let rev = rev or (link_between(e, p, t) == 1 and at(x, t) == at(x, p) - 1 and row_of(t) - row_of(p) == row_of(p) - row_of(q) and col_of(t) - col_of(p) == col_of(p) - col_of(q))
+        let rev = any_where(adj4(p), fn (t) -> link_between(e, p, t) == 1 and at(x, t) == at(x, p) - 1 and row_of(t) - row_of(p) == row_of(p) - row_of(q) and col_of(t) - col_of(p) == col_of(p) - col_of(q))
         let ok = ok or (link_between(e, p, q) == 1 and at(x, q) == at(x, p) + 1 and at(s, q) == at(s, p) - 1 and at(r, q) == at(s, q) and at(s, q) >= 1 and not rev)
     return ok

@@ -11,10 +11,7 @@ cc_count(x, 1) == clue_cells(a).size
 
 let sz = cc_size(x)
 for p in clue_cells(a):
-    let n = 0
-    for q in clue_cells(a):
-        let n = n + b2i(at(a, p) == at(a, q))
-    n >= 2
+    count_where(clue_cells(a), fn (q) -> at(a, p) == at(a, q)) >= 2
 
 for p in clue_cells(a):
     if has_value(d, p):

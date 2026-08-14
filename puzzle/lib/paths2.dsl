@@ -9,23 +9,17 @@ import "loops"
 
 def no_outer_links(e):
     for p in cells():
-        if shift(p, -1, 0).size == 0:
+        if not in_grid(p, -1, 0):
             link_up(e, p) == 0
-        if shift(p, 1, 0).size == 0:
+        if not in_grid(p, 1, 0):
             link_down(e, p) == 0
-        if shift(p, 0, -1).size == 0:
+        if not in_grid(p, 0, -1):
             link_left(e, p) == 0
-        if shift(p, 0, 1).size == 0:
+        if not in_grid(p, 0, 1):
             link_right(e, p) == 0
 
 def opposite_dir(d):
-    if d == UP:
-        return DOWN
-    if d == DOWN:
-        return UP
-    if d == LEFT:
-        return RIGHT
-    return LEFT
+    return opp(d)
 
 def cell_idx(p):
     return row_of(p) * cols.size + col_of(p)

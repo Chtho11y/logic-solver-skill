@@ -22,13 +22,13 @@
 
 ### 关键字（KEYWORDS）
 ```
-if  elif  else  for  in  let  and  or  not  true  false  def  return  import
+if  elif  else  for  in  let  and  or  not  true  false  def  return  import  meta  scope  fn
 ```
 
 ### 运算符
-- 双字符（优先匹配）：`==` `!=` `<=` `>=` `&&` `||` `=>`
+- 双字符（优先匹配）：`==` `!=` `<=` `>=` `&&` `||` `=>` `->`
 - 单字符：`+ - * / % < > = ( ) [ ] , : ^ ! .`
-- `&&` / `||` 是 `and` / `or` 的符号别名；`^` 是 xor；`!` 是 not；`=>` 是 implies；`.` 是成员访问。
+- `&&` / `||` 是 `and` / `or` 的符号别名；`^` 是 xor；`!` 是 not；`=>` 是 implies；`->` 用于 `fn (...) -> expr`；`.` 是成员访问。
 
 ### 字面量与标识符
 - 整数：连续数字组成（仅非负整数；负数由一元 `-` 得到）。
@@ -45,10 +45,12 @@ if  elif  else  for  in  let  and  or  not  true  false  def  return  import
 ```ebnf
 program     := { NEWLINE } { statement }
 statement   := simple NEWLINE | compound
-compound    := if_stmt | for_stmt | def_stmt
+compound    := if_stmt | for_stmt | def_stmt | meta_stmt | scope_stmt
 if_stmt     := 'if' expr ':' suite { 'elif' expr ':' suite } [ 'else' ':' suite ]
 for_stmt    := 'for' name_list 'in' expr ':' suite
 def_stmt    := 'def' NAME '(' [ name_list ] ')' ':' suite
+meta_stmt   := 'meta' ':' suite
+scope_stmt  := 'scope' ':' suite
 suite       := simple NEWLINE | NEWLINE INDENT statement+ DEDENT
 simple      := 'let' name_list '=' expr | 'return' [ expr ] | 'import' STR | expr
 name_list   := NAME { ',' NAME }
@@ -63,8 +65,11 @@ arith       := term {('+'|'-') term}
 term        := factor {('*'|'/'|'%') factor}
 factor      := ('+'|'-') factor | postfix
 postfix     := primary {'[' expr ']' | '(' [args] ')' | '.' NAME}
-primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] ']'
+primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] ']' | lambda_expr
+lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 ```
+
+`fn` 的体是**单个表达式**（不是语句块）。跨行时把体放在括号里：`fn (p) -> (a or b)`。
 
 ### 语句
 - **顶层表达式语句**：将其（广播后的）布尔值作为约束断言。整数/区域等非布尔会报错。
@@ -73,8 +78,11 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
   - 若 `cond` 在编译期可求值为**纯 Python 布尔常量**，则进行**常量折叠**：直接编译被选中的分支，既不生成条件约束，也不为该分支添加守卫。`not` / `and` / `or` / `^` / `=>` 在两侧都是编译期布尔时同样折叠，因此 `if not same_region(p, q):` 之类写法可以安全地包裹 `let` 累加。
   - 否则把 `body` 内每条约束包装为 `Implies(cond, c)`，`else` 分支包装为 `Implies(Not(cond), c)`。守卫（guard）会累积。**注意**：守卫只作用于被断言的约束，不会阻止 `let` 执行——需要条件性累加时请确保条件是编译期常量。
 - **`for v in iterable: body`**：在编译期**展开**循环，每次迭代把 `v` 绑定到一个元素。
-- **`def name(a, b): body`**：定义编译期内联的辅助函数。函数体内的约束按调用点的守卫被断言；`return expr` 返回一个值（可以是布尔表达式、区域、列表……），没有 `return` 时返回空列表。同一块内的 `def` 会被**提升**，因此可以先用后定义。函数体在独立的作用域栈中执行（只能看到自己的参数与全局的变量/区域/常量/函数）。
+- **`def name(a, b): body`**：定义编译期内联的辅助函数。函数体内的约束按调用点的守卫被断言；`return expr` 返回一个值（可以是布尔表达式、区域、列表……），没有 `return` 时返回空列表。同一块内的 `def` 会被**提升**，因此可以先用后定义。调用时作用域栈被替换为**仅** `[参数帧]`（只能看到自己的参数与全局的变量/区域/常量/函数），**不捕获**外层 `let`。
+- **`fn (a, b) -> expr`**：匿名函数，表达式体，无副作用。求值时把当前 `self._scopes` **逐层 `dict(scope)` 拷贝**进闭包。调用时作用域为 `captured + [参数帧]`，因此能看见捕获时的外层绑定。捕获的是拷贝，之后的 `let` 就地重绑定**不可见**（与 Python 相反）。`def` 与 `fn` 的作用域规则不同，不要混用预期。
 - **`import "module"`**：把另一个 DSL 模块的定义引入当前程序（同名模块只加载一次）。解析顺序为 `puzzle/lib/` 然后 `impls/`，扩展名 `.dsl` 可省略。
+- **`meta:` 块**：编译期求解。`solve` / `exclude` / `scope` / `require` / `emit_witness` **只能**写在这里。块必须出现在守卫为空的位置（不能包在符号 `if` 里），不能嵌套，块内不能 `def`。`meta:` 可以写在 `def` 体内，但调用点的守卫仍须为空。默认不执行：`compile_source` / `solve` / `solve_instance` 的 `run_meta` 默认为 `False`；`compile_only` 恒为 `False`。关闭时整块跳过并记一条 debug。
+- **`scope:` 块**：只能写在 `meta:` 内。对应求解器 `push`/`pop`、截断本次加入的约束、回滚 `_memo` 与 `_cc_z3`。**不** push DSL 变量作用域，因此 `let s2 = solve()` 可以在退出后继续读取。不回滚 `_aux_counter`。
 
 ### 结构化绑定（解包）
 - `let a, b, c = expr` 与 `for a, b, c in expr:` 把 `expr`（或每个循环元素）按位解包到多个目标名。
@@ -97,6 +105,8 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | **列表 list** | 可嵌套的值列表；支持 `.size` / `.append(x)` / `[i]` |
 | **RegionValue** | 单一种类（cell/corner/edge）的有序点集，可作索引或被迭代；支持 `.size` |
 | **VarValue** | 一个变量在其全部点上的量集合；直接使用时等价于其所有量组成的列表；支持 `.size`。区域划分（cc）变量的 `.id` / `.size` / `.border` 也以 `VarValue` 形式返回 |
+| **Closure** | `fn (...) -> expr` 的值：参数、表达式体、捕获的作用域拷贝。可传入 `count_where` 等聚合 |
+| **UserFunction** | `def` 定义的函数值。调用时**不**捕获外层 `let`（作用域仅为参数帧） |
 | **_BoundMethod** | 由成员访问产生的可调用方法（如 `list.append`），仅用于随后立即调用 |
 
 ### 点（Point）表示
@@ -135,8 +145,10 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 ### `and` 的集合合并语义
 当 `and` 两侧都是「可合并」值（list / RegionValue / VarValue）时，结果是**合并**而非逻辑与：
-- 两个同种 `RegionValue` → 合并点集为新区域；不同种类报错。
+- 两个同种 `RegionValue` → 合并点集为新区域；不同种类报错。**合并走 `RegionValue.of`，会按 `sort_points` 重排**，因此 `rev(...) and ...` 会丢掉逆序。
 - 否则各自展平为元素列表后拼接。
+
+`and` / `or` / `^` / `=>` **两侧都会求值**，没有短路。`in_grid(p, dr, dc) and at(x, shift(p, dr, dc))` 仍会执行 `shift`/`at`，越界时照样报错。越界请用 `if not in_grid(...):` 守卫，或改用 `at_or` / `nb`（缺省值）。
 
 这样可写 `row(0) and row(1)` 把两行合成一个区域再传给函数。
 
@@ -183,6 +195,13 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `count(list)` | 元素个数（具体整数，编译期可得） |
 | `max(list)` | 最大量（z3 If 链）；空列表报错 |
 | `min(list)` | 最小量（z3 If 链）；空列表报错 |
+| `count_where(iterable, pred)` | `Sum(If(pred(e), 1, 0))`。`pred` 为 `fn` 或 `def` |
+| `sum_where(iterable, pred, val)` | `Sum(If(pred(e), val(e), 0))`。`val` 同样是可调用 |
+| `any_where(iterable, pred)` | 至少一个 `pred(e)` 成立 |
+| `all_where(iterable, pred)` | 全部 `pred(e)` 成立 |
+
+`iterable` 接受 RegionValue / list / VarValue。空列表时 `count_where`/`sum_where` 为 0，`any_where` 为 false，`all_where` 为 true。
+沿射线的前缀状态机（`see_count`、`seg_len`/`arm_len`、`vis_count`/`first_nonzero`、`h_run_len` 等）**不能**改写成这些聚合：它们依赖迭代顺序上的 `alive`/`seen`/`mx`。
 
 ### 6.2 逐元素函数（Element-wise）
 
@@ -203,6 +222,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `boundary()` | 位于盘面外圈的 cell |
 | `rect(r, c, h, w)` | 以 (r,c) 为左上角的 h×w 矩形（越界裁剪） |
 | `shift(point, dr, dc)` | 平移后的 cell/corner；越界时返回空区域 |
+| `in_grid(point [, dr, dc])` | 点（加可选偏移）是否在盘内；编译期布尔，替代 `.size == 0` |
 | `diag()` | 主对角线 cell：(0,0),(1,1),… |
 | `ct_diag()` | 反对角线 cell：(0,cols-1),(1,cols-2),… |
 | `adj4(cell)` | 正交相邻的 4 个 cell（越界裁剪） |
@@ -212,6 +232,16 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `corner_of(point)` | 与某 cell/corner/edge 直接相连的 corner |
 | `edge_of(point)` | 与某 cell/corner/edge 直接相连的 edge |
 | `dir(cell, value)` | 从某 cell 沿方向 value(0-7) 的所有 cell（不含起点，保持射线顺序） |
+| `line_from(p, d)` | 与 `dir(p, d)` 相同，线族写法 |
+| `line(axis, i)` | `axis==0` → `row(i)`；`axis==1` → `col(i)`。保持从左到右 / 从上到下的顺序 |
+| `lines(axis)` | 该轴全部线，等价于 `rows` / `cols` |
+| `rev(region)` | 逆序的同类区域或列表。**直接构造，不经过 `RegionValue.of`，因此不排序** |
+| `side_of(axis, near)` | 盘外线索边名。`axis==0`（行）：`near==0` → `"left"`，否则 `"right"`；`axis==1`（列）：`near==0` → `"top"`，否则 `"bottom"`。`near` 须为具体整数 0/1 |
+| `dr_of(d)` / `dc_of(d)` | 方向 `d` 的行列偏移（编译期整数，读方向表） |
+| `opp(d)` | 反向（4 向与 8 向都支持） |
+| `rot90(d [, k])` | 4 向顺时针转 90°×k（`k` 缺省 1） |
+| `is_horizontal(d)` / `is_vertical(d)` | 编译期布尔：LEFT/RIGHT vs UP/DOWN |
+| `tr(dr, dc, t)` | 8 元二面体变换，返回 `[dr', dc']` |
 | `spiral()` | 从左上角起顺时针螺旋走过每个 cell（保持访问顺序，不排序） |
 | `grid(w, h)` | 把棋盘划分为不重叠的 w×h tile（区域列表，仅完整 tile） |
 | `slide(w, h)` | 所有重叠的 w×h 滑动窗口（步长 1，区域列表） |
@@ -224,6 +254,9 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | 签名 | 说明 |
 |------|------|
 | `at(var, point)` | 变量在**单个点**上的量（标量）。`x[p]` 返回长度 1 的列表，需要标量时一律用 `at` |
+| `at_or(var, point, default)` | 点在盘内且变量有值 → 该量；否则 → `default`（`default` 可以是任意值，包括 `false`） |
+| `nb(var, point, d [, default])` | `at_or(var, step(point, d), default)`，`default` 缺省 0 |
+| `nb_at(var, point, dr, dc [, default])` | 偏移版本。缺省 0 在「值为 0 也合法」时**不能**当越界哨兵（例如数相邻的 0-格对） |
 | `defined(var)` | 常量变量实际有值的点组成的区域 |
 | `has_value(var, point)` | 该点是否有值（编译期布尔） |
 | `param("name")` | 实例参数（整数或嵌套列表），如盘外提示 `param("top")[c]` |
@@ -249,20 +282,24 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 ### 6.6 同值连通分量（Connectivity）
 
-作用于 **cell 变量**，把「取值相同且相邻」的格子归为一组。
+作用于 **cell 变量**，把「取值相同且相邻」的格子归为一组。按语义强度分层：
 
-| 签名 | 说明 |
-|------|------|
-| `cc_id(var)` | 每格所在 4-连通同值分量的 id（分量内最小线性下标） |
-| `cc_size(var)` | 每格所在分量的格数（O(N²)，谨慎使用） |
-| `cc_count(var, value)` | 取值为 value 的分量个数；`== 1` 即「全部连通」 |
-| `cc_root(var, cell)` | 该格是否为其分量的代表元 |
-| `cc_count_in(var, value, region)` | 把 `region` 外的格当墙后，取值为 value 的 4-连通分量个数 |
-| `cc_size_in(var, cell, region)` | 上述遮罩连通下 `cell` 所在分量的格数（cell 不在 region 内则为 0） |
-| `cc_width(var)` / `cc_height(var)` | 每格所在 4-CC 外接框的宽/高（O(N²)） |
-| `cc_is_rect(var, cell)` | 该格所在 4-CC 是否填满外接框（`size == width * height`） |
-| `cc8_id` / `cc8_size` / `cc8_count` / `cc8_root` | 上述的 8-连通（含对角）版本 |
-| `cc8_count_in` / `cc8_size_in` | 区域遮罩的 8-连通版本 |
+| 层 | 签名 | 说明 |
+|----|------|------|
+| **L1** | `is_connected(var, value)` | 取值为 value 的格**至多一个** 4-连通分量。**空集算连通**。单流编码，**不建 id**。`connected(x, v)` 转调此函数。只适合作为约束断言；`not is_connected` 不是「存在两个分量」的见证 |
+| **L1** | `is_connected8(var, value)` | 8-连通版本；`connected8` 转调它 |
+| **L2** | `component_count(var, value)` | 取值为 value 的 4-连通分量个数。别名 `cc_count` |
+| **L3** | `same_component(var, p, q)` | 两点是否同 4-连通同值分量（依赖 canonical id） |
+| **L4** | `component_size(var)` | 每格所在分量格数（O(N²)）。别名 `cc_size` |
+| **L5** | `component_id(var)` | **low-level** canonical id = 分量内最小 `r*cols+c`。别名 `cc_id` |
+| | `cc_root(var, cell)` | 该格是否为其分量的代表元 |
+| | `cc_count_in` / `cc_size_in` | 区域外当墙后的 4-连通版本 |
+| | `cc_width` / `cc_height` / `cc_is_rect` | 外接框派生量（O(N²)） |
+| | `cc8_*` | 上述的 8-连通版本 |
+
+**L5 硬约束**：`component_id` / CC 变量自身的值必须是 canonical id（分量内最小线性下标）。唯一性判定依赖「一个分区 ↔ 一组 id 赋值」的双射。费用流等非 canonical 编码**只允许**用于不暴露 id 的 L1。
+
+`group_count(x, v, n)` 仍是 `cc_count(x, v) == n`（L2）。
 
 ### 6.7 回路与路径（Loops）
 
@@ -297,6 +334,23 @@ print(row(0))        # 打印第 0 行的 cell 列表
 print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 ```
 
+### 6.9 元求解（Meta）
+
+只在 `meta:` 块内可用（`domain_of` 除外，它是纯编译期查询）。`require` / `unique_over` / `emit_witness` 返回空列表，用作表达式语句时不产生 `BoolVal(True)`。
+
+| 签名 | 说明 |
+|------|------|
+| `solve([timeout_ms])` | 对**当前已生成的全部约束**求解。返回快照：`.sat`（编译期布尔）、`.status`（`"sat"` / `"unsat"`）、`.<变量名>`（CONSTANT 风格的取值表，可用 `at(s.x, p)`） |
+| `exclude(s [, vars...])` | 约束：决定性变量（NORMAL / CC，或 `unique_over` / 额外参数列出的子集）与快照 `s` 至少有一处不同。不纳入 aux / `cc.size` / `cc.border` |
+| `unique_over(v1, v2, ...)` | 声明后续 `exclude()` 的判定范围。不声明时 `exclude(s)` 覆盖全部决定性变量；辅助建模变量上的 `model_completion` 会造成虚假多解 |
+| `require(cond, msg)` | 编译期断言。`cond` 必须是 Python 布尔，否则报错（不会静默变成约束） |
+| `fail(msg)` | 无条件终止编译 |
+| `domain_of(var)` | 编译期整数列表，展开 `Variable.domain` 的闭区间 |
+| `emit_witness(tag, value)` | 记录一条 `(tag, int)` 见证到 `SolveResult.witnesses` |
+| `solve_count()` | 本 `meta:` 块内已调用 `solve()` 的次数 |
+
+库函数 `import "meta"` 提供 `assert_unique(v)`：求一解 → `exclude` → 再求，期望第二次 UNSAT。
+
 ---
 
 ## 7. 常量（Constants）
@@ -313,8 +367,10 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 | `UP_RIGHT` = 5 | 方向：右上 |
 | `DOWN_LEFT` = 6 | 方向：左下 |
 | `DOWN_RIGHT` = 7 | 方向：右下 |
+| `dirs4` | `[UP, DOWN, LEFT, RIGHT]` |
+| `dirs8` | 四个正交方向后接四个对角方向 |
 
-方向常量用于 `dir(cell, value)`。
+方向常量用于 `dir(cell, value)` / `nb` / `dr_of`。`dirs4`/`dirs8` 是可迭代的方向列表。
 
 ---
 
@@ -360,7 +416,7 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 - **值域 domain**：若变量带有 `domain = (lo, hi)`，则每个量满足 `lo <= q <= hi`。
 - **预填 givens**：若某点有预设值 `g`，则 `q == g`。
 
-CC 变量自身编码连通约束（id/size/border），不接受 domain/givens；CONSTANT 变量
+CC 变量自身编码连通约束（id/size/border），不接受 domain；若实例把 CC 取值钉成 givens（例如负向检查），则按 `id[p] == given` 注入。CONSTANT 变量
 直接携带其预设值，不注入额外约束。求解后：CC 变量回显其区域 id（可「按区域染色」），
 `.border` 回显每条 edge 的 0/1，CONSTANT 变量回显其预设值。
 
@@ -373,16 +429,17 @@ CC 变量自身编码连通约束（id/size/border），不接受 domain/givens�
 | 名称 | 说明 |
 |------|------|
 | `parse(source)` | 解析为 AST `Program` |
-| `solve(grid, variables, regions, source, logic="AUTO", params=None, loader=None, timeout_ms=None)` | 编译并用 z3 求解，返回 `SolveResult` |
-| `compile_only(grid, variables, regions, source, params=None, loader=None)` | **仅编译**：报告约束数与 `print()` 输出，不求解 |
+| `solve(grid, variables, regions, source, logic="AUTO", params=None, loader=None, timeout_ms=None, run_meta=False)` | 编译并用 z3 求解，返回 `SolveResult`。`run_meta=True` 时执行 `meta:` 块 |
+| `compile_only(grid, variables, regions, source, params=None, loader=None)` | **仅编译**：报告约束数与 `print()` 输出，不求解；`run_meta` 恒为 `False` |
+| `compile_source(..., run_meta=False)` | 编译入口。默认跳过 `meta:`。`session is None` 且 `run_meta=True` 时报错 |
 | `format_model(result)` | 把结果渲染为输出面板可读文本（末尾附 `print():` 块） |
 | `is_available()` | z3 是否已安装 |
 | `function_table()` | 供 UI 浏览的内置函数/常量/运算符/cc 文档表 |
 | `SOLVER_LOGICS` | UI 可选的求解器后端预设元组 |
 
 `params` 将实例数据暴露给 `param("name")`；`loader(name) -> source` 解析 `import`。
-上层封装见 `puzzle.runner.solve_instance(spec, instance)`，它会从 `PuzzleSpec` /
-`Instance` 构造好网格、变量、区域与参数。
+上层封装见 `puzzle.runner.solve_instance(spec, instance, run_meta=False)`，它会从 `PuzzleSpec` /
+`Instance` 构造好网格、变量、区域与参数。`SolveResult.witnesses` 保存 `emit_witness` 记录。
 
 ### 求解器后端（`logic`）
 `solve` 的 `logic` 参数选择 z3 后端：
@@ -472,7 +529,8 @@ print(row(0))
 | `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` |
 | `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
 | `fill` | `latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、箭头辅助 |
-| `outside` | `row_count` / `col_count`、`row_runs` / `col_runs`、`row_runs_set` / `col_runs_set`、`row_index_sum` / `col_index_sum` |
+| `outside` | `line_count` / `line_runs` / `line_runs_set`（`axis` 0=行 1=列）；旧名 `row_count` / `col_count` 等保留为包装；`row_index_sum` / `col_index_sum` |
+| `meta` | `assert_unique(v)`：编译期唯一性判定（须 `run_meta=True`） |
 
 ### 常见陷阱
 
@@ -482,3 +540,9 @@ print(row(0))
 3. `cc_size` / `cc_width` / `cc_height` 是 O(N²) 编码，大盘面谨慎；`cc_count` 便宜得多。
 4. `runs` 是**有序**段长；无序用 `runs_set`，环形用 `runs_cycle`。长度 `-1` 表示 `?`；`runs_set(..., extra=true)` 才允许多余未匹配段（`*`）。`*` 插在有序 `runs` 中间仍未编码。
 5. `loop` / `cloop` 会为每个节点生成 id/距离辅助量，同一变量多次调用会复用缓存。
+6. `scope:` **不**引入 DSL 变量作用域（与 `for` 不同）。`let s2 = solve()` 写在 `scope:` 内、在块外读 `s2` 是故意支持的写法。
+7. 若在 `scope:` 内**首次**触发 `cloop` / `cc.size` 等重型编码，退出时会回滚 `_memo` 与 `_cc_z3`，否则块外再次调用会命中缓存但约束已被丢弃。
+8. `exclude` 默认覆盖全部 NORMAL/CC 变量。辅助建模变量在 `model_completion=True` 下可能取任意值，造成虚假多解；用 `unique_over(v1, …)` 限制判定范围。
+9. `fn` 捕获的是作用域**拷贝**，之后的 `let` 重绑定看不见；`def` 完全不捕获外层 `let`。不要按 Python 闭包来想。
+10. `rev(region)` 保序；把它交给 `and` 合并或任何走 `RegionValue.of` 的路径会**重新排序**。索引 `x[rev(line)]` 与 `for p in rev(line)` 保留逆序。
+11. `and`/`or` 不短路。越界取值用 `if not in_grid` 或 `at_or`/`nb`，不要写 `in_grid(...) and at(...)`。`nb` 缺省 0：当 0 是合法值时，越界与「值为 0」无法区分。

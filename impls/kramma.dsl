@@ -14,16 +14,14 @@ for p in clue_cells(o):
 # 同一列缝要么整列都是区界，要么整列都不是。
 for p in cells():
     let right = shift(p, 0, 1)
-    if right.size == 1:
+    if in_grid(p, 0, 1):
         for q in cells():
             if col_of(q) == col_of(p):
-                let qr = shift(q, 0, 1)
-                if qr.size == 1:
-                    (at(c, p) != at(c, right)) == (at(c, q) != at(c, qr))
+                if in_grid(q, 0, 1):
+                    (at(c, p) != at(c, right)) == (at(c, q) != at(c, shift(q, 0, 1)))
     let down = shift(p, 1, 0)
-    if down.size == 1:
+    if in_grid(p, 1, 0):
         for q in cells():
             if row_of(q) == row_of(p):
-                let qd = shift(q, 1, 0)
-                if qd.size == 1:
-                    (at(c, p) != at(c, down)) == (at(c, q) != at(c, qd))
+                if in_grid(q, 1, 0):
+                    (at(c, p) != at(c, down)) == (at(c, q) != at(c, shift(q, 1, 0)))

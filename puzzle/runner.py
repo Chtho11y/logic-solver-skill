@@ -29,6 +29,7 @@ def solve_instance(
     logic: str = "AUTO",
     timeout_ms: int | None = 60000,
     source: str | None = None,
+    run_meta: bool = False,
 ) -> dict[str, Any]:
     """Solve one puzzle instance and return a JSON-serialisable result."""
 
@@ -49,12 +50,14 @@ def solve_instance(
         params=params,
         loader=make_loader(),
         timeout_ms=timeout_ms,
+        run_meta=run_meta,
     )
     payload: dict[str, Any] = {
         "status": result.status,
         "message": result.message,
         "constraints": result.constraint_count,
         "debug": result.debug,
+        "witnesses": list(result.witnesses),
     }
     if result.error_line is not None:
         payload["errorLine"] = result.error_line

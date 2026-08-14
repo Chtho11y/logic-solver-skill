@@ -1,11 +1,12 @@
 """Verification harness for newly authored rules.
 
-Three checks per rule:
-  1. compile   — DSL type-checks against a synthetic board.
-  2. solve     — the shipped sample is satisfiable.
-  3. bite      — every declared CONSTANT clue variable actually changes the
-                 constraint set when given a value. This catches dead code such
-                 as calling a pure helper and discarding its result.
+Four checks per rule:
+  1. compile     — DSL type-checks against the shipped sample.
+  2. solve       — the shipped sample is satisfiable.
+  3. bite        — every declared CONSTANT clue variable actually changes the
+                   constraint set when given a value.
+  4. uniqueness  — report unique/multiple (skipped when unencodedClues is
+                   nonempty). Multiple is informational, not a failure.
 
     python verify.py <key> [<key> ...]
 """
@@ -18,6 +19,7 @@ from puzzle.dsl import compile_only
 from puzzle.spec import (build_grid, build_params, build_regions, build_variables,
                          load_sample, load_spec, make_loader, Instance)
 from puzzle.runner import solve_instance
+from tools.uniqueness import check_uniqueness
 
 
 def _count(spec, instance):
@@ -78,7 +80,16 @@ def check(key):
         return out
     tag = "partial" if expected_dead else "full"
     note = f"  (unencoded: {','.join(sorted(expected_dead))})" if expected_dead else ""
-    out.append(f"ok   {key:16} {n0} constraints, sample sat  [{tag}]{note}")
+    uniq = "skipped"
+    if expected_dead:
+        uniq = "skipped (unencodedClues)"
+    elif sm is not None:
+        u = check_uniqueness(spec, sm, timeout_ms=60000)
+        uniq = u["status"]
+        if uniq not in ("unique", "multiple"):
+            out.append(f"FAIL {key:16} uniqueness: {uniq} {u.get('message','')[:60]}")
+            return out
+    out.append(f"ok   {key:16} {n0} constraints, sample sat, {uniq}  [{tag}]{note}")
     return out
 
 

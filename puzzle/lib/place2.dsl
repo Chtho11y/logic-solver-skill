@@ -16,16 +16,10 @@ def is_root(c, p):
     return at(c, p) == row_of(p) * cols.size + col_of(p)
 
 def region_full2x2(c, p):
-    let total = 0
-    for w in slide(2, 2):
-        let total = total + b2i(num_eq(c[w], at(c, p)) == 4)
-    return total
+    return count_where(slide(2, 2), fn (w) -> num_eq(c[w], at(c, p)) == 4)
 
 def region_deg_count(c, p, d):
-    let total = 0
-    for q in cells():
-        let total = total + b2i(at(c, q) == at(c, p) and region_deg(c, q) == d)
-    return total
+    return count_where(cells(), fn (q) -> at(c, q) == at(c, p) and region_deg(c, q) == d)
 
 def region_bbox_h(c, p):
     let minr = row_of(p)
@@ -152,38 +146,10 @@ def tromino_type(c, p):
 # -- 8-element dihedral transforms of (dr, dc) relative to an origin ---------
 
 def tr_r(dr, dc, t):
-    if t == 0:
-        return dr
-    if t == 1:
-        return dc
-    if t == 2:
-        return 0 - dr
-    if t == 3:
-        return 0 - dc
-    if t == 4:
-        return dr
-    if t == 5:
-        return 0 - dr
-    if t == 6:
-        return dc
-    return 0 - dc
+    return tr(dr, dc, t)[0]
 
 def tr_c(dr, dc, t):
-    if t == 0:
-        return dc
-    if t == 1:
-        return 0 - dr
-    if t == 2:
-        return 0 - dc
-    if t == 3:
-        return dr
-    if t == 4:
-        return 0 - dc
-    if t == 5:
-        return dc
-    if t == 6:
-        return dr
-    return 0 - dr
+    return tr(dr, dc, t)[1]
 
 def region_match_tr(c, a, b, t):
     # Region of `a`, rotated/flipped by t about `a`, equals region of `b` about `b`.
@@ -269,29 +235,19 @@ def color_pairs_in(c, g, p, v):
 # -- 180° rotational symmetry of a solved region (unknown centre) ------------
 
 def region_sym_shift(c, p, q, dr, dc):
-    let q2 = shift(q, dr, dc)
-    if q2.size == 0:
+    if not in_grid(q, dr, dc):
         return at(c, q) != at(c, p)
-    return (at(c, q) == at(c, p)) == (at(c, q2) == at(c, p))
+    return (at(c, q) == at(c, p)) == (at(c, shift(q, dr, dc)) == at(c, p))
 
 def region_sym_cell(c, p, t):
-    let ok = true
-    for q in cells():
-        let ok = ok and region_sym_shift(c, p, q, 2 * row_of(t) - 2 * row_of(q), 2 * col_of(t) - 2 * col_of(q))
-    return ok
+    return all_where(cells(), fn (q) -> region_sym_shift(c, p, q, 2 * row_of(t) - 2 * row_of(q), 2 * col_of(t) - 2 * col_of(q)))
 
 def region_sym_vertex(c, p, v):
-    let ok = true
-    for q in cells():
-        let ok = ok and region_sym_shift(c, p, q, 2 * row_of(v) - 1 - 2 * row_of(q), 2 * col_of(v) - 1 - 2 * col_of(q))
-    return ok
+    return all_where(cells(), fn (q) -> region_sym_shift(c, p, q, 2 * row_of(v) - 1 - 2 * row_of(q), 2 * col_of(v) - 1 - 2 * col_of(q)))
 
 def region_sym_pair(c, p, a, b):
     # 180° about the midpoint of adjacent cells a, b.
-    let ok = true
-    for q in cells():
-        let ok = ok and region_sym_shift(c, p, q, row_of(a) + row_of(b) - 2 * row_of(q), col_of(a) + col_of(b) - 2 * col_of(q))
-    return ok
+    return all_where(cells(), fn (q) -> region_sym_shift(c, p, q, row_of(a) + row_of(b) - 2 * row_of(q), col_of(a) + col_of(b) - 2 * col_of(q)))
 
 def has_180_sym(c, p):
     let ok = false

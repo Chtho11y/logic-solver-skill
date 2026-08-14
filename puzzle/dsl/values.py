@@ -57,9 +57,103 @@ class VarValue:
     kind: PointKind
     quantities: dict[Point, Any]
     order: tuple[Point, ...]
+    bool_backed: bool = False
 
     def as_list(self) -> list:
         return [self.quantities[p] for p in self.order]
+
+
+def _as_python_int(value: Any) -> int | None:
+    # Python bool is a subclass of int; do not treat True/False as 1/0 here.
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    return None
+
+
+def is_bool_atom(value: Any, z3) -> bool:
+    """True for Python bools and z3 Bool *variables* (not comparison formulas)."""
+
+    if isinstance(value, bool):
+        return True
+    return bool(z3.is_expr(value) and z3.is_bool(value) and z3.is_const(value))
+
+
+def is_bool_expr(value: Any, z3) -> bool:
+    if isinstance(value, bool):
+        return True
+    return bool(z3.is_expr(value) and z3.is_bool(value))
+
+
+def as_int(q: Any, z3) -> Any:
+    """Lift a boolean *variable* to ``0/1``; integers and formulas pass through."""
+
+    if isinstance(q, bool):
+        return 1 if q else 0
+    if isinstance(q, int):
+        return q
+    if is_bool_atom(q, z3):
+        return z3.If(q, 1, 0)
+    return q
+
+
+def _as_z3_bool(q: Any, z3) -> Any:
+    if isinstance(q, bool):
+        return z3.BoolVal(q)
+    if is_bool_expr(q, z3):
+        return q
+    return as_bool(q, 1, z3)
+
+
+def as_bool(q: Any, v: Any, z3) -> Any:
+    """Whether quantity ``q`` equals integer ``v`` (boolean-aware)."""
+
+    if isinstance(v, bool) or is_bool_expr(v, z3):
+        return _as_z3_bool(q, z3) == _as_z3_bool(v, z3)
+    target = _as_python_int(v)
+    if target is None:
+        return q == v
+    if isinstance(q, bool):
+        return q is (target == 1) if target in (0, 1) else False
+    if isinstance(q, int):
+        return q == target
+    if is_bool_atom(q, z3):
+        if target == 1:
+            return q
+        if target == 0:
+            return z3.Not(q)
+        return z3.BoolVal(False)
+    return q == target
+
+
+def as_ne(q: Any, v: Any, z3) -> Any:
+    """Whether quantity ``q`` differs from integer ``v`` (boolean-aware)."""
+
+    if isinstance(q, bool) or isinstance(v, bool) or is_bool_atom(q, z3) or is_bool_atom(v, z3):
+        return z3.Not(as_same(q, v, z3))
+    target = _as_python_int(v)
+    if target is None:
+        return q != v
+    return q != target
+
+
+def as_same(a: Any, b: Any, z3) -> Any:
+    """Whether two quantities are equal, mixing Bool and Int safely."""
+
+    if isinstance(a, bool) and isinstance(b, bool):
+        return a is b
+    if is_bool_expr(a, z3) or is_bool_expr(b, z3) or isinstance(a, bool) or isinstance(b, bool):
+        return _as_z3_bool(a, z3) == _as_z3_bool(b, z3)
+    av = _as_python_int(a)
+    bv = _as_python_int(b)
+    if av is not None and bv is not None:
+        return av == bv
+    if av is not None:
+        return as_bool(b, av, z3)
+    if bv is not None:
+        return as_bool(a, bv, z3)
+    return a == b
 
 
 class BroadcastError(ValueError):
@@ -74,7 +168,12 @@ def to_numeric(value: Any) -> Any:
     """
 
     if isinstance(value, VarValue):
-        return value.as_list()
+        items = value.as_list()
+        if value.bool_backed:
+            import z3
+
+            return [as_int(q, z3) for q in items]
+        return items
     if isinstance(value, RegionValue):
         raise BroadcastError("a region cannot be used as a number")
     if isinstance(value, list):

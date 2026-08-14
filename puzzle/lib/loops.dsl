@@ -85,15 +85,15 @@ def link_between(e, p, q):
     return at(e, edge("H", row_of(p), col_of(p)))
 
 def straight_beside(e, p, d):
-    let q = step(p, d)
-    if q.size == 0:
+    if not in_grid(p, dr_of(d), dc_of(d)):
         return false
+    let q = step(p, d)
     return on_loop(e, q) and goes_straight(e, q)
 
 def turn_beside(e, p, d):
-    let q = step(p, d)
-    if q.size == 0:
+    if not in_grid(p, dr_of(d), dc_of(d)):
         return false
+    let q = step(p, d)
     return turns(e, q)
 
 def full_loop(e):
@@ -161,16 +161,10 @@ def region_crossings(e, reg):
     return total
 
 def region_visited_cells(e, reg):
-    let total = 0
-    for p in reg:
-        let total = total + b2i(on_loop(e, p))
-    return total
+    return count_where(reg, fn (p) -> on_loop(e, p))
 
 def region_turns(e, reg):
-    let total = 0
-    for p in reg:
-        let total = total + b2i(turns(e, p))
-    return total
+    return count_where(reg, fn (p) -> turns(e, p))
 
 def nearest_loop_dist(e, p, d):
     # 1-based distance to the nearest loop edge looking from `p` in direction

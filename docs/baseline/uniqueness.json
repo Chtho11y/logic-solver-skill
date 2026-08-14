@@ -1,0 +1,2670 @@
+{
+  "sha": "9de3db1b33b8",
+  "z3": "4.16.0",
+  "generated": "2026-08-14T07:20:14Z",
+  "timeout_ms": 30000,
+  "keys": [
+    {
+      "key": "aho",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 197,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "akari",
+      "status": "multiple",
+      "message": "line 38: MULTIPLE: encoding admits more than one solution",
+      "ms": 31,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "akichi",
+      "status": "multiple",
+      "message": "line 23: MULTIPLE: encoding admits more than one solution",
+      "ms": 305,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "alternate",
+      "status": "multiple",
+      "message": "line 22: MULTIPLE: encoding admits more than one solution",
+      "ms": 75,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "anglers",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 34,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "antmill",
+      "status": "multiple",
+      "message": "line 15: MULTIPLE: encoding admits more than one solution",
+      "ms": 1674,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "aqre",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 98,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "aquapelago",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "aquarium",
+      "status": "multiple",
+      "message": "line 30: MULTIPLE: encoding admits more than one solution",
+      "ms": 43,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "araf",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "arrowflow",
+      "status": "multiple",
+      "message": "line 37: MULTIPLE: encoding admits more than one solution",
+      "ms": 36,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "a",
+        "dest"
+      ]
+    },
+    {
+      "key": "ayeheya",
+      "status": "multiple",
+      "message": "line 37: MULTIPLE: encoding admits more than one solution",
+      "ms": 180,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "balance",
+      "status": "multiple",
+      "message": "line 35: MULTIPLE: encoding admits more than one solution",
+      "ms": 90,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "barns",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 33,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "batten",
+      "status": "multiple",
+      "message": "line 28: MULTIPLE: encoding admits more than one solution",
+      "ms": 33,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "battleship",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "bdblock",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 32,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "bhaibahan",
+      "status": "multiple",
+      "message": "line 34: MULTIPLE: encoding admits more than one solution",
+      "ms": 112,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "binairo",
+      "status": "multiple",
+      "message": "line 25: MULTIPLE: encoding admits more than one solution",
+      "ms": 59,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "blind",
+      "status": "multiple",
+      "message": "line 39: MULTIPLE: encoding admits more than one solution",
+      "ms": 84,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "a"
+      ]
+    },
+    {
+      "key": "bonsan",
+      "status": "multiple",
+      "message": "line 50: MULTIPLE: encoding admits more than one solution",
+      "ms": 46,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "f",
+        "e",
+        "x"
+      ]
+    },
+    {
+      "key": "bosanowa",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 20,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "bosnianroad",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 154,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "box",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 25,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "canal",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "castle",
+      "status": "multiple",
+      "message": "line 43: MULTIPLE: encoding admits more than one solution",
+      "ms": 252,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "ins",
+        "y"
+      ]
+    },
+    {
+      "key": "cave",
+      "status": "multiple",
+      "message": "line 21: MULTIPLE: encoding admits more than one solution",
+      "ms": 388,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "cbanana",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "cbblock",
+      "status": "multiple",
+      "message": "line 34: MULTIPLE: encoding admits more than one solution",
+      "ms": 1827,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "chainedb",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 957,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "chocona",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 28,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "circlesquare",
+      "status": "multiple",
+      "message": "line 21: MULTIPLE: encoding admits more than one solution",
+      "ms": 8397,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "clouds",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 272,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "cocktail",
+      "status": "multiple",
+      "message": "line 20: MULTIPLE: encoding admits more than one solution",
+      "ms": 164,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "coffeemilk",
+      "status": "multiple",
+      "message": "line 81: MULTIPLE: encoding admits more than one solution",
+      "ms": 30,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "u"
+      ]
+    },
+    {
+      "key": "cojun",
+      "status": "multiple",
+      "message": "line 22: MULTIPLE: encoding admits more than one solution",
+      "ms": 39,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "compass",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 22,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "consecutiveq",
+      "status": "multiple",
+      "message": "line 28: MULTIPLE: encoding admits more than one solution",
+      "ms": 26,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "context",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 94,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "coral",
+      "status": "multiple",
+      "message": "line 20: MULTIPLE: encoding admits more than one solution",
+      "ms": 1250,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "cornerch",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 3009,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "country",
+      "status": "multiple",
+      "message": "line 28: MULTIPLE: encoding admits more than one solution",
+      "ms": 123,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "creek",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "crossstitch",
+      "status": "multiple",
+      "message": "line 62: MULTIPLE: encoding admits more than one solution",
+      "ms": 32,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "cts",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 112,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "curvedata",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 24,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "dbchoco",
+      "status": "skip",
+      "message": "unencodedClues: congruence",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "congruence"
+      ],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "detour",
+      "status": "multiple",
+      "message": "line 19: MULTIPLE: encoding admits more than one solution",
+      "ms": 88,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "diamond",
+      "status": "skip",
+      "message": "unencodedClues: w,n",
+      "ms": 0,
+      "source": "sample",
+      "unencodedClues": [
+        "w",
+        "n"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "disco",
+      "status": "multiple",
+      "message": "line 16: MULTIPLE: encoding admits more than one solution",
+      "ms": 142,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "disloop",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 104,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "dominion",
+      "status": "multiple",
+      "message": "line 25: MULTIPLE: encoding admits more than one solution",
+      "ms": 314,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "domino-search",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 37,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "doppelblock",
+      "status": "multiple",
+      "message": "line 59: MULTIPLE: encoding admits more than one solution",
+      "ms": 77,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "dosufuwa",
+      "status": "multiple",
+      "message": "line 31: MULTIPLE: encoding admits more than one solution",
+      "ms": 17,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "dotchi",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 96,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "dotchi2",
+      "status": "multiple",
+      "message": "line 36: MULTIPLE: encoding admits more than one solution",
+      "ms": 100,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "doubleback",
+      "status": "multiple",
+      "message": "line 19: MULTIPLE: encoding admits more than one solution",
+      "ms": 84,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "doubleornothing",
+      "status": "multiple",
+      "message": "line 30: MULTIPLE: encoding admits more than one solution",
+      "ms": 179,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "f"
+      ]
+    },
+    {
+      "key": "easyasabc",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 54,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "evolmino",
+      "status": "multiple",
+      "message": "line 35: MULTIPLE: encoding admits more than one solution",
+      "ms": 464,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "fillomino",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 94,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "firefly",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 39,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "x"
+      ]
+    },
+    {
+      "key": "firewalk",
+      "status": "multiple",
+      "message": "line 30: MULTIPLE: encoding admits more than one solution",
+      "ms": 63,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "fivecells",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 334,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "forestwalk",
+      "status": "multiple",
+      "message": "line 49: MULTIPLE: encoding admits more than one solution",
+      "ms": 44,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "u",
+        "z"
+      ]
+    },
+    {
+      "key": "fourcells",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 288,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "fuzuli",
+      "status": "multiple",
+      "message": "line 26: MULTIPLE: encoding admits more than one solution",
+      "ms": 54,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "gaps",
+      "status": "multiple",
+      "message": "line 42: MULTIPLE: encoding admits more than one solution",
+      "ms": 515,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "geradeweg",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 120,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "go",
+      "status": "skip",
+      "message": "unencodedClues: n",
+      "ms": 0,
+      "source": "sample",
+      "unencodedClues": [
+        "n"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "goishi",
+      "status": "multiple",
+      "message": "line 57: MULTIPLE: encoding admits more than one solution",
+      "ms": 25,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "gokigen",
+      "status": "multiple",
+      "message": "line 47: MULTIPLE: encoding admits more than one solution",
+      "ms": 37,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "g",
+        "par",
+        "rk"
+      ]
+    },
+    {
+      "key": "guidearrow",
+      "status": "skip",
+      "message": "unencodedClues: d,s",
+      "ms": 0,
+      "source": "sample",
+      "unencodedClues": [
+        "d",
+        "s"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "haisu",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 46,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "hanare",
+      "status": "multiple",
+      "message": "line 43: MULTIPLE: encoding admits more than one solution",
+      "ms": 37,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "hashi",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 56,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "t"
+      ]
+    },
+    {
+      "key": "heavydots",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 53,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "hebi",
+      "status": "multiple",
+      "message": "line 67: MULTIPLE: encoding admits more than one solution",
+      "ms": 785,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "f"
+      ]
+    },
+    {
+      "key": "herugolf",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 35,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e",
+        "u",
+        "r",
+        "s"
+      ]
+    },
+    {
+      "key": "heteromino",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 110,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "heyawake",
+      "status": "multiple",
+      "message": "line 19: MULTIPLE: encoding admits more than one solution",
+      "ms": 74,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "hidato",
+      "status": "multiple",
+      "message": "line 31: MULTIPLE: encoding admits more than one solution",
+      "ms": 35,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "hinge",
+      "status": "multiple",
+      "message": "line 15: MULTIPLE: encoding admits more than one solution",
+      "ms": 22,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "hitori",
+      "status": "multiple",
+      "message": "line 30: MULTIPLE: encoding admits more than one solution",
+      "ms": 85,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "icebarn",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 31,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "icelom",
+      "status": "skip",
+      "message": "unencodedClues: n",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "n"
+      ],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "icewalk",
+      "status": "multiple",
+      "message": "line 30: MULTIPLE: encoding admits more than one solution",
+      "ms": 59,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "interbd",
+      "status": "multiple",
+      "message": "line 45: MULTIPLE: encoding admits more than one solution",
+      "ms": 92,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "isowatari",
+      "status": "multiple",
+      "message": "line 22: MULTIPLE: encoding admits more than one solution",
+      "ms": 18239,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "japanesesums",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 69,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "kaero",
+      "status": "multiple",
+      "message": "line 56: MULTIPLE: encoding admits more than one solution",
+      "ms": 63,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "f",
+        "e",
+        "x"
+      ]
+    },
+    {
+      "key": "kakuro",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 28,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "keywest",
+      "status": "multiple",
+      "message": "line 39: MULTIPLE: encoding admits more than one solution",
+      "ms": 33,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "kinkonkan",
+      "status": "skip",
+      "message": "unencodedClues: letters,bounces",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "letters",
+        "bounces"
+      ],
+      "vars": [
+        "m"
+      ]
+    },
+    {
+      "key": "kissing",
+      "status": "skip",
+      "message": "unencodedClues: shapes",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "shapes"
+      ],
+      "vars": [
+        "x",
+        "c"
+      ]
+    },
+    {
+      "key": "koburin",
+      "status": "multiple",
+      "message": "line 25: MULTIPLE: encoding admits more than one solution",
+      "ms": 104,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "kramma",
+      "status": "multiple",
+      "message": "line 38: MULTIPLE: encoding admits more than one solution",
+      "ms": 22,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "kropki",
+      "status": "multiple",
+      "message": "line 41: MULTIPLE: encoding admits more than one solution",
+      "ms": 62,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "kropki-pairs",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 33,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "kurarin",
+      "status": "multiple",
+      "message": "line 29: MULTIPLE: encoding admits more than one solution",
+      "ms": 75,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "kuroclone",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 185,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "kurodoko",
+      "status": "multiple",
+      "message": "line 20: MULTIPLE: encoding admits more than one solution",
+      "ms": 215,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "kurotto",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "lapaz",
+      "status": "multiple",
+      "message": "line 28: MULTIPLE: encoding admits more than one solution",
+      "ms": 97,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "c"
+      ]
+    },
+    {
+      "key": "lightshadow",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "lineofsight",
+      "status": "multiple",
+      "message": "line 19: MULTIPLE: encoding admits more than one solution",
+      "ms": 463,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "lits",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "t"
+      ]
+    },
+    {
+      "key": "lohkous",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 48,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "lookair",
+      "status": "multiple",
+      "message": "line 31: MULTIPLE: encoding admits more than one solution",
+      "ms": 3163,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "magic",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 63,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "magnets",
+      "status": "multiple",
+      "message": "line 30: MULTIPLE: encoding admits more than one solution",
+      "ms": 28,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "makaro",
+      "status": "multiple",
+      "message": "line 46: MULTIPLE: encoding admits more than one solution",
+      "ms": 24,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "martini",
+      "status": "multiple",
+      "message": "line 34: MULTIPLE: encoding admits more than one solution",
+      "ms": 202,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "masyu",
+      "status": "multiple",
+      "message": "line 33: MULTIPLE: encoding admits more than one solution",
+      "ms": 537,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "maxi",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 49,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "meadows",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 326,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "meander",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "midloop",
+      "status": "multiple",
+      "message": "line 21: MULTIPLE: encoding admits more than one solution",
+      "ms": 128,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "mines",
+      "status": "multiple",
+      "message": "line 17: MULTIPLE: encoding admits more than one solution",
+      "ms": 45,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "mintonette",
+      "status": "multiple",
+      "message": "line 38: MULTIPLE: encoding admits more than one solution",
+      "ms": 42,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "mirrorbk",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 66,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "mochikoro",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "mochinyoro",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 3301,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "moonlight",
+      "status": "skip",
+      "message": "unencodedClues: light",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "light"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "moonsun",
+      "status": "multiple",
+      "message": "line 47: MULTIPLE: encoding admits more than one solution",
+      "ms": 123,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "mrtile",
+      "status": "multiple",
+      "message": "line 22: MULTIPLE: encoding admits more than one solution",
+      "ms": 1059,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "mukkonn",
+      "status": "multiple",
+      "message": "line 20: MULTIPLE: encoding admits more than one solution",
+      "ms": 162,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "myopia",
+      "status": "multiple",
+      "message": "line 49: MULTIPLE: encoding admits more than one solution",
+      "ms": 418,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "nagare",
+      "status": "multiple",
+      "message": "line 34: MULTIPLE: encoding admits more than one solution",
+      "ms": 57,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "nagenawa",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 43,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "nanameguri",
+      "status": "multiple",
+      "message": "line 27: MULTIPLE: encoding admits more than one solution",
+      "ms": 99,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "nanro",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "f"
+      ]
+    },
+    {
+      "key": "narrow",
+      "status": "multiple",
+      "message": "line 37: MULTIPLE: encoding admits more than one solution",
+      "ms": 78,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "nikoji",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 48,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "nonogram",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 60,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "norinori",
+      "status": "multiple",
+      "message": "line 20: MULTIPLE: encoding admits more than one solution",
+      "ms": 460,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "norinuri",
+      "status": "multiple",
+      "message": "line 18: MULTIPLE: encoding admits more than one solution",
+      "ms": 2488,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "nothing",
+      "status": "multiple",
+      "message": "line 28: MULTIPLE: encoding admits more than one solution",
+      "ms": 131,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "nothree",
+      "status": "multiple",
+      "message": "line 30: MULTIPLE: encoding admits more than one solution",
+      "ms": 392,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "numlin",
+      "status": "multiple",
+      "message": "line 42: MULTIPLE: encoding admits more than one solution",
+      "ms": 121,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "nuribou",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 1190,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "nurikabe",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 1329,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "nuriloop",
+      "status": "multiple",
+      "message": "line 25: MULTIPLE: encoding admits more than one solution",
+      "ms": 383,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "y"
+      ]
+    },
+    {
+      "key": "nurimaze",
+      "status": "skip",
+      "message": "unencodedClues: m",
+      "ms": 0,
+      "source": "sample",
+      "unencodedClues": [
+        "m"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "nurimisaki",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "nuritwin",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 4411,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "oasis",
+      "status": "multiple",
+      "message": "line 16: MULTIPLE: encoding admits more than one solution",
+      "ms": 279,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "oneroom",
+      "status": "multiple",
+      "message": "line 33: MULTIPLE: encoding admits more than one solution",
+      "ms": 260,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "orbital",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 167,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "paintarea",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "parquet",
+      "status": "timeout",
+      "message": "line 13: solve() returned unknown (timeout?)",
+      "ms": 30783,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "pencils",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 93,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "k",
+        "c"
+      ]
+    },
+    {
+      "key": "pentatouch",
+      "status": "skip",
+      "message": "unencodedClues: shapes",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "shapes"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "pentominous",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 999,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "pentopia",
+      "status": "skip",
+      "message": "unencodedClues: shapes",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "shapes"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "pipelink",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 61,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "pmemory",
+      "status": "multiple",
+      "message": "line 115: MULTIPLE: encoding admits more than one solution",
+      "ms": 77,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "putteria",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "ququ",
+      "status": "multiple",
+      "message": "line 18: MULTIPLE: encoding admits more than one solution",
+      "ms": 1526,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "r",
+      "status": "multiple",
+      "message": "line 16: MULTIPLE: encoding admits more than one solution",
+      "ms": 61,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "railpool",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 177,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "rassi",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 31,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "rectslider",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 42,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "f",
+        "e",
+        "x"
+      ]
+    },
+    {
+      "key": "reflect",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 58,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "renban",
+      "status": "multiple",
+      "message": "line 22: MULTIPLE: encoding admits more than one solution",
+      "ms": 47,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "ringring",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 43,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "ripple",
+      "status": "multiple",
+      "message": "line 29: MULTIPLE: encoding admits more than one solution",
+      "ms": 49,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "roma",
+      "status": "multiple",
+      "message": "line 42: MULTIPLE: encoding admits more than one solution",
+      "ms": 45,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "a",
+        "dist"
+      ]
+    },
+    {
+      "key": "sansaroad",
+      "status": "multiple",
+      "message": "line 23: MULTIPLE: encoding admits more than one solution",
+      "ms": 242,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "sashigane",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 102,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "sashikabe",
+      "status": "skip",
+      "message": "unencodedClues: n,d",
+      "ms": 0,
+      "source": "sample",
+      "unencodedClues": [
+        "n",
+        "d"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "sato",
+      "status": "multiple",
+      "message": "line 49: MULTIPLE: encoding admits more than one solution",
+      "ms": 66,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "f",
+        "e",
+        "x"
+      ]
+    },
+    {
+      "key": "scrabble",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 102,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "f"
+      ]
+    },
+    {
+      "key": "scrin",
+      "status": "multiple",
+      "message": "line 18: MULTIPLE: encoding admits more than one solution",
+      "ms": 18040,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "sendai",
+      "status": "multiple",
+      "message": "line 33: MULTIPLE: encoding admits more than one solution",
+      "ms": 100,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "shakashaka",
+      "status": "multiple",
+      "message": "line 14: MULTIPLE: encoding admits more than one solution",
+      "ms": 16,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "shikaku",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 392,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "shimaguni",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "shugaku",
+      "status": "skip",
+      "message": "unencodedClues: n",
+      "ms": 0,
+      "source": "sample",
+      "unencodedClues": [
+        "n"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "simplegako",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 50,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "simpleloop",
+      "status": "multiple",
+      "message": "line 21: MULTIPLE: encoding admits more than one solution",
+      "ms": 103,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "skyscrapers",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 65,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "slalom",
+      "status": "skip",
+      "message": "unencodedClues: d",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "d"
+      ],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "slashpack",
+      "status": "skip",
+      "message": "unencodedClues: connectivity",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "connectivity"
+      ],
+      "vars": [
+        "s",
+        "u",
+        "v"
+      ]
+    },
+    {
+      "key": "slither",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 6567,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "snail",
+      "status": "multiple",
+      "message": "line 33: MULTIPLE: encoding admits more than one solution",
+      "ms": 53,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "snake",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 810,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "snakeegg",
+      "status": "multiple",
+      "message": "line 28: MULTIPLE: encoding admits more than one solution",
+      "ms": 6016,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "snakepit",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 108,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "squarejam",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 231,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "starbattle",
+      "status": "multiple",
+      "message": "line 25: MULTIPLE: encoding admits more than one solution",
+      "ms": 69,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "statuepark",
+      "status": "skip",
+      "message": "unencodedClues: shapes",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "shapes"
+      ],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "stostone",
+      "status": "multiple",
+      "message": "line 19: MULTIPLE: encoding admits more than one solution",
+      "ms": 137,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "subomino",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 83,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "sudoku",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 141,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "suguru",
+      "status": "multiple",
+      "message": "line 16: MULTIPLE: encoding admits more than one solution",
+      "ms": 37,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "sukoro",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "f"
+      ]
+    },
+    {
+      "key": "sumiwake",
+      "status": "multiple",
+      "message": "line 22: MULTIPLE: encoding admits more than one solution",
+      "ms": 245,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "swslither",
+      "status": "multiple",
+      "message": "line 26: MULTIPLE: encoding admits more than one solution",
+      "ms": 787,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e",
+        "ins"
+      ]
+    },
+    {
+      "key": "symmarea",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 114,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "tapa",
+      "status": "multiple",
+      "message": "line 18: MULTIPLE: encoding admits more than one solution",
+      "ms": 417,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "tapaloop",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 115,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "tasquare",
+      "status": "multiple",
+      "message": "line 32: MULTIPLE: encoding admits more than one solution",
+      "ms": 4382,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "tatamibari",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 53,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "tateyoko",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 46,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "tawa",
+      "status": "multiple",
+      "message": "line 31: MULTIPLE: encoding admits more than one solution",
+      "ms": 78,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "tentaisho",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 54,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "tents",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "a"
+      ]
+    },
+    {
+      "key": "teri",
+      "status": "multiple",
+      "message": "line 15: MULTIPLE: encoding admits more than one solution",
+      "ms": 954,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "tetrochain",
+      "status": "timeout",
+      "message": "line 19: solve() returned unknown (timeout?)",
+      "ms": 46359,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "tetrochaink",
+      "status": "multiple",
+      "message": "line 16: MULTIPLE: encoding admits more than one solution",
+      "ms": 30746,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "tetrominous",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 187,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "tilepaint",
+      "status": "error",
+      "message": "no sample or fixture",
+      "ms": 0,
+      "source": "none",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "toichika",
+      "status": "multiple",
+      "message": "line 61: MULTIPLE: encoding admits more than one solution",
+      "ms": 344,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "a"
+      ]
+    },
+    {
+      "key": "trainstations",
+      "status": "multiple",
+      "message": "line 24: MULTIPLE: encoding admits more than one solution",
+      "ms": 116,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "tren",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 76,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "ubahn",
+      "status": "multiple",
+      "message": "line 72: MULTIPLE: encoding admits more than one solution",
+      "ms": 41,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "usoone",
+      "status": "multiple",
+      "message": "line 25: MULTIPLE: encoding admits more than one solution",
+      "ms": 151,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "vertigo",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 59,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "voxas",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 66,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "wafusuma",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 47,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "c"
+      ]
+    },
+    {
+      "key": "wagiri",
+      "status": "skip",
+      "message": "unencodedClues: m",
+      "ms": 0,
+      "source": "fixture",
+      "unencodedClues": [
+        "m"
+      ],
+      "vars": [
+        "g"
+      ]
+    },
+    {
+      "key": "walllogic",
+      "status": "unique",
+      "message": "Satisfiable \u2014 model found.",
+      "ms": 25,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "waterwalk",
+      "status": "multiple",
+      "message": "line 28: MULTIPLE: encoding admits more than one solution",
+      "ms": 96,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "wblink",
+      "status": "multiple",
+      "message": "line 34: MULTIPLE: encoding admits more than one solution",
+      "ms": 29,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "wbloop",
+      "status": "multiple",
+      "message": "line 45: MULTIPLE: encoding admits more than one solution",
+      "ms": 102,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "e"
+      ]
+    },
+    {
+      "key": "wittgen",
+      "status": "multiple",
+      "message": "line 18: MULTIPLE: encoding admits more than one solution",
+      "ms": 993,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "yajikazu",
+      "status": "multiple",
+      "message": "line 19: MULTIPLE: encoding admits more than one solution",
+      "ms": 429,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "yajilin",
+      "status": "multiple",
+      "message": "line 23: MULTIPLE: encoding admits more than one solution",
+      "ms": 119,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "yajilin-regions",
+      "status": "multiple",
+      "message": "line 19: MULTIPLE: encoding admits more than one solution",
+      "ms": 127,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "x",
+        "e"
+      ]
+    },
+    {
+      "key": "yajirushi",
+      "status": "multiple",
+      "message": "line 60: MULTIPLE: encoding admits more than one solution",
+      "ms": 98,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "a"
+      ]
+    },
+    {
+      "key": "yinyang",
+      "status": "multiple",
+      "message": "line 20: MULTIPLE: encoding admits more than one solution",
+      "ms": 128,
+      "source": "sample",
+      "unencodedClues": [],
+      "vars": [
+        "x"
+      ]
+    },
+    {
+      "key": "yosenabe",
+      "status": "multiple",
+      "message": "line 62: MULTIPLE: encoding admits more than one solution",
+      "ms": 58,
+      "source": "fixture",
+      "unencodedClues": [],
+      "vars": [
+        "f",
+        "e",
+        "x"
+      ]
+    }
+  ]
+}

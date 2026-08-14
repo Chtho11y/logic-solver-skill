@@ -15,11 +15,5 @@ for p in cells():
 
 for p in clue_cells(o):
     cc_count(x, at(x, p)) == 1
-    let same = 0
-    let opp = 0
-    for q in clue_cells(o):
-        if not (row_of(p) == row_of(q) and col_of(p) == col_of(q)):
-            let same = same + b2i(at(x, p) == at(x, q) and at(o, p) == at(o, q))
-            let opp = opp + b2i(at(x, p) == at(x, q) and at(o, p) != at(o, q))
-    same == 0
-    opp == 1
+    count_where(clue_cells(o), fn (q) -> not (row_of(p) == row_of(q) and col_of(p) == col_of(q)) and at(x, p) == at(x, q) and at(o, p) == at(o, q)) == 0
+    count_where(clue_cells(o), fn (q) -> not (row_of(p) == row_of(q) and col_of(p) == col_of(q)) and at(x, p) == at(x, q) and at(o, p) != at(o, q)) == 1

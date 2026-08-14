@@ -17,9 +17,7 @@ for i in rows:
     if not no_clue(k):
         let gap = 0
         for p in i:
-            for q in i:
-                if col_of(q) > col_of(p):
-                    let gap = gap + b2i(at(x, p) == 1 and at(x, q) == 1) * (col_of(q) - col_of(p) - 1)
+            let gap = gap + sum_where(i, fn (q) -> col_of(q) > col_of(p) and at(x, p) == 1 and at(x, q) == 1, fn (q) -> col_of(q) - col_of(p) - 1)
         gap == k
 
 for j in cols:
@@ -27,7 +25,5 @@ for j in cols:
     if not no_clue(k):
         let gap = 0
         for p in j:
-            for q in j:
-                if row_of(q) > row_of(p):
-                    let gap = gap + b2i(at(x, p) == 1 and at(x, q) == 1) * (row_of(q) - row_of(p) - 1)
+            let gap = gap + sum_where(j, fn (q) -> row_of(q) > row_of(p) and at(x, p) == 1 and at(x, q) == 1, fn (q) -> row_of(q) - row_of(p) - 1)
         gap == k

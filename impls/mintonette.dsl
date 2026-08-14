@@ -16,14 +16,7 @@ for p in cells():
 
 for p in clue_cells(o):
     cc_count(x, at(x, p)) == 1
-    let mates = 0
-    for q in clue_cells(o):
-        if not (row_of(p) == row_of(q) and col_of(p) == col_of(q)):
-            let mates = mates + b2i(at(x, p) == at(x, q))
-    mates == 1
+    count_where(clue_cells(o), fn (q) -> not (row_of(p) == row_of(q) and col_of(p) == col_of(q)) and at(x, p) == at(x, q)) == 1
 
 for p in clue_cells(n):
-    let tcount = 0
-    for q in cells():
-        let tcount = tcount + b2i(at(x, q) == at(x, p) and turns(e, q))
-    tcount == at(n, p)
+    count_where(cells(), fn (q) -> at(x, q) == at(x, p) and turns(e, q)) == at(n, p)

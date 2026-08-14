@@ -16,6 +16,7 @@ UI-independent (no PyQt import).
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -25,10 +26,14 @@ from . import ast_nodes as ast
 from .builtins import BUILTIN_FUNCTIONS, BuiltinFunction, make_constants
 from .errors import CompileError
 from .parser import parse
+from .session import SolutionValue, SolverSession, decisive_var_types
 from .values import (
     BroadcastError,
     RegionValue,
     VarValue,
+    as_int,
+    as_ne,
+    as_same,
     broadcast,
     flatten_scalars,
     map_elementwise,
@@ -54,6 +59,16 @@ class UserFunction:
     module: str = ""
 
 
+@dataclass
+class Closure:
+    """A ``fn (...) -> expr`` value with a snapshot of the enclosing scopes."""
+
+    params: list[str]
+    body: Any
+    captured_scopes: list
+    name: str = "<fn>"
+
+
 class _ReturnSignal(Exception):
     """Internal control flow for ``return`` inside a ``def`` body."""
 
@@ -75,6 +90,7 @@ class CompiledProgram:
     # Extra named quantities produced by helper builtins (echoed to the UI).
     derived: dict[str, dict[Point, Any]] = field(default_factory=dict)
     derived_kinds: dict[str, PointKind] = field(default_factory=dict)
+    witnesses: list[tuple[str, int]] = field(default_factory=list)
 
 
 def _point_label(point: Point) -> str:
@@ -92,16 +108,34 @@ def compile_source(
     params: dict | None = None,
     loader: Callable[[str], str] | None = None,
     module: str = "<main>",
+    session: SolverSession | None = None,
+    run_meta: bool = False,
+    timeout_ms: int | None = None,
+    meta_budget_ms: int = 300000,
+    meta_solve_limit: int = 200,
 ) -> CompiledProgram:
     """Parse ``source`` and compile it against the given editor state.
 
     ``params`` exposes puzzle instance data to ``param("name")`` and ``loader``
     resolves ``import "module"`` statements to source text.
+    ``run_meta`` executes ``meta:`` blocks (default off, so compile stays cheap).
     """
 
     program = parse(source)
     program.module = module
-    return Compiler(grid, variables, regions, z3, params, loader).compile(program)
+    return Compiler(
+        grid,
+        variables,
+        regions,
+        z3,
+        params,
+        loader,
+        session=session,
+        run_meta=run_meta,
+        timeout_ms=timeout_ms,
+        meta_budget_ms=meta_budget_ms,
+        meta_solve_limit=meta_solve_limit,
+    ).compile(program)
 
 
 class Compiler:
@@ -113,12 +147,28 @@ class Compiler:
         z3,
         params: dict | None = None,
         loader: Callable[[str], str] | None = None,
+        session: SolverSession | None = None,
+        run_meta: bool = False,
+        timeout_ms: int | None = None,
+        meta_budget_ms: int = 300000,
+        meta_solve_limit: int = 200,
     ) -> None:
         self.grid = grid
         self.z3 = z3
         self.variables = list(variables)
         self.params = dict(params or {})
         self._loader = loader
+        self._session = session
+        self._run_meta = bool(run_meta)
+        self._timeout_ms = timeout_ms
+        self._meta_budget_ms = int(meta_budget_ms)
+        self._meta_solve_limit = int(meta_solve_limit)
+        self._synced_upto = 0
+        self._in_meta = False
+        self._solve_count = 0
+        self._meta_started: float | None = None
+        self._unique_over: list[str] | None = None
+        self._witnesses: list[tuple[str, int]] = []
         self._imported: set[str] = set()
         self._functions: dict[str, UserFunction] = {}
         self._call_depth = 0
@@ -148,9 +198,14 @@ class Compiler:
                 self._const_names.add(var.name)
                 continue
             order = sort_points(grid.points(var.kind))
-            quantities = {p: z3.Int(f"{var.name}#{_point_label(p)}") for p in order}
+            if var.is_boolean:
+                quantities = {p: z3.Bool(f"{var.name}#{_point_label(p)}") for p in order}
+            else:
+                quantities = {p: z3.Int(f"{var.name}#{_point_label(p)}") for p in order}
             self.var_z3[var.name] = quantities
-            self._var_values[var.name] = VarValue(var.name, var.kind, quantities, order)
+            self._var_values[var.name] = VarValue(
+                var.name, var.kind, quantities, order, bool_backed=var.is_boolean
+            )
             if vtype is VarType.CC:
                 self._cc_names.add(var.name)
 
@@ -175,6 +230,10 @@ class Compiler:
 
     def compile(self, program: ast.Program) -> CompiledProgram:
         self._apply_variable_presets()
+        if self._run_meta:
+            # Uniqueness checks inside meta: need canonical CC ids already present.
+            for name in self._cc_names:
+                self._ensure_cc(name)
         self._exec_block(program.statements)
         # Always generate the connectivity for cc (region-partition) variables
         # so their region ids exist and can be echoed even if the program never
@@ -190,6 +249,7 @@ class Compiler:
             self._debug,
             self.derived,
             self.derived_kinds,
+            self._witnesses,
         )
 
     # -- aux variables (used by helper builtins) ------------------------
@@ -230,21 +290,35 @@ class Compiler:
 
         These are unconditional constraints (no ``if`` guards apply) added
         before the user program so ``x[...] == given`` and ``lo <= x <= hi``
-        always hold.
+        always hold. CONSTANT variables already store Python ints. CC
+        variables skip domain bounds (ids are canonical roots) but still pin
+        givens so a full assignment can be accepted or rejected.
         """
 
         for var in self.variables:
-            # cc variables encode their own connectivity; constant variables
-            # carry their values directly (no z3 quantities) -- neither takes a
-            # domain or pinned givens here.
-            if getattr(var, "var_type", VarType.NORMAL) is not VarType.NORMAL:
+            vtype = getattr(var, "var_type", VarType.NORMAL)
+            if vtype is VarType.CONSTANT:
                 continue
             quantities = self.var_z3[var.name]
-            domain = getattr(var, "domain", None)
-            if domain is not None:
-                lo, hi = domain
-                for q in quantities.values():
-                    self._constraints.append(self.z3.And(q >= lo, q <= hi))
+            if var.is_boolean:
+                for point, value in getattr(var, "givens", {}).items():
+                    q = quantities.get(point)
+                    if q is None:
+                        continue
+                    given = int(value)
+                    if given == 1:
+                        self._constraints.append(q)
+                    elif given == 0:
+                        self._constraints.append(self.z3.Not(q))
+                    else:
+                        self._constraints.append(self.z3.BoolVal(False))
+                continue
+            if vtype is VarType.NORMAL:
+                domain = getattr(var, "domain", None)
+                if domain is not None:
+                    lo, hi = domain
+                    for q in quantities.values():
+                        self._constraints.append(self.z3.And(q >= lo, q <= hi))
             for point, value in getattr(var, "givens", {}).items():
                 q = quantities.get(point)
                 if q is not None:
@@ -254,6 +328,10 @@ class Compiler:
 
     def _exec_block(self, statements) -> None:
         # Declarations are hoisted so helpers may be used before their `def`.
+        if self._in_meta:
+            for stmt in statements:
+                if isinstance(stmt, ast.DefStmt):
+                    raise CompileError("'def' is not allowed inside meta:", stmt.line, stmt.col)
         for stmt in statements:
             if isinstance(stmt, ast.DefStmt):
                 self._functions[stmt.name] = UserFunction(stmt.name, list(stmt.params), stmt.body)
@@ -287,8 +365,219 @@ class Compiler:
                     self._exec_block(stmt.body)
                 finally:
                     self._scopes.pop()
+        elif isinstance(stmt, ast.MetaStmt):
+            self._exec_meta(stmt)
+        elif isinstance(stmt, ast.ScopeStmt):
+            self._exec_scope(stmt)
         else:  # pragma: no cover - defensive
             raise CompileError("unknown statement", stmt.line, stmt.col)
+
+    def _exec_meta(self, stmt: ast.MetaStmt) -> None:
+        if self._in_meta:
+            raise CompileError("meta: cannot nest", stmt.line, stmt.col)
+        if self._guards:
+            raise CompileError(
+                "meta: must be at top level (no surrounding if-guards)",
+                stmt.line,
+                stmt.col,
+            )
+        if not self._run_meta:
+            self.add_debug(stmt.line, "skipped meta: (run_meta=False)")
+            return
+        if self._session is None:
+            raise CompileError(
+                "meta: requires a solver session (pass run_meta=True)",
+                stmt.line,
+                stmt.col,
+            )
+        self._in_meta = True
+        self._meta_started = time.perf_counter()
+        try:
+            self._exec_block(stmt.body)
+        finally:
+            self._in_meta = False
+
+    def _exec_scope(self, stmt: ast.ScopeStmt) -> None:
+        if not self._in_meta:
+            raise CompileError("scope: is only allowed inside meta:", stmt.line, stmt.col)
+        session = self._session
+        if session is None:
+            raise CompileError("scope: requires a solver session", stmt.line, stmt.col)
+        snap_n = len(self._constraints)
+        snap_synced = self._synced_upto
+        snap_memo = dict(self._memo)
+        snap_cc = {name: dict(inner) for name, inner in self._cc_z3.items()}
+        session.push()
+        try:
+            self._exec_block(stmt.body)
+        finally:
+            session.pop()
+            del self._constraints[snap_n:]
+            self._synced_upto = min(snap_synced, len(self._constraints))
+            self._memo = snap_memo
+            self._cc_z3 = snap_cc
+
+    def _require_meta(self, name: str, pos) -> None:
+        if not self._in_meta:
+            raise CompileError(f"{name}() is only allowed inside a meta: block", pos.line, pos.col)
+
+    def _flush(self) -> None:
+        session = self._session
+        if session is None:
+            return
+        for constraint in self._constraints[self._synced_upto:]:
+            session.add(constraint)
+        self._synced_upto = len(self._constraints)
+
+    def _check_meta_budget(self, pos) -> None:
+        if self._solve_count >= self._meta_solve_limit:
+            raise CompileError(
+                f"meta: solve() limit {self._meta_solve_limit} exceeded "
+                f"({self._solve_count} call(s))",
+                pos.line,
+                pos.col,
+            )
+        if self._meta_started is None:
+            return
+        elapsed_ms = (time.perf_counter() - self._meta_started) * 1000
+        if elapsed_ms > self._meta_budget_ms:
+            raise CompileError(
+                f"meta: time budget {self._meta_budget_ms}ms exceeded "
+                f"after {self._solve_count} solve() call(s)",
+                pos.line,
+                pos.col,
+            )
+
+    def meta_solve(self, args: list, pos) -> SolutionValue:
+        self._require_meta("solve", pos)
+        if self._session is None:
+            raise CompileError("solve() requires a solver session", pos.line, pos.col)
+        timeout = None
+        if args:
+            raw = args[0]
+            if isinstance(raw, bool) or not isinstance(raw, int):
+                raise CompileError("solve(timeout_ms) expects an integer", pos.line, pos.col)
+            timeout = int(raw)
+        self._check_meta_budget(pos)
+        self._flush()
+        status = self._session.check(timeout if timeout is not None else self._timeout_ms)
+        self._solve_count += 1
+        if status == "unknown":
+            raise CompileError("solve() returned unknown (timeout?)", pos.line, pos.col)
+        values: dict[str, dict] = {}
+        kinds: dict[str, PointKind] = {}
+        if status == "sat":
+            for var in self.variables:
+                if var.var_type is VarType.CONSTANT:
+                    continue
+                table = self.var_z3.get(var.name) or {}
+                values[var.name] = {p: self._session.value_of(q) for p, q in table.items()}
+                kinds[var.name] = var.kind
+        return SolutionValue(status, values, kinds)
+
+    def meta_exclude(self, args: list, pos):
+        self._require_meta("exclude", pos)
+        if not args or not isinstance(args[0], SolutionValue):
+            raise CompileError("exclude() expects a solve() result", pos.line, pos.col)
+        sol: SolutionValue = args[0]
+        names: list[str] | None = None
+        extra = args[1:]
+        if extra:
+            names = []
+            for item in extra:
+                if isinstance(item, VarValue):
+                    names.append(item.name.split(".")[0])
+                elif isinstance(item, str):
+                    names.append(item)
+                else:
+                    raise CompileError("exclude() extra args must be variables", pos.line, pos.col)
+        elif self._unique_over is not None:
+            names = list(self._unique_over)
+        diffs = []
+        free: list[str] = []
+        allowed = set(names) if names is not None else None
+        for var in self.variables:
+            if var.var_type not in decisive_var_types():
+                continue
+            if allowed is not None and var.name not in allowed:
+                continue
+            model_vals = sol.values.get(var.name) or {}
+            for point, term in (self.var_z3.get(var.name) or {}).items():
+                if self._session is not None and not self._session.is_determined(term):
+                    free.append(f"{var.name}[{point}]")
+                if point not in model_vals:
+                    continue
+                diffs.append(as_ne(term, model_vals[point], self.z3))
+        if free:
+            shown = ", ".join(free[:12])
+            more = f" (+{len(free) - 12} more)" if len(free) > 12 else ""
+            self.add_debug(pos.line, f"exclude(): unconstrained points {shown}{more}")
+        if not diffs:
+            return self.z3.BoolVal(False)
+        return self.z3.Or(diffs)
+
+    def meta_unique_over(self, args: list, pos):
+        self._require_meta("unique_over", pos)
+        names: list[str] = []
+        for item in args:
+            if isinstance(item, VarValue):
+                names.append(item.name.split(".")[0])
+            elif isinstance(item, str):
+                names.append(item)
+            else:
+                raise CompileError("unique_over() expects variables", pos.line, pos.col)
+        if not names:
+            raise CompileError("unique_over() needs at least one variable", pos.line, pos.col)
+        self._unique_over = names
+        return []
+
+    def meta_require(self, args: list, pos):
+        self._require_meta("require", pos)
+        if len(args) != 2:
+            raise CompileError("require(cond, msg) takes two arguments", pos.line, pos.col)
+        cond = self._try_const_bool(args[0])
+        if cond is None:
+            raise CompileError("require() condition must be a compile-time boolean", pos.line, pos.col)
+        if not cond:
+            msg = args[1] if isinstance(args[1], str) else str(args[1])
+            raise CompileError(msg, pos.line, pos.col)
+        return []
+
+    def meta_fail(self, args: list, pos):
+        self._require_meta("fail", pos)
+        msg = args[0] if args and isinstance(args[0], str) else "fail()"
+        raise CompileError(str(msg), pos.line, pos.col)
+
+    def meta_domain_of(self, args: list, pos) -> list[int]:
+        if len(args) != 1:
+            raise CompileError("domain_of(var) takes one argument", pos.line, pos.col)
+        name = None
+        if isinstance(args[0], VarValue):
+            name = args[0].name.split(".")[0]
+        elif isinstance(args[0], str):
+            name = args[0]
+        var = next((v for v in self.variables if v.name == name), None)
+        if var is None or var.domain is None:
+            raise CompileError("domain_of() needs a variable with a domain", pos.line, pos.col)
+        lo, hi = var.domain
+        return list(range(int(lo), int(hi) + 1))
+
+    def meta_emit_witness(self, args: list, pos):
+        self._require_meta("emit_witness", pos)
+        if len(args) != 2:
+            raise CompileError("emit_witness(tag, value) takes two arguments", pos.line, pos.col)
+        tag = str(args[0])
+        value = args[1]
+        if isinstance(value, bool):
+            value = int(value)
+        if not isinstance(value, int):
+            raise CompileError("emit_witness() value must be a compile-time integer", pos.line, pos.col)
+        self._witnesses.append((tag, value))
+        return []
+
+    def meta_solve_count(self, args: list, pos) -> int:
+        self._require_meta("solve_count", pos)
+        return self._solve_count
 
     def _exec_import(self, stmt: ast.ImportStmt) -> None:
         name = stmt.path.strip()
@@ -334,6 +623,35 @@ class Compiler:
         finally:
             self._call_depth -= 1
             self._scopes = saved_scopes
+
+    def _call_closure(self, fn: Closure, args: list, node) -> Any:
+        if len(args) != len(fn.params):
+            raise CompileError(
+                f"{fn.name}() takes {len(fn.params)} argument(s) but {len(args)} given",
+                node.line,
+                node.col,
+            )
+        if self._call_depth > 64:
+            raise CompileError(f"{fn.name}(): recursion too deep", node.line, node.col)
+        frame = dict(zip(fn.params, args))
+        saved_scopes, self._scopes = self._scopes, [dict(s) for s in fn.captured_scopes] + [frame]
+        self._call_depth += 1
+        try:
+            return self._eval(fn.body)
+        finally:
+            self._call_depth -= 1
+            self._scopes = saved_scopes
+
+    def call(self, callee, args: list, pos) -> Any:
+        """Invoke a ``def``, ``fn``, or builtin from another builtin (P2)."""
+
+        if isinstance(callee, UserFunction):
+            return self._call_user_function(callee, args, pos)
+        if isinstance(callee, Closure):
+            return self._call_closure(callee, args, pos)
+        if isinstance(callee, BuiltinFunction):
+            return callee.fn(self, args, pos)
+        raise CompileError("value is not callable", pos.line, pos.col)
 
     # -- binding & control flow -----------------------------------------
 
@@ -477,6 +795,12 @@ class Compiler:
             return self._eval_unary(node)
         if isinstance(node, ast.Binary):
             return self._eval_binary(node)
+        if isinstance(node, ast.Lambda):
+            return Closure(
+                list(node.params),
+                node.body,
+                [dict(scope) for scope in self._scopes],
+            )
         raise CompileError("cannot evaluate expression", node.line, node.col)  # pragma: no cover
 
     def _eval_name(self, node: ast.Name) -> Any:
@@ -557,6 +881,21 @@ class Compiler:
     def _eval_member(self, node: ast.Member) -> Any:
         base = self._eval(node.base)
         attr = node.attr
+        if isinstance(base, SolutionValue):
+            if attr == "sat":
+                return base.sat
+            if attr == "status":
+                return base.status
+            table = base.values.get(attr)
+            if table is None:
+                raise CompileError(
+                    f"solve() result has no member '{attr}'",
+                    node.line,
+                    node.col,
+                )
+            kind = base.kinds.get(attr, PointKind.CELL)
+            order = sort_points(table.keys())
+            return VarValue(attr, kind, dict(table), order)
         if isinstance(base, list):
             return self._list_member(base, attr, node)
         if isinstance(base, RegionValue):
@@ -716,8 +1055,8 @@ class Compiler:
     def _eval_call(self, node: ast.Call) -> Any:
         callee = self._eval(node.callee)
         args = [self._eval(arg) for arg in node.args]
-        if isinstance(callee, UserFunction):
-            return self._call_user_function(callee, args, node)
+        if isinstance(callee, (UserFunction, Closure)):
+            return self.call(callee, args, node)
         if isinstance(callee, _BoundMethod):
             try:
                 return callee.fn(args, node)
@@ -744,7 +1083,7 @@ class Compiler:
             if node.op == "not":
                 return map_elementwise(operand, self._not)
             if node.op == "-":
-                return map_elementwise(operand, lambda v: -v)
+                return map_elementwise(operand, lambda v: -as_int(v, self.z3))
             return map_elementwise(operand, lambda v: v)  # unary '+'
         except BroadcastError as exc:
             raise CompileError(str(exc), node.line, node.col) from exc
@@ -833,55 +1172,57 @@ class Compiler:
 
     @staticmethod
     def _op_add(self, a, b, node):
-        return a + b
+        return as_int(a, self.z3) + as_int(b, self.z3)
 
     @staticmethod
     def _op_sub(self, a, b, node):
-        return a - b
+        return as_int(a, self.z3) - as_int(b, self.z3)
 
     @staticmethod
     def _op_mul(self, a, b, node):
-        return a * b
+        return as_int(a, self.z3) * as_int(b, self.z3)
 
     @staticmethod
     def _op_div(self, a, b, node):
-        if isinstance(a, int) and isinstance(b, int):
-            if b == 0:
+        a_n, b_n = as_int(a, self.z3), as_int(b, self.z3)
+        if isinstance(a_n, int) and isinstance(b_n, int):
+            if b_n == 0:
                 raise CompileError("division by zero", node.line, node.col)
-            return a // b
-        return a / b
+            return a_n // b_n
+        return a_n / b_n
 
     @staticmethod
     def _op_mod(self, a, b, node):
-        if isinstance(a, int) and isinstance(b, int):
-            if b == 0:
+        a_n, b_n = as_int(a, self.z3), as_int(b, self.z3)
+        if isinstance(a_n, int) and isinstance(b_n, int):
+            if b_n == 0:
                 raise CompileError("modulo by zero", node.line, node.col)
-            return a % b
-        return a % b
+            return a_n % b_n
+        return a_n % b_n
 
     @staticmethod
     def _op_eq(self, a, b, node):
-        return a == b
+        return as_same(a, b, self.z3)
 
     @staticmethod
     def _op_ne(self, a, b, node):
-        return a != b
+        return as_ne(a, b, self.z3)
 
     @staticmethod
     def _op_lt(self, a, b, node):
-        return a < b
+        return as_int(a, self.z3) < as_int(b, self.z3)
 
     @staticmethod
     def _op_le(self, a, b, node):
-        return a <= b
+        return as_int(a, self.z3) <= as_int(b, self.z3)
 
     @staticmethod
     def _op_gt(self, a, b, node):
-        return a > b
+        return as_int(a, self.z3) > as_int(b, self.z3)
 
     @staticmethod
     def _op_ge(self, a, b, node):
-        return a >= b
+        return as_int(a, self.z3) >= as_int(b, self.z3)
 
     _ARITH = {
         "+": _op_add.__func__,

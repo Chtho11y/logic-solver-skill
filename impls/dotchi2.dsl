@@ -20,8 +20,4 @@ for p in clue_cells(o):
             on_loop(e, p) and at(o, p) != at(o, q) => off_loop(e, q)
 
 for p in cells():
-    let n = 0
-    for q in region_of(p):
-        if has_value(o, q):
-            let n = n + b2i(on_loop(e, q))
-    n >= 1
+    count_where(clue_cells(o), fn (q) -> same_region(p, q) and on_loop(e, q)) >= 1

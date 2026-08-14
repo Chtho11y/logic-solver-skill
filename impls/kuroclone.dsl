@@ -12,7 +12,7 @@ clue_cells_white(x, n)
 let sz = cc_size(x)
 for p in clue_cells(n):
     if has_value(d, p):
-        let nxt = step(p, at(d, p))
-        if nxt.size == 1:
+        if in_grid(p, dr_of(at(d, p)), dc_of(at(d, p))):
+            let nxt = step(p, at(d, p))
             eq(x, nxt, 1)
             at(sz, nxt) == at(n, p)

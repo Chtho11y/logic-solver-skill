@@ -6,11 +6,7 @@ import "regions"
 for p in cells():
     region_deg(c, p) <= 2
     region_end_count(c, p) == 2
-    let bends = 0
-    for q in cells():
-        let corner = (same_reg_dir(c, q, UP) or same_reg_dir(c, q, DOWN)) and (same_reg_dir(c, q, LEFT) or same_reg_dir(c, q, RIGHT))
-        let bends = bends + b2i(at(c, q) == at(c, p) and corner)
-    bends == 1
+    count_where(cells(), fn (q) -> at(c, q) == at(c, p) and (same_reg_dir(c, q, UP) or same_reg_dir(c, q, DOWN)) and (same_reg_dir(c, q, LEFT) or same_reg_dir(c, q, RIGHT))) == 1
 
 for p in clue_cells(o):
     (same_reg_dir(c, p, UP) or same_reg_dir(c, p, DOWN)) and (same_reg_dir(c, p, LEFT) or same_reg_dir(c, p, RIGHT))

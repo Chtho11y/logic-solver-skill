@@ -23,25 +23,24 @@ for p in cells():
 
 for p in clue_cells(o):
     let nid = cell_idx(p) + 1
-    let q = step(p, at(d, p))
-    if q.size == 0:
+    if not in_grid(p, dr_of(at(d, p)), dc_of(at(d, p))):
         false
-    elif has_value(o, q):
-        if has_value(n, p):
-            at(n, p) == 0
-        let back = step(q, at(d, q))
-        if back.size > 0:
-            if row_of(back) == row_of(p) and col_of(back) == col_of(p):
-                false
     else:
-        at(x, q) == nid
+        let q = step(p, at(d, p))
+        if has_value(o, q):
+            if has_value(n, p):
+                at(n, p) == 0
+            if in_grid(q, dr_of(at(d, q)), dc_of(at(d, q))):
+                let back = step(q, at(d, q))
+                if row_of(back) == row_of(p) and col_of(back) == col_of(p):
+                    false
+        else:
+            at(x, q) == nid
 
 for p in clue_cells(n):
     let nid = cell_idx(p) + 1
-    let q = step(p, at(d, p))
-    if q.size > 0:
+    if in_grid(p, dr_of(at(d, p)), dc_of(at(d, p))):
+        let q = step(p, at(d, p))
         if not has_value(o, q):
-            let tcount = 0
-            for r in cells():
-                let tcount = tcount + b2i(at(x, r) == nid and turns(e, r))
+            let tcount = count_where(cells(), fn (r) -> at(x, r) == nid and turns(e, r))
             tcount == at(n, p)

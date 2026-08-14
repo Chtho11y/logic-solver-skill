@@ -9,8 +9,8 @@ for reg in regions:
     wrong_clues_in(x, n, reg) == 1
 
 def wrong_clues_in(x, n, reg):
-    let total = 0
+    let clues = []
     for p in reg:
         if has_value(n, p):
-            let total = total + b2i(n_adj4(x, p, 1) != at(n, p))
-    return total
+            let clues = clues.append(p)
+    return count_where(clues, fn (p) -> n_adj4(x, p, 1) != at(n, p))

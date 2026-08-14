@@ -9,7 +9,7 @@ one_clue_per_region(c, o)
 for p in cells():
     for t in clue_cells(o):
         let q = shift(t, row_of(t) - row_of(p), col_of(t) - col_of(p))
-        if q.size == 0:
+        if not in_grid(t, row_of(t) - row_of(p), col_of(t) - col_of(p)):
             at(c, p) != at(c, t)
-        if q.size == 1:
+        else:
             at(c, p) == at(c, t) => at(c, q) == at(c, t)

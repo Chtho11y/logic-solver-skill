@@ -9,14 +9,8 @@ let sz = cc_size(x)
 for p in cells():
     for q in cells():
         if row_of(p) == row_of(q) and col_of(p) + 1 < col_of(q):
-            let clear = true
-            for k in row(row_of(p)):
-                if col_of(p) < col_of(k) and col_of(k) < col_of(q):
-                    let clear = clear and is_white(x, k)
+            let clear = all_where(row(row_of(p)), fn (k) -> not (col_of(p) < col_of(k) and col_of(k) < col_of(q)) or is_white(x, k))
             is_black(x, p) and is_black(x, q) and clear => at(sz, p) != at(sz, q)
         if col_of(p) == col_of(q) and row_of(p) + 1 < row_of(q):
-            let clear = true
-            for k in col(col_of(p)):
-                if row_of(p) < row_of(k) and row_of(k) < row_of(q):
-                    let clear = clear and is_white(x, k)
+            let clear = all_where(col(col_of(p)), fn (k) -> not (row_of(p) < row_of(k) and row_of(k) < row_of(q)) or is_white(x, k))
             is_black(x, p) and is_black(x, q) and clear => at(sz, p) != at(sz, q)

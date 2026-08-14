@@ -18,7 +18,5 @@ def doors_between(x, ra, rb):
     let rid = region_id(rb[0])
     let total = 0
     for p in ra:
-        for q in adj4(p):
-            if region_id(q) == rid:
-                let total = total + b2i(is_white(x, p) and is_white(x, q))
+        let total = total + count_where(adj4(p), fn (q) -> region_id(q) == rid and is_white(x, p) and is_white(x, q))
     return total
