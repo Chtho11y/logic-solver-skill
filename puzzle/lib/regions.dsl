@@ -128,11 +128,11 @@ def regions_are_rectangles(c):
             num_eq(c[w], at(c, p)) != 3
 
 def region_width(c, p):
-    # Cells of p's region that share p's row (equals the rectangle's width).
-    return count_where(cells(), fn (q) -> row_of(q) == row_of(p) and at(c, q) == at(c, p))
+    # Same-row occupancy; equals bbox width only for rectangles.
+    return cc_line_count(c, p, 0)
 
 def region_height(c, p):
-    return count_where(cells(), fn (q) -> col_of(q) == col_of(p) and at(c, q) == at(c, p))
+    return cc_line_count(c, p, 1)
 
 def regions_are_squares(c):
     regions_are_rectangles(c)
@@ -155,8 +155,7 @@ def region_border_clue(c, k):
         num_eq(c.border[edge_of(p)], 1) == at(k, p)
 
 def region_deg(c, p):
-    # Orthogonal neighbours that belong to the same solved region as p.
-    return count_where(adj4(p), fn (q) -> at(c, q) == at(c, p))
+    return at(c.deg, p)
 
 def same_reg_dir(c, p, d):
     if not in_grid(p, dr_of(d), dc_of(d)):
@@ -164,20 +163,19 @@ def same_reg_dir(c, p, d):
     return at(c, step(p, d)) == at(c, p)
 
 def region_notch_count(c, p):
-    # 2x2 windows that contain exactly three cells of p's region (concave corners).
-    return count_where(slide(2, 2), fn (w) -> num_eq(c[w], at(c, p)) == 3)
+    return cc_notch_count(c, p)
 
 def region_end_count(c, p):
-    return count_where(cells(), fn (q) -> at(c, q) == at(c, p) and region_deg(c, q) == 1)
+    return cc_deg_count(c, p, 1)
 
 def region_above(c, p):
-    return count_where(cells(), fn (q) -> row_of(q) < row_of(p) and at(c, q) == at(c, p))
+    return cc_half_count(c, p, 0, 0)
 
 def region_below(c, p):
-    return count_where(cells(), fn (q) -> row_of(q) > row_of(p) and at(c, q) == at(c, p))
+    return cc_half_count(c, p, 0, 1)
 
 def region_left_of(c, p):
-    return count_where(cells(), fn (q) -> col_of(q) < col_of(p) and at(c, q) == at(c, p))
+    return cc_half_count(c, p, 1, 0)
 
 def region_right_of(c, p):
-    return count_where(cells(), fn (q) -> col_of(q) > col_of(p) and at(c, q) == at(c, p))
+    return cc_half_count(c, p, 1, 1)

@@ -260,6 +260,14 @@ L1：`is_connected` / `is_connected8` 为单流编码（根供给 = 开启格数
 
 验收：`tests.test_fn.ConnectedTests` + `tests.test_meta`；55 个 L1 调用 key 编译无错；有 fixture 答案的 26 个 accept 仍为 sat（零翻转）。相对 P1s2，L1 key 的约束数上升（小盘面上流约束条数多于原先共享的 `cc_count<=1`；同时用 L2/L4 的 key 会叠两套编码）。`sudoku` / `yajilin` 约束数未动。
 
+### 7.3 P4B（CC 派生量统一）
+
+`_value_cc` 在目标为 CC 变量且 4-连通、无区域掩码时复用 `Compiler.ensure_cc()` 的 id/dist（`dist` 为正式键，`_dist` 仍为别名），不再建第二套树。`cc_count` / `cc8_*` 对 CC 变量编译报错。
+
+几何量下沉到 Python 并 memo：`c.bbox_w` / `c.bbox_h` / `c.deg`；`cc_line_count` / `cc_half_count` / `cc_notch_count` / `cc_full2x2` / `cc_corner_count` / `cc_deg_count`。`regions.dsl` / `place2.dsl` 的 14 个全盘扫描函数改为转调。`region_width` 保持「同行占用」语义，**不等于** `bbox_w`；当前调用点均有矩形前提（`regions_are_squares`、`tatamibari`、`squarejam`、`tren`、`voxas`）。
+
+验收：`tests.test_fn.CcReuseTests`；35 个含 CC 变量的 key 编译无错；有 fixture 的 32 个 accept 仍为 sat。14 个改用派生量的 key 约束数上升（全盘 memo 的命名辅助量；小盘面上比按线索点内联更贵），21 个只用 `c.size` 的不变。
+
 ---
 
 ## 8. 后续建议

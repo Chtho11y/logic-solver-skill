@@ -381,7 +381,7 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 | 类型 | 说明 |
 |------|------|
 | **NORMAL（普通）** | 每点一个待求解的量（最常见）。可设值域 `domain` 与预设 givens。 |
-| **CC（区域划分）** | 一类**独立**的区域划分变量，自身在每个 cell 上的值即该 cell 的**区域 id**，内置 4-连通约束，不依赖任何其他变量。始终定义于 cell。无预设。暴露成员 `.id` / `.size` / `.border`。 |
+| **CC（区域划分）** | 一类**独立**的区域划分变量，自身在每个 cell 上的值即该 cell 的**区域 id**，内置 4-连通约束，不依赖任何其他变量。始终定义于 cell。无预设。暴露成员 `.id` / `.size` / `.border` / `.bbox_w` / `.bbox_h` / `.deg`。 |
 | **CONSTANT（常量）** | 不参与求解；仅在**填写了预设值**的点上存在该常量值，可被表达式引用。 |
 
 ### 8.1 区域划分变量（CC）
@@ -394,6 +394,20 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 | `c.id[cell(r,c)]` | 每个 cell 的区域 id；id 相等 ⟺ 连通；id = 区域内最小线性下标 `r*cols+c` |
 | `c.size[cell(r,c)]` | 每个 cell 所在区域的 cell 数；O(N²)，谨慎使用 |
 | `c.border[edge(...)]` | 每条 edge 的 0/1 整数：当且仅当该 edge 位于**网格边界**、或其两侧 cell 属于**不同区域**（cc id 不等）时为 1 |
+| `c.bbox_w` / `c.bbox_h` | 外接框宽/高（O(N²)）。**不等于**「同行/同列格数」 |
+| `c.deg` | 与本格同 id 的正交邻居数 |
+
+对 CC 变量调用 `cc_id` / `cc_size` / `cc_width` 等会**复用**上述 id/dist，不再建第二套树。`cc_count` / `cc8_*` 对 CC 变量编译报错（请用 `.size`）。
+
+几何派生量（均 memo，O(N²) 除非注明）：
+
+| 签名 | 说明 |
+|------|------|
+| `cc_line_count(var, cell, axis)` | 同行（axis=0）或同列（axis=1）的同区格数。`region_width` / `region_height` 转调它 |
+| `cc_half_count(var, cell, axis, side)` | 严格更上/下（axis=0）或左/右（axis=1）；side 0=负向、1=正向 |
+| `cc_notch_count` / `cc_full2x2` | 含恰好 3 / 恰好 4 格本区的 2×2 窗数 |
+| `cc_corner_count` | 外接框四角被本区占据的次数（退化角可能重复计数，与旧 DSL 一致） |
+| `cc_deg_count(var, cell, d)` | 本区度数为 d 的格数；`region_end_count` = `cc_deg_count(..., 1)` |
 
 编码方式：在 4-连通网格上，每个区域的 `id` 等于其所有 cell 中最小的线性下标
 `r*cols+c`（即其唯一根，亦即 CC 变量自身的 z3 量），并通过生成树距离见证
@@ -526,7 +540,7 @@ print(row(0))
 |------|------|
 | `core` | `eq` / `is_black` / `is_white`、`n_adj4` / `n_adj8` / `n_diag4` / `n_around`、`no2x2` / `no_run` / `no_adjacent`、`connected` / `connected8` / `group_count`、`is_rect_group`、`clue_cells` / `before` / `step` |
 | `shading` | 涂黑家族骨架：`island_rule`（黑格不相邻 + 白格连通）、`wall_rule`（黑格连通 + 无全黑 2x2）、`no_mono_2x2`、`adj_black_clue` / `around_black_clue` / `adj8_black_clue`、`region_black_count`、`see_count` / `see4`、`group_touches_border`、`clues_in_distinct_groups` |
-| `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` |
+| `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles`；`region_width`/`height`/`deg`/`notch_count`/`end_count`/`above` 等转调 P4B 内置 |
 | `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
 | `fill` | `latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、箭头辅助 |
 | `outside` | `line_count` / `line_runs` / `line_runs_set`（`axis` 0=行 1=列）；旧名 `row_count` / `col_count` 等保留为包装；`row_index_sum` / `col_index_sum` |
@@ -544,5 +558,6 @@ print(row(0))
 7. 若在 `scope:` 内**首次**触发 `cloop` / `cc.size` 等重型编码，退出时会回滚 `_memo` 与 `_cc_z3`，否则块外再次调用会命中缓存但约束已被丢弃。
 8. `exclude` 默认覆盖全部 NORMAL/CC 变量。辅助建模变量在 `model_completion=True` 下可能取任意值，造成虚假多解；用 `unique_over(v1, …)` 限制判定范围。
 9. `fn` 捕获的是作用域**拷贝**，之后的 `let` 重绑定看不见；`def` 完全不捕获外层 `let`。不要按 Python 闭包来想。
-10. `rev(region)` 保序；把它交给 `and` 合并或任何走 `RegionValue.of` 的路径会**重新排序**。索引 `x[rev(line)]` 与 `for p in rev(line)` 保留逆序。
+11. `region_width` / `region_height` 是同行/同列占用格数，**不是** `c.bbox_w` / `c.bbox_h`。非矩形区域上两者不等（例如 L 形顶格 `line_count` 为 1、bbox 宽为 2）。当前调用点均有矩形前提：`regions_are_squares`（先 `regions_are_rectangles`）、`tatamibari`、`squarejam`、`tren`（1×2/1×3 且 notch=0）、`voxas`（先 `regions_are_rectangles`）。
+12. 对 CC 变量调用 `cc_count` 会报错；区域面积用 `c.size`。
 11. `and`/`or` 不短路。越界取值用 `if not in_grid` 或 `at_or`/`nb`，不要写 `in_grid(...) and at(...)`。`nb` 缺省 0：当 0 是合法值时，越界与「值为 0」无法区分。

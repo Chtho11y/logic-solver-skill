@@ -261,5 +261,45 @@ is_connected(x, 1)
         self.assertIn("#cc4#id", blob)
 
 
+def _cc_var(name="c"):
+    return Variable(name, PointKind.CELL, VarType.CC, None)
+
+
+class CcReuseTests(unittest.TestCase):
+    def test_cc_size_reuses_partition_ids(self) -> None:
+        compiled = _compile(
+            "at(cc_size(c), cell(0, 0)) >= 1\n",
+            [_cc_var()],
+            rows=2,
+            cols=2,
+        )
+        blob = "\n".join(c.sexpr() for c in compiled.constraints)
+        self.assertIn("cc_dist", blob)
+        self.assertNotIn("#cc4#id", blob)
+
+    def test_cc_count_rejected_on_cc_var(self) -> None:
+        with self.assertRaises(CompileError) as ctx:
+            _compile("cc_count(c, 0) <= 1\n", [_cc_var()], rows=2, cols=2)
+        self.assertIn("CC variable", str(ctx.exception))
+
+    def test_line_count_differs_from_bbox_on_l_shape(self) -> None:
+        source = """
+import "regions"
+at(c, cell(0, 0)) == 0
+at(c, cell(1, 0)) == 0
+at(c, cell(1, 1)) == 0
+at(c, cell(0, 1)) == 1
+at(c, cell(0, 2)) == 2
+at(c, cell(1, 2)) == 5
+cc_line_count(c, cell(0, 0), 0) == 1
+at(c.bbox_w, cell(0, 0)) == 2
+"""
+        compiled = _compile(source, [_cc_var()], rows=2, cols=3)
+        solver = z3.Solver()
+        for constraint in compiled.constraints:
+            solver.add(constraint)
+        self.assertEqual(str(solver.check()), "sat")
+
+
 if __name__ == "__main__":
     unittest.main()

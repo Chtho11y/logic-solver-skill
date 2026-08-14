@@ -922,8 +922,22 @@ class Compiler:
         if attr == "border":
             self._ensure_cc_border(name)
             return self._cc_var_value(name, "border", PointKind.EDGE)
+        if attr in ("bbox_w", "bbox_h", "deg"):
+            from . import builtins as _b
+
+            var = self._var_values[name]
+            if attr == "deg":
+                cc = _b._ensure_cc_deg(self, var, _b._CC4)
+                member = "deg"
+            else:
+                cc = _b._ensure_cc_bbox(self, var, _b._CC4)
+                member = "width" if attr == "bbox_w" else "height"
+            quantities = cc[member]
+            self._cc_z3[name][attr] = quantities
+            return VarValue(f"{name}.{attr}", PointKind.CELL, quantities, sort_points(quantities.keys()))
         raise CompileError(
-            f"region variable '{name}' has no member '{attr}' (use id/size/border)",
+            f"region variable '{name}' has no member '{attr}' "
+            f"(use id/size/border/bbox_w/bbox_h/deg)",
             node.line,
             node.col,
         )
@@ -984,7 +998,25 @@ class Compiler:
             ]
             parent_exists = z3.Or(parents) if parents else z3.BoolVal(False)
             self._constraints.append(z3.Implies(dc > 0, parent_exists))
-        self._cc_z3[name] = {"id": id_vars, "_dist": dist_vars}
+        # ``dist`` is the public key for builtins reuse; ``_dist`` stays as alias.
+        self._cc_z3[name] = {"id": id_vars, "dist": dist_vars, "_dist": dist_vars}
+
+    def is_cc_var(self, name: str) -> bool:
+        return name in self._cc_names
+
+    def ensure_cc(self, name: str) -> dict:
+        """Canonical 4-CC id + dist for a CC variable (P4B reuse API)."""
+
+        if name not in self._cc_names:
+            raise CompileError(f"'{name}' is not a CC variable")
+        self._ensure_cc(name)
+        return self._cc_z3[name]
+
+    def ensure_cc_size(self, name: str) -> dict:
+        if name not in self._cc_names:
+            raise CompileError(f"'{name}' is not a CC variable")
+        self._ensure_cc_size(name)
+        return self._cc_z3[name]
 
     def _ensure_cc_size(self, name: str) -> None:
         """Generate cc.size z3 vars: the count of cells sharing each id.

@@ -16,45 +16,19 @@ def is_root(c, p):
     return at(c, p) == row_of(p) * cols.size + col_of(p)
 
 def region_full2x2(c, p):
-    return count_where(slide(2, 2), fn (w) -> num_eq(c[w], at(c, p)) == 4)
+    return cc_full2x2(c, p)
 
 def region_deg_count(c, p, d):
-    return count_where(cells(), fn (q) -> at(c, q) == at(c, p) and region_deg(c, q) == d)
+    return cc_deg_count(c, p, d)
 
 def region_bbox_h(c, p):
-    let minr = row_of(p)
-    let maxr = row_of(p)
-    for q in cells():
-        let minr = ite(at(c, q) == at(c, p) and row_of(q) < minr, row_of(q), minr)
-        let maxr = ite(at(c, q) == at(c, p) and row_of(q) > maxr, row_of(q), maxr)
-    return maxr - minr + 1
+    return at(c.bbox_h, p)
 
 def region_bbox_w(c, p):
-    let minc = col_of(p)
-    let maxc = col_of(p)
-    for q in cells():
-        let minc = ite(at(c, q) == at(c, p) and col_of(q) < minc, col_of(q), minc)
-        let maxc = ite(at(c, q) == at(c, p) and col_of(q) > maxc, col_of(q), maxc)
-    return maxc - minc + 1
+    return at(c.bbox_w, p)
 
 def region_bbox_corners(c, p):
-    let minr = row_of(p)
-    let maxr = row_of(p)
-    let minc = col_of(p)
-    let maxc = col_of(p)
-    for q in cells():
-        let minr = ite(at(c, q) == at(c, p) and row_of(q) < minr, row_of(q), minr)
-        let maxr = ite(at(c, q) == at(c, p) and row_of(q) > maxr, row_of(q), maxr)
-        let minc = ite(at(c, q) == at(c, p) and col_of(q) < minc, col_of(q), minc)
-        let maxc = ite(at(c, q) == at(c, p) and col_of(q) > maxc, col_of(q), maxc)
-    let cn = 0
-    for q in cells():
-        let here = at(c, q) == at(c, p)
-        let cn = cn + b2i(here and row_of(q) == minr and col_of(q) == minc)
-        let cn = cn + b2i(here and row_of(q) == minr and col_of(q) == maxc)
-        let cn = cn + b2i(here and row_of(q) == maxr and col_of(q) == minc)
-        let cn = cn + b2i(here and row_of(q) == maxr and col_of(q) == maxc)
-    return cn
+    return cc_corner_count(c, p)
 
 def ba5(c, p):
     let h = region_bbox_h(c, p)

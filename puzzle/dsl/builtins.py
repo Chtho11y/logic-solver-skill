@@ -1032,9 +1032,55 @@ def _build_value_cc(ctx, var: VarValue, deltas, cells=None) -> dict:
     return {"id": ids, "dist": dist, "cells": cells, "tag": tag}
 
 
+def _is_cc_var(ctx, name: str) -> bool:
+    check = getattr(ctx, "is_cc_var", None)
+    return bool(callable(check) and check(name))
+
+
+def _wrap_cc_partition(ctx, var: VarValue) -> dict:
+    """Reuse the CC variable's own canonical id/dist instead of a second tree."""
+
+    payload = ctx.ensure_cc(var.name)
+    cells = sort_points(payload["id"].keys())
+    dist = payload.get("dist", payload["_dist"])
+    wrapped = {
+        "id": payload["id"],
+        "dist": dist,
+        "cells": cells,
+        "tag": f"{var.name}#cc",
+        "cc_name": var.name,
+        "_payload": payload,
+    }
+    for key in ("size", "width", "height", "deg", "notch", "full2x2", "corners",
+                "row_span", "col_span", "above", "below", "left", "right"):
+        if key in payload:
+            wrapped[key] = payload[key]
+    return wrapped
+
+
+def _sync_cc_payload(cc: dict, key: str, value) -> None:
+    payload = cc.get("_payload")
+    if payload is not None:
+        payload[key] = value
+    cc[key] = value
+
+
 def _value_cc(ctx, var: VarValue, deltas, region_points=None):
+    if region_points is None and _is_cc_var(ctx, var.name):
+        if len(deltas) != 4:
+            raise CompileError(
+                f"8-connectivity builtins do not apply to CC variable '{var.name}'"
+            )
+        return ctx.memo(
+            ("valuecc", var.name, 4, "reused"),
+            lambda: _wrap_cc_partition(ctx, var),
+        )
     if region_points is None:
         return ctx.memo(("valuecc", var.name, len(deltas)), lambda: _build_value_cc(ctx, var, deltas))
+    if _is_cc_var(ctx, var.name) and len(deltas) != 4:
+        raise CompileError(
+            f"8-connectivity builtins do not apply to CC variable '{var.name}'"
+        )
     points = sort_points(region_points)
     return ctx.memo(
         ("valuecc", var.name, len(deltas), points),
@@ -1062,6 +1108,10 @@ def _ensure_cc_size(ctx, var: VarValue, deltas, region_points=None) -> dict:
     cc = _value_cc(ctx, var, deltas, region_points)
     if "size" in cc:
         return cc
+    if cc.get("cc_name") and region_points is None:
+        payload = ctx.ensure_cc_size(cc["cc_name"])
+        _sync_cc_payload(cc, "size", payload["size"])
+        return cc
     z3 = ctx.z3
     cells = cc["cells"]
     ids = cc["id"]
@@ -1069,7 +1119,7 @@ def _ensure_cc_size(ctx, var: VarValue, deltas, region_points=None) -> dict:
     sizes = {p: z3.Int(f"{tag}#n#r{p[0]}c{p[1]}") for p in cells}
     for p in cells:
         ctx.add_aux(sizes[p] == z3.Sum([z3.If(ids[q] == ids[p], 1, 0) for q in cells]))
-    cc["size"] = sizes
+    _sync_cc_payload(cc, "size", sizes)
     return cc
 
 
@@ -1091,6 +1141,12 @@ def _make_cc_count(deltas, label: str):
         if len(args) != 2:
             raise CompileError(f"{label}(var, value) takes two arguments", pos.line, pos.col)
         var = _expect_cell_var(args[0], label, pos)
+        if _is_cc_var(ctx, var.name):
+            raise CompileError(
+                f"{label}() does not apply to a CC variable; use .size for region area",
+                pos.line,
+                pos.col,
+            )
         value = to_numeric(args[1])
         cc = _value_cc(ctx, var, deltas)
         z3 = ctx.z3
@@ -1171,6 +1227,7 @@ def _ensure_cc_bbox(ctx, var: VarValue, deltas) -> dict:
     rows, cols = ctx.grid.rows, ctx.grid.cols
     widths = {p: z3.Int(f"{tag}#w#r{p[0]}c{p[1]}") for p in cells}
     heights = {p: z3.Int(f"{tag}#h#r{p[0]}c{p[1]}") for p in cells}
+    corners = {p: z3.Int(f"{tag}#cn#r{p[0]}c{p[1]}") for p in cells}
     for p in cells:
         min_r, max_r = rows, -1
         min_c, max_c = cols, -1
@@ -1182,8 +1239,18 @@ def _ensure_cc_bbox(ctx, var: VarValue, deltas) -> dict:
             max_c = z3.If(z3.And(same, q[1] > max_c), q[1], max_c)
         ctx.add_aux(widths[p] == max_c - min_c + 1)
         ctx.add_aux(heights[p] == max_r - min_r + 1)
-    cc["width"] = widths
-    cc["height"] = heights
+        # Same four-corner count as the old DSL (degenerate corners may double-count).
+        corner_terms = []
+        for q in cells:
+            same = ids[q] == ids[p]
+            corner_terms.append(z3.If(z3.And(same, q[0] == min_r, q[1] == min_c), 1, 0))
+            corner_terms.append(z3.If(z3.And(same, q[0] == min_r, q[1] == max_c), 1, 0))
+            corner_terms.append(z3.If(z3.And(same, q[0] == max_r, q[1] == min_c), 1, 0))
+            corner_terms.append(z3.If(z3.And(same, q[0] == max_r, q[1] == max_c), 1, 0))
+        ctx.add_aux(corners[p] == z3.Sum(corner_terms))
+    _sync_cc_payload(cc, "width", widths)
+    _sync_cc_payload(cc, "height", heights)
+    _sync_cc_payload(cc, "corners", corners)
     return cc
 
 
@@ -1218,6 +1285,203 @@ def _fn_cc_is_rect(ctx, args, pos):
     if cell not in cc["size"]:
         raise CompileError("cc_is_rect() cell is not in the variable", pos.line, pos.col)
     return cc["size"][cell] == cc["width"][cell] * cc["height"][cell]
+
+
+def _ensure_cc_deg(ctx, var: VarValue, deltas) -> dict:
+    cc = _value_cc(ctx, var, deltas)
+    if "deg" in cc:
+        return cc
+    z3 = ctx.z3
+    cells = cc["cells"]
+    cell_set = set(cells)
+    ids = cc["id"]
+    tag = cc.get("tag", f"{var.name}#cc{len(deltas)}")
+    degs = {p: z3.Int(f"{tag}#deg#r{p[0]}c{p[1]}") for p in cells}
+    for r, c in cells:
+        p = (r, c)
+        nbs = [(r + dr, c + dc) for dr, dc in deltas if (r + dr, c + dc) in cell_set]
+        total = z3.Sum([z3.If(ids[q] == ids[p], 1, 0) for q in nbs]) if nbs else 0
+        ctx.add_aux(degs[p] == total)
+    _sync_cc_payload(cc, "deg", degs)
+    return cc
+
+
+def _ensure_cc_line(ctx, var: VarValue, deltas) -> dict:
+    cc = _value_cc(ctx, var, deltas)
+    if "row_span" in cc:
+        return cc
+    z3 = ctx.z3
+    cells = cc["cells"]
+    ids = cc["id"]
+    tag = cc.get("tag", f"{var.name}#cc{len(deltas)}")
+    row_span = {p: z3.Int(f"{tag}#rs#r{p[0]}c{p[1]}") for p in cells}
+    col_span = {p: z3.Int(f"{tag}#cs#r{p[0]}c{p[1]}") for p in cells}
+    for p in cells:
+        ctx.add_aux(row_span[p] == z3.Sum(
+            [z3.If(z3.And(ids[q] == ids[p], q[0] == p[0]), 1, 0) for q in cells]
+        ))
+        ctx.add_aux(col_span[p] == z3.Sum(
+            [z3.If(z3.And(ids[q] == ids[p], q[1] == p[1]), 1, 0) for q in cells]
+        ))
+    _sync_cc_payload(cc, "row_span", row_span)
+    _sync_cc_payload(cc, "col_span", col_span)
+    return cc
+
+
+def _ensure_cc_half(ctx, var: VarValue, deltas) -> dict:
+    cc = _value_cc(ctx, var, deltas)
+    if "above" in cc:
+        return cc
+    z3 = ctx.z3
+    cells = cc["cells"]
+    ids = cc["id"]
+    tag = cc.get("tag", f"{var.name}#cc{len(deltas)}")
+    maps = {}
+    specs = (
+        ("above", lambda q, p: q[0] < p[0]),
+        ("below", lambda q, p: q[0] > p[0]),
+        ("left", lambda q, p: q[1] < p[1]),
+        ("right", lambda q, p: q[1] > p[1]),
+    )
+    for name, pred in specs:
+        table = {p: z3.Int(f"{tag}#{name[0]}#r{p[0]}c{p[1]}") for p in cells}
+        for p in cells:
+            ctx.add_aux(table[p] == z3.Sum(
+                [z3.If(z3.And(ids[q] == ids[p], pred(q, p)), 1, 0) for q in cells]
+            ))
+        maps[name] = table
+        _sync_cc_payload(cc, name, table)
+    return cc
+
+
+def _ensure_cc_windows(ctx, var: VarValue, deltas) -> dict:
+    cc = _value_cc(ctx, var, deltas)
+    if "notch" in cc:
+        return cc
+    z3 = ctx.z3
+    cells = cc["cells"]
+    cell_set = set(cells)
+    ids = cc["id"]
+    tag = cc.get("tag", f"{var.name}#cc{len(deltas)}")
+    rows, cols = ctx.grid.rows, ctx.grid.cols
+    windows = []
+    for r in range(rows - 1):
+        for c in range(cols - 1):
+            window = ((r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1))
+            if all(p in cell_set for p in window):
+                windows.append(window)
+    notches = {p: z3.Int(f"{tag}#n3#r{p[0]}c{p[1]}") for p in cells}
+    fulls = {p: z3.Int(f"{tag}#f4#r{p[0]}c{p[1]}") for p in cells}
+    for p in cells:
+        n_terms = []
+        f_terms = []
+        for window in windows:
+            total = z3.Sum([z3.If(ids[q] == ids[p], 1, 0) for q in window])
+            n_terms.append(z3.If(total == 3, 1, 0))
+            f_terms.append(z3.If(total == 4, 1, 0))
+        ctx.add_aux(notches[p] == (z3.Sum(n_terms) if n_terms else 0))
+        ctx.add_aux(fulls[p] == (z3.Sum(f_terms) if f_terms else 0))
+    _sync_cc_payload(cc, "notch", notches)
+    _sync_cc_payload(cc, "full2x2", fulls)
+    return cc
+
+
+def _cc_deg_count_at(ctx, var: VarValue, deltas, cell, degree):
+    cc = _ensure_cc_deg(ctx, var, deltas)
+    z3 = ctx.z3
+    key = f"deg_count_{degree}"
+    if key not in cc:
+        cells = cc["cells"]
+        ids = cc["id"]
+        degs = cc["deg"]
+        tag = cc.get("tag", f"{var.name}#cc{len(deltas)}")
+        table = {p: z3.Int(f"{tag}#dc{degree}#r{p[0]}c{p[1]}") for p in cells}
+        for p in cells:
+            ctx.add_aux(table[p] == z3.Sum(
+                [z3.If(z3.And(ids[q] == ids[p], degs[q] == degree), 1, 0) for q in cells]
+            ))
+        _sync_cc_payload(cc, key, table)
+    table = cc[key]
+    if cell not in table:
+        raise CompileError("cc_deg_count() cell is not in the variable")
+    return table[cell]
+
+
+def _fn_cc_corner_count(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("cc_corner_count(var, cell) takes two arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "cc_corner_count", pos)
+    cell = _expect_cell(args[1], "cc_corner_count", pos)
+    cc = _ensure_cc_bbox(ctx, var, _CC4)
+    if cell not in cc["corners"]:
+        raise CompileError("cc_corner_count() cell is not in the variable", pos.line, pos.col)
+    return cc["corners"][cell]
+
+
+def _fn_cc_notch_count(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("cc_notch_count(var, cell) takes two arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "cc_notch_count", pos)
+    cell = _expect_cell(args[1], "cc_notch_count", pos)
+    cc = _ensure_cc_windows(ctx, var, _CC4)
+    if cell not in cc["notch"]:
+        raise CompileError("cc_notch_count() cell is not in the variable", pos.line, pos.col)
+    return cc["notch"][cell]
+
+
+def _fn_cc_full2x2(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("cc_full2x2(var, cell) takes two arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "cc_full2x2", pos)
+    cell = _expect_cell(args[1], "cc_full2x2", pos)
+    cc = _ensure_cc_windows(ctx, var, _CC4)
+    if cell not in cc["full2x2"]:
+        raise CompileError("cc_full2x2() cell is not in the variable", pos.line, pos.col)
+    return cc["full2x2"][cell]
+
+
+def _fn_cc_deg_count(ctx, args, pos):
+    if len(args) != 3:
+        raise CompileError("cc_deg_count(var, cell, d) takes three arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "cc_deg_count", pos)
+    cell = _expect_cell(args[1], "cc_deg_count", pos)
+    degree = _as_int(args[2], "cc_deg_count")
+    if degree < 0 or degree > 4:
+        raise CompileError("cc_deg_count() degree must be 0..4", pos.line, pos.col)
+    return _cc_deg_count_at(ctx, var, _CC4, cell, degree)
+
+
+def _fn_cc_half_count(ctx, args, pos):
+    if len(args) != 4:
+        raise CompileError(
+            "cc_half_count(var, cell, axis, side) takes four arguments", pos.line, pos.col
+        )
+    var = _expect_cell_var(args[0], "cc_half_count", pos)
+    cell = _expect_cell(args[1], "cc_half_count", pos)
+    axis = _as_int(args[2], "cc_half_count")
+    side = _as_int(args[3], "cc_half_count")
+    if axis not in (0, 1) or side not in (0, 1):
+        raise CompileError("cc_half_count() axis/side must be 0 or 1", pos.line, pos.col)
+    cc = _ensure_cc_half(ctx, var, _CC4)
+    name = (("above", "below"), ("left", "right"))[axis][side]
+    if cell not in cc[name]:
+        raise CompileError("cc_half_count() cell is not in the variable", pos.line, pos.col)
+    return cc[name][cell]
+
+
+def _fn_cc_line_count(ctx, args, pos):
+    if len(args) != 3:
+        raise CompileError("cc_line_count(var, cell, axis) takes three arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "cc_line_count", pos)
+    cell = _expect_cell(args[1], "cc_line_count", pos)
+    axis = _as_int(args[2], "cc_line_count")
+    if axis not in (0, 1):
+        raise CompileError("cc_line_count() axis must be 0 (row) or 1 (col)", pos.line, pos.col)
+    cc = _ensure_cc_line(ctx, var, _CC4)
+    table = cc["row_span"] if axis == 0 else cc["col_span"]
+    if cell not in table:
+        raise CompileError("cc_line_count() cell is not in the variable", pos.line, pos.col)
+    return table[cell]
 
 
 # -- gravity / covering (Stostone) --------------------------------------------
@@ -2047,6 +2311,30 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
         "cc_is_rect", _fn_cc_is_rect, signature="cc_is_rect(var, cell)",
         doc="True iff the cell's 4-CC fills its bounding box (size == width * height).",
     ),
+    "cc_corner_count": BuiltinFunction(
+        "cc_corner_count", _fn_cc_corner_count, signature="cc_corner_count(var, cell)",
+        doc="How many of the region's four bbox corners are occupied (P4B).",
+    ),
+    "cc_notch_count": BuiltinFunction(
+        "cc_notch_count", _fn_cc_notch_count, signature="cc_notch_count(var, cell)",
+        doc="Number of 2x2 windows containing exactly three cells of this region.",
+    ),
+    "cc_full2x2": BuiltinFunction(
+        "cc_full2x2", _fn_cc_full2x2, signature="cc_full2x2(var, cell)",
+        doc="Number of 2x2 windows filled by this region.",
+    ),
+    "cc_deg_count": BuiltinFunction(
+        "cc_deg_count", _fn_cc_deg_count, signature="cc_deg_count(var, cell, d)",
+        doc="How many cells of this region have orthogonal degree d (0..4).",
+    ),
+    "cc_half_count": BuiltinFunction(
+        "cc_half_count", _fn_cc_half_count, signature="cc_half_count(var, cell, axis, side)",
+        doc="Cells of this region strictly above/below (axis=0) or left/right (axis=1); side 0=neg, 1=pos.",
+    ),
+    "cc_line_count": BuiltinFunction(
+        "cc_line_count", _fn_cc_line_count, signature="cc_line_count(var, cell, axis)",
+        doc="Same-region cells on this row (axis=0) or column (axis=1). Not bbox width/height.",
+    ),
     "cc8_id": BuiltinFunction(
         "cc8_id", _make_cc_id(_CC8, "cc8_id"), signature="cc8_id(var)",
         doc="Per-cell id of the 8-connected component of equal-valued cells.",
@@ -2268,6 +2556,10 @@ def function_table() -> list[DocEntry]:
         ("c.border", "c.border[edge_of(cell(0,0))]",
          "Per-edge 0/1: 1 iff the edge is on the grid boundary or separates two "
          "different regions."),
+        ("c.bbox_w / c.bbox_h", "c.bbox_w[cell(0,0)]",
+         "Per-cell bounding-box width/height of the region (O(N²))."),
+        ("c.deg", "c.deg[cell(0,0)]",
+         "Orthogonal neighbours that share this cell's region id."),
     ]
     for name, sig, doc in cc_members:
         entries.append(DocEntry(name, sig, doc, "Region (cc)"))
