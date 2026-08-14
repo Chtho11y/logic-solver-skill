@@ -1,10 +1,12 @@
-# Puzzle DSL 重构计划（P1–P6）
+# Puzzle DSL 重构计划（P0–P6 + PM）
 
 目标：在**不破坏现有 234 个 `impls/*.dsl`** 的前提下，消除库与实现中的系统性冗余，并补齐 B 类「部分实现」集中缺失的原语。
 
 本计划基于对 `puzzle/dsl/*.py`、`puzzle/lib/*.dsl`、234 个 `impls/*.dsl` 的实地勘察撰写，所有文件名、行号、函数名、字段名均已核对。
 
-第 7 项（连通性与单回路的编码方式更换 / 求解后端决策）**不在本文件内**，见 `docs/SOLVER_BACKEND_DISCUSSION.md`。
+**关联文档**：
+- `docs/META_SOLVE_PLAN.md` —— 元求解（编译期求解 / 唯一性判定 / 唯一化见证），编号 **PM**。它是 P2–P6 的**验收工具**，排在 P1 之后、P2 之前。
+- `docs/SOLVER_BACKEND_DISCUSSION.md` —— 连通性/单回路的编码方式与求解后端决策（原审查第 7 项），不在本文件内。
 
 ---
 
@@ -49,18 +51,29 @@
 ## 2. 阶段依赖与排序
 
 ```
-P0 回归基线 ──┬─> P1 布尔变量降型        (独立，收益立即可测)
-              ├─> P2 匿名函数 + 闭包 ──┬─> P3 安全取值/方向代数/线族
-              │                        └─> P4 CC 派生量统一
-              └─> P5 回路走访序/定向    (独立于 P2-P4，但建议在 P0 之后)
-                                        └─> P6 形状目录 + 全等
+P0 回归基线
+  │
+  ├─> P1 布尔变量降型 ──> PM 元求解/唯一性判定 ──┐   (PM 详见 META_SOLVE_PLAN.md)
+  │                                              │
+  ├─> P2 匿名函数 + 闭包 ──┬─> P3 安全取值/方向代数/线族
+  │                        │
+  │                        └─> P4A 连通性 API 分层 ──> P4B CC 派生量统一
+  │
+  └─> P5 回路走访序/定向 ──> P6 形状目录 + 全等
+                                              │
+        PM 为 P2/P3/P4/P5/P6 提供「是否引入过松」的验收依据 ──┘
 ```
 
-- P1 与 P2 可并行（触碰文件不重叠：P1 改 `compiler.py` 变量构造与 `builtins.py` 的数值化辅助；P2 改 `lexer/tokens/parser/ast_nodes/compiler` 的作用域）。
-- P3、P4 依赖 P2（新库函数要用谓词参数才写得干净）。
+- **P1 与 P2 可并行**：触碰文件不重叠（P1 改 `compiler.py` 变量构造与 `builtins.py` 的数值化辅助；P2 改 `lexer/tokens/parser/ast_nodes/compiler` 的作用域）。
+- **PM 必须在 P1 之后**：`exclude()` 生成的「取值不等」表达式形式取决于变量是 `z3.Int` 还是 `z3.Bool`，需复用 P1 的 `as_bool`/`as_int` 适配层，否则要写两遍。
+- **PM 应当在 P2 之前**：P2 要改写 165 处累加器，P5/P6 要把 25 条 B 转 A —— 没有唯一性判定，这些改写只能靠 accept（不漏解）验证，**无法确认没有引入过松**。先有工具再动刀。
+- P3、P4A 依赖 P2（新库函数要用谓词参数才写得干净）。
+- **P4A 必须在 P4B 之前**：先把 API 按语义强度分层，再决定哪些派生量下沉。
 - P6 依赖 P5 的「候选枚举」基础设施复用，但不依赖其回路语义，必要时可提前。
 
-**建议顺序：P0 → P1 → P2 → P3 → P4 → P5 → P6。** 理由：P1 收益最大且零语义风险，适合作为「重构机制本身是否可靠」的验证；P2 是 P3/P4 的前提；P5/P6 是功能补齐，风险最高，放最后。
+**建议顺序：P0 → P1 → PM → P2 → P3 → P4A → P4B → P5 → P6。**
+
+理由：P1 收益最大且零语义风险，适合作为「重构机制本身是否可靠」的验证；PM 是后续全部改写的验收工具，且解锁当前完全缺失的能力；P2 是 P3/P4 的前提；P5/P6 是功能补齐，风险最高，放最后。
 
 ---
 
@@ -84,7 +97,9 @@ P0 回归基线 ──┬─> P1 布尔变量降型        (独立，收益立�
 | P0-2 | 模型指纹定义为：对每个 NORMAL/CC 变量，按 `sort_points` 序拼接取值后取 SHA-256 前 16 位。用于「同一编码在同一 z3 版本下是否产生同一模型」的弱一致性检查 | 同上 |
 | P0-3 | 新增 `tools/baseline_diff.py`：比对两份基线，按 `accept 状态翻转` / `约束数变化率` / `耗时变化率` 三个维度出表 | 终端表格 |
 | P0-4 | 为 `tests/cases/*.json` 补 `"unique": true`：**仅**对已人工确认唯一解的 case 开启。逐条确认，不批量猜测 | 更新后的 case 文件 |
-| P0-5 | 新增「负向检查」：把答案**故意改错一格**后钉入，断言必须 UNSAT。这是唯一能捕获「约束过松」的自动检查 | `tests/test_solve.py` 新增 reject 检查 |
+| P0-5 | 新增「负向检查」：把答案**故意改错一格**后钉入，断言必须 UNSAT。这是本阶段唯一能捕获「约束过松」的自动检查 | `tests/test_solve.py` 新增 reject 检查 |
+
+> P0-5 是**唯一性判定的弱化替代品**。PM 落地后（见 `docs/META_SOLVE_PLAN.md`），真正的判定是「求一个解 → 排除它 → 再求 → 期望 UNSAT」，强得多。届时 P0-5 退化为快速冒烟检查，保留而不删除（它比 PM 快，适合每次提交都跑）。
 
 ### 3.3 验收
 
@@ -331,11 +346,86 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 ---
 
-## 7. P4 — CC 派生量统一
+## 7. P4A — 连通性 API 按语义强度分层
 
-依赖 P2。
+依赖 P2。**这是 P4B 的前提，也是未来任何后端抽象的前提。**
 
-### 7.1 现状与依据
+### 7.1 问题：现有 API 把编码细节当契约
+
+我统计了连通性 API 的实际使用面（`impls/` 文件数，不含库自身）：
+
+| 语义强度 | API | 使用面 | 现状编码 |
+|---|---|---|---|
+| **L1** 全连通（1 bit） | `connected` / `connected8` | **17 个文件** + 库 7 处 | 走 L2 机制（见下） |
+| **L2** 分量计数 | `cc_count*` | **29 个文件** + 库 6 处 | 每格 id + dist + 根计数 |
+| **L3** 两点同分量 | CC 变量的 `at(c,p) == at(c,q)` | — | 同上 |
+| **L4** per-cell 面积/外接框 | `cc_size*` / `cc_width` / `cc_height` / `cc_is_rect` | **22 个文件** + 库 8 处 | O(N²) If 求和 |
+| **L5** 暴露 canonical id | `cc_id` / `cc8_id` | **10 个文件** + 库 2 处 | id = 分量内最小线性下标 |
+| **L5** | `cc_root` | 2 个文件 + 库 2 处 | 同上 |
+| **L5** | CC 变量本身 | **35 个规则**（`impls/*.json` 含 `"cc"`） | 变量自身即 region id |
+
+**关键事实：`cc_id` 的语义「分量内最小线性下标」是编码细节，而它已写入 `GRAMMAR.md` 并被 47 条规则依赖**（10 + 2 + 35）。CC 变量的情况最深：`compiler.py:626-627` 让变量自身的 z3 量就是 region id，`c.id` 直接返回变量本身 —— 这不是「连通性的一种实现」，而是**变量的语义定义**。
+
+### 7.2 三个结论
+
+1. **不做「可插拔连通性后端」。** 在 L3/L5 上，「同一套 API、可切换编码」在语义上不成立：费用流的自然产物是「边流量 + 节点被哪个根覆盖」，**不天然产生 canonical id**；要合成 id 就得给每个候选根加指示变量 + `Sum(root_lin * reached)`，附加开销会吃掉流编码的全部优势。
+2. **不为费用流单开一套抽象。** 现在已有**三套**互不复用的连通性实现：`_build_value_cc`（`builtins.py:714`）、`Compiler._ensure_cc`（`compiler.py:610`）、`_link_connect`（`builtins.py:1281`，边图版）。再加一套就是四套。
+3. **按语义强度分层，编码选择自然发生，不需要开关。**
+
+### 7.3 分层设计
+
+```
+L1  is_connected(var, value)            -> Bool     便宜编码（单流 / 惰性割）
+L2  component_count(var, value)         -> Int      树距离见证
+L3  same_component(var, p, q)           -> Bool     树距离见证（canonical 必需）
+L4  component_size(var, p)              -> Int      树距离见证 + 派生（P4B）
+L5  component_id(var, p)                -> Int      树距离见证，标记为 low-level
+```
+
+**L1 是最大的免费收益**：`core.dsl` 现在把 `connected(x,v)` 实现为 `cc_count(x,v) <= 1` —— 用 L2 的整套机制（每格 id + dist + O(N) 根判定）去做一件只需 1 bit 的事。L1 单独实现后可以完全不建 id 变量。这 17 个文件 + 库 7 处是纯赚。
+
+**L4 用流反而优于现状**（反直觉但正确）：单流中根的供给量恒等于分量大小，是流量守恒的直接产物，O(边数) 变量；而 `_ensure_cc_size`（`builtins.py:782`）是 `Sum([If(ids[q]==ids[p],1,0) for q in cells])`，9×9 即 6561 个 `If`。但要读「任意格所在分量的面积」还需沿流反向传播一个值，这部分机制不免费 —— 因此 L4 换编码属于实验项（对应 `SOLVER_BACKEND_DISCUSSION.md` §5 的 M5），不在本阶段承诺。
+
+### 7.4 硬约束：L3/L5 永久保持 canonical id
+
+**这条来自 PM（`docs/META_SOLVE_PLAN.md` §4.4），是不可协商的：**
+
+唯一性判定依赖「一个解 ↔ 一组变量赋值」的双射。CC 变量当前是 canonical id（`compiler.py:636-639` 强制 `id <= lin` 且 `(dist==0) == (id==lin)`），所以「一个分区 ↔ 一组 id 赋值」是双射。
+
+**若 L3/L5 改用非 canonical 编码，同一个分区会有多种合法 id 赋值 → `exclude()` 排掉一种表示后仍能找到同一分区的另一种表示 → 唯一性判定必然误报多解。**
+
+因此：**费用流等非 canonical 编码只允许用于不暴露 id 的 L1 层。** 这条必须写入 `GRAMMAR.md` 的 L5 说明。
+
+### 7.5 任务
+
+| 编号 | 任务 |
+|---|---|
+| P4A-1 | 新增 L1 内置 `is_connected` / `is_connected8`，实现为独立的便宜编码（不建 id 变量）。`connected` / `connected8` 保留原名，实现体转调 L1 |
+| P4A-2 | 新增 `component_count` / `same_component` / `component_size` / `component_id` 作为 L2–L5 的正式名字；`cc_*` 全部保留为别名 |
+| P4A-3 | `GRAMMAR.md` 标注 L5 为 low-level，写明 canonical id 契约与 §7.4 的硬约束 |
+| P4A-4 | 生成「连通性 API → 依赖 key」反向索引（P3 已建同类索引，复用） |
+
+### 7.6 验收标准
+
+- P4A-1/-2 落地后基线**逐字节相同**（纯新增 + 别名）。
+- `connected` 转调 L1 后：那 17 个文件的辅助变量数显著下降，accept 零翻转。
+- L1 的实现**不得**出现在 `cc_*` 的 memo 表里（避免与 L2 见证混淆）。
+
+### 7.7 风险
+
+| 风险 | 处置 |
+|---|---|
+| `connected` 语义与 `cc_count(x,v) <= 1` 的细微差异：**空集**（该值一格都没有）时 `cc_count == 0`，也满足 `<= 1` | L1 必须保持「空集算连通」的现有行为，否则会破坏现有规则。必须写单测固定 |
+| L1 便宜编码本身选错（单流 vs 惰性割） | 本阶段只要求「不建 id 变量」，具体编码可先用单流；惰性割属 `SOLVER_BACKEND_DISCUSSION.md` 的方案 B，不在此承诺 |
+| 别名层导致 `function_table()` 重复项 | 别名标注 `alias_of` 字段，UI 与 LSP 折叠显示 |
+
+---
+
+## 8. P4B — CC 派生量统一
+
+依赖 P4A。
+
+### 8.1 现状与依据
 
 存在**两套并行且互不复用**的连通分量派生量：
 
@@ -345,7 +435,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 更严重的是：**对 CC 变量调用 A 套会重复生成一整套连通性见证**。`_build_value_cc` 的 memo key 是 `("valuecc", var.name, len(deltas))`（`builtins.py:758`），而 CC 变量自身的 id/dist 存在 `Compiler._cc_z3[name]`（`compiler.py:648`）。两者完全独立，于是同一个 CC 变量会有两套 `id` + 两套 `dist`，且必须靠约束互相绑定 —— 变量数与约束数双倍。
 
-### 7.2 方案
+### 8.2 方案
 
 1. **统一见证来源**：`_build_value_cc` 增加分支 —— 当目标变量是 CC 变量（`ctx` 需暴露 `is_cc_var(name)`）时，直接复用 `Compiler._cc_z3[name]["id"]` 与 `["_dist"]`，不新建。这一步单独提交，可立即消除重复编码。
 2. **补齐 CC 成员**：把 B 套的几何量提升为 CC 变量成员或统一 builtin，实现移到 Python（复用已有的 `_ensure_cc_bbox` 折叠链，`builtins.py:884-908`）：
@@ -361,29 +451,29 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 3. **旧名全部保留为包装**，实现体转调新成员。`regions.dsl` / `place2.dsl` 的手写体删除。
 
-注意 `region_width` / `region_height`（`regions.dsl:140-153`）语义是「同行/同列的同区格数」，在**矩形区域**前提下等于 bbox 宽高，但对非矩形区域**不等价**。迁移时必须逐调用点确认前提（`regions_are_squares` 里有 `regions_are_rectangles` 前置，是安全的；其他调用点需逐一核对）。这是 P4 最容易出错的地方。
+注意 `region_width` / `region_height`（`regions.dsl:140-153`）语义是「同行/同列的同区格数」，在**矩形区域**前提下等于 bbox 宽高，但对非矩形区域**不等价**。迁移时必须逐调用点确认前提（`regions_are_squares` 里有 `regions_are_rectangles` 前置，是安全的；其他调用点需逐一核对）。这是本阶段最容易出错的地方。
 
-### 7.3 验收标准
+### 8.3 验收标准
 
-- 步骤 1（见证复用）：对使用 CC 变量的 key，约束数与辅助变量数**显著下降**，accept 零翻转。这是 P4 的主要收益。
+- 步骤 1（见证复用）：对使用 CC 变量的 key，约束数与辅助变量数**显著下降**，accept 零翻转。这是 P4B 的主要收益。
 - 步骤 2/3：`place2.dsl` 与 `regions.dsl` 中 `for q in cells()` 的出现次数从 21 降至 0；O(N²) 编码从 DSL 层移入 Python 层（复杂度不变，但可在 Python 内做 memo 与剪枝）。
 - `region_width` 的每一个调用点都有书面的「矩形前提成立」记录。
 
-### 7.4 风险
+### 8.4 风险
 
 | 风险 | 处置 |
 |---|---|
-| `region_width` ≠ `bbox_w` 的语义差 | 见 §7.2 末段；无法确认前提的调用点**保留手写版**，不迁移 |
+| `region_width` ≠ `bbox_w` 的语义差 | 见 §8.2 末段；无法确认前提的调用点**保留手写版**，不迁移 |
 | 见证复用后 `cc_count` 对 CC 变量的语义 | CC 变量的 id 已保证「同 id ⟺ 连通」，`cc_count(c, v)` 会退化为「id 恰为 v 的分量数」，语义与普通变量不同。方案：对 CC 变量**禁用** `cc_count`（编译报错并提示用 `.size`），避免误用 |
 | `_cc_z3[name]["_dist"]` 是私有字段 | 提升为正式内部 API 并加注释，否则跨模块依赖私有键 |
 
 ---
 
-## 8. P5 — 回路走访序与定向
+## 9. P5 — 回路走访序与定向
 
 不依赖 P2–P4，但依赖 P0。这是**功能补齐**阶段，风险高于前四阶段。
 
-### 8.1 目标规则（14 条）
+### 9.1 目标规则（14 条）
 
 | 缺口 | 规则 |
 |---|---|
@@ -392,7 +482,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 这 14 条在 `IMPLEMENTATION_STATUS.md` §4.1 中的「未实现原因」几乎逐字相同：都是「用连通块面积/邻域计数代替沿回路量」或「无向回路无法定义方向」。
 
-### 8.2 关键设计决策：序号放在**弧**上而非格上
+### 9.2 关键设计决策：序号放在**弧**上而非格上
 
 `icewalk` / `icelom` / `firewalk` / `trainstations` / `icebarn` 都允许**同一格被走两次**（度 4 的自交）。因此「每格一个访问序号」从根本上不成立 —— `IMPLEMENTATION_STATUS.md` 对这几条的说明正是「首次访问序不够用」。
 
@@ -402,7 +492,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 - **deg-4 的配对**：自交格必须是「上下直行 + 左右直行」两条独立通道，不能是两个拐弯。约束为「入弧与出弧按对轴配对」：从上入必从下出，从左入必从右出。
 - **弧序号**：为每条弧配整数 `ord`，选取一个规范起点（复用 `_link_connect` 的 `dist == 0` 根，`builtins.py:1302`），`ord[start_arc] == 0`，其余 `Implies(arc a 后继 b, ord[b] == ord[a] + 1)`，起点弧除外（环闭合）。`ord` 上界 = 弧总数。
 
-### 8.3 新增内置
+### 9.3 新增内置
 
 | 签名 | 语义 | 服务规则 |
 |---|---|---|
@@ -414,7 +504,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 | `along_next_marked(e, c, p)` | 沿回路从 `p` 出发遇到的下一个带标记格 | `wbloop` `alternate`（「沿回路连续两圈」） |
 | `turn_side(e, p)` | 在 `p` 处相对行进方向是左转/直行/右转（`-1/0/1`） | `vertigo` `nagare` |
 
-### 8.4 `along_run_len` 的编码与环绕问题
+### 9.4 `along_run_len` 的编码与环绕问题
 
 递推：对每格 `p` 设 `acc[p]`（「到 `p` 为止的同色连续长度」），
 `Implies(arc(q,p) and same_colour(q,p), acc[p] == acc[q] + 1)`、
@@ -427,7 +517,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 必须为此写专门的单测：构造一个「同色段跨越规范起点」的实例，断言 `along_run_len` 给出正确值。
 
-### 8.5 分步交付
+### 9.5 分步交付
 
 | 步 | 内容 | 验收 |
 |---|---|---|
@@ -436,31 +526,31 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 | P5-3 | `along_run_len` + 环绕特例 | 单测 + `waterwalk` `firewalk` `icewalk` 从 B 转 A |
 | P5-4 | `turn_side` | `vertigo` `nagare` 从 B 转 A |
 | P5-5 | `along_next_marked` | `wbloop` `alternate` 从 B 转 A |
-| P5-6 | `slalom` `icebarn` `disloop` `maxi` `trainstations` `bhaibahan` `icelom` 逐条收紧 | 逐条 accept + reject |
+| P5-6 | `slalom` `icebarn` `disloop` `maxi` `trainstations` `bhaibahan` `icelom` 逐条收紧 | 逐条 accept + **PM 唯一性判定** |
 
-### 8.6 风险
+### 9.6 风险
 
 | 风险 | 处置 |
 |---|---|
 | 定向使变量数翻倍、约束数上升，求解变慢 | `orient` 必须**按需生成**（memo，仅在被调用时才建弧变量），不能像 `cloop` 那样无条件注入。P5-1 的零翻转检查同时记录耗时，若某 key 劣化超过阈值，该 key 不迁移 |
 | deg-4 配对约束写错，排除合法自交 | P5-1 的零翻转检查专门覆盖现有允许自交的 key（`icewalk` `icebarn` `trainstations` `vertigo` `cross_loop` 使用者） |
 | `vertigo` 的「全左或全右」在**无向**回路上本就有两个镜像解 | 规则语义是「沿某一方向走完整圈时转弯全同向」，定向后是「存在一个定向使 `turn_side` 全同号」。由于我们只需存在性，且 `orient` 给出的定向是求解器自由选择的，这正好正确。需在实现说明中写清此论证 |
-| 环绕特例的正确性 | §8.4 已给出严格论证 + 强制单测 |
+| 环绕特例的正确性 | §9.4 已给出严格论证 + 强制单测 |
 
 ---
 
-## 9. P6 — 形状目录与全等
+## 10. P6 — 形状目录与全等
 
 依赖 P5 的候选枚举基础设施（可复用但非强依赖）。
 
-### 9.1 目标规则（14 条）
+### 10.1 目标规则（14 条）
 
 | 缺口 | 规则 |
 |---|---|
 | 题面给定的多连块目录（可旋转/翻转） | `statuepark` `pentopia` `pentatouch` `kissing` `curvedata` |
 | 组间全等比较（8 变换） | `mrtile` `ququ` `kuroclone` `evolmino` `chainedb` `tetrochain` `tetrochaink` `hinge` `dbchoco` |
 
-### 9.2 现状：指纹 hack 与 O(8N⁴) 展开
+### 10.2 现状：指纹 hack 与 O(8N⁴) 展开
 
 **指纹 hack**：`place2.dsl:83-118` 的 `pent_type` / `tet_type` 用「凹角数 + 2×2 满窗数 + 度数分布 + bbox 角点数」凑出 12 个五连块的判别式。每个指纹项内部是一次全盘扫描，一次 `pent_type` 调用展开成 6 次 O(N²) 扫描。不可读、不可验证。
 
@@ -468,7 +558,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 `place2.dsl:239-245` 的 `parts_congruent` 更是 `N² × 8 × N²`。
 
-### 9.3 方案 A：形状目录 → 精确覆盖（服务前 5 条）
+### 10.3 方案 A：形状目录 → 精确覆盖（服务前 5 条）
 
 题面新增 param 约定：`param("shapes")` = 形状列表，每个形状是 `[[dr,dc], ...]` 的归一化偏移集。
 
@@ -483,7 +573,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 副产品：`pent_type` / `tet_type` / `tromino_type` 三个指纹 hack 可整体删除 —— 形状身份成为显式变量，`pentominous` / `tetrominous` / `lits` 等既有实现也可迁移（但**不强制迁移**，它们目前是 A 类完全实现，属于「能跑就别动」范畴，迁移仅在有明确收益时进行）。
 
-### 9.4 方案 B：有界形状 id → 全等（服务后 9 条）
+### 10.4 方案 B：有界形状 id → 全等（服务后 9 条）
 
 关键观察：这 9 条里，除 `dbchoco`（灰白两大块）外，**组的大小都有上界**（`mrtile`/`ququ`/`kuroclone`/`chainedb` 由线索给出，`tetrochain`/`tetrochaink` 恰 4，`evolmino` 逐步 +1，`hinge` 由区域大小界定）。
 
@@ -500,7 +590,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 `dbchoco`（两块可能很大）不在此方案覆盖范围内，**明确保留为部分实现**，并在文档中写明原因（形状类枚举随 k 指数增长，大块不适用）。这是诚实的边界，不做勉强。
 
-### 9.5 分步交付
+### 10.5 分步交付
 
 | 步 | 内容 | 验收 |
 |---|---|---|
@@ -510,7 +600,7 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 | P6-4 | 删除 `place2.dsl` 的 `pent_type` / `tet_type` / `tromino_type` / `freely_congruent` / `region_match_tr` / `parts_congruent` / `subset_match_tr` / `tr_r` / `tr_c` | 依赖这些函数的 key 全部 accept 通过 |
 | P6-5 | `curvedata`（折线骨架可伸缩匹配） | 单独评估：它需要「形状的拓扑骨架 + 各段长可变」，是 `place_shapes` 的推广而非直接应用。若成本过高，保留为部分实现 |
 
-### 9.6 风险
+### 10.6 风险
 
 | 风险 | 处置 |
 |---|---|
@@ -521,26 +611,44 @@ lambda_expr := 'fn' '(' [name_list] ')' '->' expr
 
 ---
 
-## 10. 交付物汇总
+## 11. 交付物汇总
 
 | 阶段 | 改动范围 | 新增 `impls/` 能力 | 主要收益 |
 |---|---|---|---|
 | P0 | `tools/`、`tests/` | — | 建立语义级回归网（含 reject 负向检查） |
 | P1 | `compiler.py` `builtins.py` `values.py` `solver.py` | — | 求解性能（覆盖过半规则），零语义变化 |
+| **PM** | `session.py`(新) `compiler` `parser` `solver` `verify` `tests` | — | **唯一性判定**（当前完全缺失）+ 编译期反馈；详见 `META_SOLVE_PLAN.md` |
 | P2 | `lexer/tokens/parser/ast_nodes/compiler` + 4 builtin | — | 消除 165 处累加器 + 57 处布尔累加 |
 | P3 | `builtins.py` + `core/loops/outside/fill2/regions/place2` | — | 消除 16 文件判空样板、全部方向 if 链、行列成对复制 |
-| P4 | `builtins.py` `compiler.py` + `regions/place2` | — | 消除 CC 变量的重复连通性见证；14 个手写 O(N²) 函数下沉 |
+| P4A | `builtins.py` `core.dsl` `GRAMMAR.md` | — | 连通性 API 按 L1–L5 分层；L1 免建 id 变量（17 文件 + 库 7 处） |
+| P4B | `builtins.py` `compiler.py` + `regions/place2` | — | 消除 CC 变量的重复连通性见证；14 个手写 O(N²) 函数下沉 |
 | P5 | `builtins.py` + 14 个 impls | **14 条 B → A** | 沿回路段长、走访序、有向回路 |
 | P6 | `builtins.py` + 11 个 impls | **11 条 B → A** | 形状目录、全等比较；删除指纹 hack |
 
 预期 B 类「部分实现」从 48 条降至约 23 条。剩余的 23 条缺口类型：非正交几何（`kouchoku` `angleloop`，需独立设计）、半格三角 lattice（`shakashaka` `wagiri` `slashpack` `crossstitch` `kinkonkan`）、按颜色可达计数（`oasis` `go` `teri`）、双层区域（`parquet`）、通配段（`cts`）、照明/反射（`moonlight` `kinkonkan`）、大块全等（`dbchoco`）等。这些留待后续规划，本文件不承诺。
 
+**注意**：上表的「B → A」是**编码能力**的转换，不等于「已验证唯一」。PM-4 会产出一份全量唯一性现状报告，届时可能发现部分 A 类规则同样存在多解 —— 这是预期的发现，不是 P5/P6 的失败。
+
 ---
 
-## 11. 文档同步义务
+## 12. 跨阶段的硬约束（不可协商）
+
+1. **L3/L5 连通性永久保持 canonical id**（P4A §7.4）。来源：PM 的唯一性判定依赖「解 ↔ 赋值」双射。任何非 canonical 编码（费用流等）只允许用于不暴露 id 的 L1 层。
+2. **`exclude()` 只对决定性变量生成**（`META_SOLVE_PLAN.md` §4.2）。`var_z3` 中 `var_type in (NORMAL, CC)` 恰为该集合；辅助量经 `add_aux` 注入，天然排除。任何新增的辅助量必须继续走 `ctx.new_int` / `_new_bool`，**不得**进入 `var_z3`。
+3. **`scope:` 必须回滚 `_memo` 与 `_cc_z3`**（`META_SOLVE_PLAN.md` §5.3）。否则 scope 内首次触发的重型编码会在退出后「记得已生成、实则约束已丢」，产生静默错误。
+4. **新增内置一律登记 `function_table()`**（带 `signature` + `doc`），否则 UI 函数浏览器与 LSP 悬浮提示缺项。
+
+---
+
+## 13. 文档同步义务
 
 每个阶段合并时必须同步更新：
 
-- `puzzle/dsl/GRAMMAR.md`：§2 语法（P2 的 `fn`/`->`）、§6 内置函数表（P2–P6 全部新增）、§8 变量类型（P1 的布尔降型说明）、§13「常见陷阱」（P2 的闭包捕获语义、P3 的 `rev` 与 `_merge` 顺序陷阱、P4 的 `region_width` ≠ `bbox_w`）。
-- `builtins.py` 的 `function_table()`：新 builtin 必须带 `signature` + `doc`，否则 UI 函数浏览器与 LSP 悬浮提示会缺项。
-- `IMPLEMENTATION_STATUS.md`：P5/P6 每条 B → A 的转换都要更新分类表与 §4.1 的逐条说明，并清空对应 JSON 的 `unencodedClues`。
+- `puzzle/dsl/GRAMMAR.md`：
+  - §2 语法：P2 的 `fn`/`->`；PM 的 `meta:`/`scope:`
+  - §6 内置函数表：P2–P6 与 PM 的全部新增
+  - §8 变量类型：P1 的布尔降型说明
+  - §13 常见陷阱：P2 的闭包捕获语义；P3 的 `rev` 与 `_merge` 顺序陷阱；P4B 的 `region_width` ≠ `bbox_w`；P4A 的 L5 canonical id 契约；PM 的三条（`scope:` 不引入变量作用域、scope 内重型编码回滚、`unique_over` 与 `model_completion`）
+- `builtins.py` 的 `function_table()`：见 §12-4。
+- `IMPLEMENTATION_STATUS.md`：P5/P6 每条 B → A 的转换都要更新分类表与 §4.1 的逐条说明，并清空对应 JSON 的 `unencodedClues`；PM-4 的唯一性现状报告作为新增一节，替代 §7 中关于唯一解的现有描述。
+- `docs/SOLVER_BACKEND_DISCUSSION.md`：P1 与 P4A 完成后，其 §5 的 M1–M4 测量应重跑并更新结论。
