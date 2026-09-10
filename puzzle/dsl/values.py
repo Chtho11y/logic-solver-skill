@@ -2,19 +2,18 @@
 
 Values flowing through the compiler are one of:
 
-* a *scalar* -- a Python ``int``/``bool`` or a z3 expression;
+* a *scalar* -- a Python ``int``/``bool`` or a solver expression;
 * a *list* -- a (possibly nested) Python ``list`` of values;
 * a :class:`RegionValue` -- an ordered set of grid points (used as an index or
   iterated over);
-* a :class:`VarValue` -- a variable's full set of z3 quantities (one per point
+* a :class:`VarValue` -- a variable's full set of solver terms (one per point
   of its kind); used directly it behaves like the list of all its quantities.
 
 Broadcasting follows the spec: a list combines with a scalar element-wise, and
 two lists combine when their lengths match or one of them is 1 (applied
 recursively for nested lists).
 
-UI-independent (no PyQt import; broadcasting takes a plain callable so this
-module needs no z3 dependency).
+UI-independent (no PyQt import or concrete solver dependency).
 """
 
 from __future__ import annotations
@@ -51,7 +50,7 @@ class RegionValue:
 
 @dataclass
 class VarValue:
-    """A variable's full set of z3 quantities, keyed by point."""
+    """A variable's full set of solver quantities, keyed by point."""
 
     name: str
     kind: PointKind

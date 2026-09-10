@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "border ring + one chord",
+      "unique": false,
       "note": "border ring + one chord, two degree-3 junctions, 9 dot clues",
       "rows": 6,
       "cols": 6,

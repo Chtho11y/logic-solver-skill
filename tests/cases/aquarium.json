@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "nine 2x2 regions with water levels + ful",
+      "unique": false,
       "note": "nine 2x2 regions with water levels + full row/col counts",
       "rows": 6,
       "cols": 6,

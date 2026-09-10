@@ -1,6 +1,6 @@
-"""Compile a parsed puzzle DSL program into z3 constraints.
+"""Compile a parsed puzzle DSL program into backend-neutral constraints.
 
-The compiler walks the AST and lowers it to a list of z3 boolean expressions:
+The compiler walks the AST and lowers it through a small constraint-model API:
 
 * every top-level expression statement asserts its (broadcast) boolean value;
 * ``if cond: body`` lowers each constraint in ``body`` to ``Implies(cond, c)``
@@ -10,8 +10,8 @@ The compiler walks the AST and lowers it to a list of z3 boolean expressions:
   points; broadcasting and predefined functions follow :mod:`values` /
   :mod:`builtins`.
 
-z3 is imported lazily so the rest of the package works without it installed.
-UI-independent (no PyQt import).
+The default model is implemented by cspuz, while concrete solving backends are
+selected later. UI-independent (no PyQt import).
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from ..backends import ConstraintModel, create_model
 from ..grid import Grid
 from ..models import Point, PointKind, Variable, VarType
 from . import ast_nodes as ast
@@ -64,12 +65,13 @@ class _ReturnSignal(Exception):
 
 @dataclass
 class CompiledProgram:
-    constraints: list  # list[z3.BoolRef]
-    var_z3: dict[str, dict[Point, Any]]
+    constraints: list
+    var_terms: dict[str, dict[Point, Any]]
     variables: list[Variable]
     grid: Grid
-    # variable name -> {"id": {point: z3}, "size": {point: z3}} (lazily filled)
-    cc_z3: dict[str, dict[str, dict[Point, Any]]] = field(default_factory=dict)
+    model: ConstraintModel
+    # variable name -> {"id": {point: term}, "size": {point: term}} (lazy)
+    cc_terms: dict[str, dict[str, dict[Point, Any]]] = field(default_factory=dict)
     # Debug lines emitted by print() during compilation.
     debug: list[str] = field(default_factory=list)
     # Extra named quantities produced by helper builtins (echoed to the UI).
@@ -88,10 +90,10 @@ def compile_source(
     grid: Grid,
     variables,
     regions,
-    z3,
     params: dict | None = None,
     loader: Callable[[str], str] | None = None,
     module: str = "<main>",
+    model: ConstraintModel | None = None,
 ) -> CompiledProgram:
     """Parse ``source`` and compile it against the given editor state.
 
@@ -101,7 +103,9 @@ def compile_source(
 
     program = parse(source)
     program.module = module
-    return Compiler(grid, variables, regions, z3, params, loader).compile(program)
+    if model is None:
+        model = create_model()
+    return Compiler(grid, variables, regions, model, params, loader).compile(program)
 
 
 class Compiler:
@@ -110,12 +114,13 @@ class Compiler:
         grid: Grid,
         variables,
         regions,
-        z3,
+        model: ConstraintModel,
         params: dict | None = None,
         loader: Callable[[str], str] | None = None,
     ) -> None:
         self.grid = grid
-        self.z3 = z3
+        self.ops = model
+        self.model = model
         self.variables = list(variables)
         self.params = dict(params or {})
         self._loader = loader
@@ -127,10 +132,10 @@ class Compiler:
         self.derived_kinds: dict[str, PointKind] = {}
         self._memo: dict[tuple, Any] = {}
 
-        # One z3 Int per point of each variable's kind. Constant variables get
-        # plain Python ints (their presets) instead of z3 quantities, and
+        # One solver integer per point of each variable's kind. Constants get
+        # plain Python ints (their presets) instead of solver quantities, and
         # cc (region-partition) variables use their own ints as region ids.
-        self.var_z3: dict[str, dict[Point, Any]] = {}
+        self.var_terms: dict[str, dict[Point, Any]] = {}
         self._var_values: dict[str, VarValue] = {}
         self._cc_names: set[str] = set()
         self._const_names: set[str] = set()
@@ -143,13 +148,23 @@ class Compiler:
                     if grid.contains(var.kind, p)
                 }
                 order = sort_points(quantities.keys())
-                self.var_z3[var.name] = quantities
+                self.var_terms[var.name] = quantities
                 self._var_values[var.name] = VarValue(var.name, var.kind, quantities, order)
                 self._const_names.add(var.name)
                 continue
             order = sort_points(grid.points(var.kind))
-            quantities = {p: z3.Int(f"{var.name}#{_point_label(p)}") for p in order}
-            self.var_z3[var.name] = quantities
+            domain = getattr(var, "domain", None)
+            if vtype is VarType.CC:
+                lo, hi = 0, max(0, len(order) - 1)
+            elif domain is not None:
+                lo, hi = int(domain[0]), int(domain[1])
+            else:
+                lo = hi = None
+            quantities = {
+                p: self.ops.Int(f"{var.name}#{_point_label(p)}", lo, hi)
+                for p in order
+            }
+            self.var_terms[var.name] = quantities
             self._var_values[var.name] = VarValue(var.name, var.kind, quantities, order)
             if vtype is VarType.CC:
                 self._cc_names.add(var.name)
@@ -167,9 +182,8 @@ class Compiler:
         self._constraints: list = []
         self._debug: list[str] = []
 
-        # Lazily-generated connected-component (cc) z3 variables, per variable
-        # name: {"id": {point: z3}, "size": {point: z3}}.
-        self._cc_z3: dict[str, dict[str, dict[Point, Any]]] = {}
+        # Lazily-generated connected-component terms, keyed by variable name.
+        self._cc_terms: dict[str, dict[str, dict[Point, Any]]] = {}
 
     # -- entry ----------------------------------------------------------
 
@@ -183,10 +197,11 @@ class Compiler:
             self._ensure_cc(name)
         return CompiledProgram(
             self._constraints,
-            self.var_z3,
+            self.var_terms,
             self.variables,
             self.grid,
-            self._cc_z3,
+            self.model,
+            self._cc_terms,
             self._debug,
             self.derived,
             self.derived_kinds,
@@ -194,11 +209,13 @@ class Compiler:
 
     # -- aux variables (used by helper builtins) ------------------------
 
-    def new_int(self, prefix: str) -> Any:
-        """Allocate a fresh auxiliary z3 integer."""
+    def new_int(
+        self, prefix: str, lo: int | None = None, hi: int | None = None
+    ) -> Any:
+        """Allocate a fresh, finite-domain auxiliary integer."""
 
         self._aux_counter += 1
-        return self.z3.Int(f"{prefix}#{self._aux_counter}")
+        return self.ops.Int(f"{prefix}#{self._aux_counter}", lo, hi)
 
     def add_aux(self, constraint) -> None:
         """Add a definitional constraint that is *not* subject to ``if`` guards."""
@@ -235,16 +252,16 @@ class Compiler:
 
         for var in self.variables:
             # cc variables encode their own connectivity; constant variables
-            # carry their values directly (no z3 quantities) -- neither takes a
+            # carry their values directly (no solver quantities) -- neither takes a
             # domain or pinned givens here.
             if getattr(var, "var_type", VarType.NORMAL) is not VarType.NORMAL:
                 continue
-            quantities = self.var_z3[var.name]
+            quantities = self.var_terms[var.name]
             domain = getattr(var, "domain", None)
             if domain is not None:
                 lo, hi = domain
                 for q in quantities.values():
-                    self._constraints.append(self.z3.And(q >= lo, q <= hi))
+                    self._constraints.append(self.ops.And(q >= lo, q <= hi))
             for point, value in getattr(var, "givens", {}).items():
                 q = quantities.get(point)
                 if q is not None:
@@ -391,7 +408,7 @@ class Compiler:
         finally:
             self._guards.pop()
         if stmt.orelse:
-            self._guards.append(self.z3.Not(cond))
+            self._guards.append(self.ops.Not(cond))
             try:
                 self._exec_block(stmt.orelse)
             finally:
@@ -401,7 +418,7 @@ class Compiler:
     def _try_const_bool(value):
         """Return a Python bool if ``value`` is a compile-time constant boolean.
 
-        Returns ``None`` when any part is a z3 expression (i.e. not constant).
+        Returns ``None`` when any part is a solver expression (not constant).
         """
 
         items = flatten_scalars(value)
@@ -420,28 +437,28 @@ class Compiler:
         if not self._guards:
             return bool_expr
         guard = self._and_all(self._guards)
-        return self.z3.Implies(guard, bool_expr)
+        return self.ops.Implies(guard, bool_expr)
 
     def _to_single_bool(self, value: Any, node):
         bools = [self._require_bool(item, node) for item in flatten_scalars(value)]
         if not bools:
-            return self.z3.BoolVal(True)
+            return self.ops.BoolVal(True)
         if len(bools) == 1:
             return bools[0]
         return self._and_all(bools)
 
     def _and_all(self, items):
-        return self.z3.And([self._as_bool(item) for item in items])
+        return self.ops.And([self._as_bool(item) for item in items])
 
     def _as_bool(self, value):
         if isinstance(value, bool):
-            return self.z3.BoolVal(value)
+            return self.ops.BoolVal(value)
         return value
 
     def _require_bool(self, value, node):
         if isinstance(value, bool):
-            return self.z3.BoolVal(value)
-        if self.z3.is_expr(value) and self.z3.is_bool(value):
+            return self.ops.BoolVal(value)
+        if self.ops.is_expr(value) and self.ops.is_bool(value):
             return value
         raise CompileError("expected a boolean constraint here", node.line, node.col)
 
@@ -603,7 +620,7 @@ class Compiler:
         return list(base) + [args[0]]
 
     def _cc_var_value(self, name: str, member: str, kind: PointKind) -> VarValue:
-        quantities = self._cc_z3[name][member]
+        quantities = self._cc_terms[name][member]
         order = sort_points(quantities.keys())
         return VarValue(f"{name}.{member}", kind, quantities, order)
 
@@ -617,23 +634,26 @@ class Compiler:
         connected (a spanning-tree distance witness).
         """
 
-        if name in self._cc_z3:
+        if name in self._cc_terms:
             return
-        z3 = self.z3
+        ops = self.ops
         cols = self.grid.cols
         cells = sort_points(self.grid.cells())
         cell_set = set(cells)
         # The cc variable's own quantities serve as the region ids.
-        id_vars: dict[Point, Any] = self.var_z3[name]
+        id_vars: dict[Point, Any] = self.var_terms[name]
         dist_vars: dict[Point, Any] = {
-            (r, c): z3.Int(f"{name}#cc_dist#r{r}c{c}") for (r, c) in cells
+            (r, c): ops.Int(
+                f"{name}#cc_dist#r{r}c{c}", 0, max(0, len(cells) - 1)
+            )
+            for (r, c) in cells
         }
         deltas = ((-1, 0), (1, 0), (0, -1), (0, 1))
         for (r, c) in cells:
             lin = r * cols + c
             idc = id_vars[(r, c)]
             dc = dist_vars[(r, c)]
-            self._constraints.append(z3.And(idc >= 0, idc <= lin))
+            self._constraints.append(ops.And(idc >= 0, idc <= lin))
             self._constraints.append(dc >= 0)
             # A cell is its region's root iff its distance is zero.
             self._constraints.append((dc == 0) == (idc == lin))
@@ -641,36 +661,38 @@ class Compiler:
             # with the same id (this is what forces same-id cells to connect).
             neighbours = [(r + dr, c + dcol) for dr, dcol in deltas if (r + dr, c + dcol) in cell_set]
             parents = [
-                z3.And(id_vars[n] == idc, dist_vars[n] == dc - 1) for n in neighbours
+                ops.And(id_vars[n] == idc, dist_vars[n] == dc - 1)
+                for n in neighbours
             ]
-            parent_exists = z3.Or(parents) if parents else z3.BoolVal(False)
-            self._constraints.append(z3.Implies(dc > 0, parent_exists))
-        self._cc_z3[name] = {"id": id_vars, "_dist": dist_vars}
+            parent_exists = ops.Or(parents) if parents else ops.BoolVal(False)
+            self._constraints.append(ops.Implies(dc > 0, parent_exists))
+        self._cc_terms[name] = {"id": id_vars, "_dist": dist_vars}
 
     def _ensure_cc_size(self, name: str) -> None:
-        """Generate cc.size z3 vars: the count of cells sharing each id.
+        """Generate cc.size terms: the count of cells sharing each id.
 
         O(N^2) in the number of cells (an ``If`` sum per cell); only emitted
         when ``.size`` is actually referenced. Cached per variable name.
         """
 
         self._ensure_cc(name)
-        cc = self._cc_z3[name]
+        cc = self._cc_terms[name]
         if "size" in cc:
             return
-        z3 = self.z3
+        ops = self.ops
         id_vars = cc["id"]
         cells = sort_points(id_vars.keys())
         size_vars: dict[Point, Any] = {
-            p: z3.Int(f"{name}#cc_size#r{p[0]}c{p[1]}") for p in cells
+            p: ops.Int(f"{name}#cc_size#r{p[0]}c{p[1]}", 1, len(cells))
+            for p in cells
         }
         for p in cells:
-            terms = [z3.If(id_vars[d] == id_vars[p], 1, 0) for d in cells]
-            self._constraints.append(size_vars[p] == z3.Sum(terms))
+            terms = [ops.If(id_vars[d] == id_vars[p], 1, 0) for d in cells]
+            self._constraints.append(size_vars[p] == ops.Sum(terms))
         cc["size"] = size_vars
 
     def _ensure_cc_border(self, name: str) -> None:
-        """Generate cc.border z3 vars: a 0/1 integer per edge.
+        """Generate cc.border terms: a 0/1 integer per edge.
 
         ``border(e) == 1`` iff the edge is on the grid boundary, or the two
         cells it separates lie in different regions (different cc ids). Cached
@@ -678,18 +700,18 @@ class Compiler:
         """
 
         self._ensure_cc(name)
-        cc = self._cc_z3[name]
+        cc = self._cc_terms[name]
         if "border" in cc:
             return
-        z3 = self.z3
+        ops = self.ops
         id_vars = cc["id"]
         edges = sort_points(self.grid.edges())
         border_vars: dict[Point, Any] = {}
         for edge in edges:
             orient, er, ec = edge
-            b = z3.Int(f"{name}#cc_border#{orient}{er}_{ec}")
+            b = ops.Int(f"{name}#cc_border#{orient}{er}_{ec}", 0, 1)
             border_vars[edge] = b
-            self._constraints.append(z3.Or(b == 0, b == 1))
+            self._constraints.append(ops.Or(b == 0, b == 1))
             sides = self._edge_cells(edge)
             if len(sides) < 2:
                 # Edge on the grid boundary: always a border.
@@ -753,7 +775,7 @@ class Compiler:
         # Keep compile-time booleans concrete so `if` can constant-fold.
         if isinstance(value, bool):
             return not value
-        return self.z3.Not(self._as_bool(value))
+        return self.ops.Not(self._as_bool(value))
 
     def _eval_binary(self, node: ast.Binary) -> Any:
         op = node.op
@@ -814,22 +836,22 @@ class Compiler:
     def _logic_and(self, a, b):
         if isinstance(a, bool) and isinstance(b, bool):
             return a and b
-        return self.z3.And(self._as_bool(a), self._as_bool(b))
+        return self.ops.And(self._as_bool(a), self._as_bool(b))
 
     def _logic_or(self, a, b):
         if isinstance(a, bool) and isinstance(b, bool):
             return a or b
-        return self.z3.Or(self._as_bool(a), self._as_bool(b))
+        return self.ops.Or(self._as_bool(a), self._as_bool(b))
 
     def _logic_xor(self, a, b):
         if isinstance(a, bool) and isinstance(b, bool):
             return a != b
-        return self.z3.Xor(self._as_bool(a), self._as_bool(b))
+        return self.ops.Xor(self._as_bool(a), self._as_bool(b))
 
     def _logic_implies(self, a, b):
         if isinstance(a, bool) and isinstance(b, bool):
             return (not a) or b
-        return self.z3.Implies(self._as_bool(a), self._as_bool(b))
+        return self.ops.Implies(self._as_bool(a), self._as_bool(b))
 
     @staticmethod
     def _op_add(self, a, b, node):
@@ -839,9 +861,75 @@ class Compiler:
     def _op_sub(self, a, b, node):
         return a - b
 
+    def _linear_scale(self, value, factor: int, node):
+        if factor == 0:
+            return 0
+        if isinstance(value, int):
+            return value * factor
+        value_bounds = self.ops.bounds(value)
+        if value_bounds is None:
+            raise CompileError(
+                "cannot infer finite bounds for symbolic multiplication",
+                node.line,
+                node.col,
+            )
+        # Binary decomposition plus bounded witnesses keeps both construction
+        # and backend tree conversion O(log |factor|).
+        remaining = abs(factor)
+        addend = value
+        addend_bounds = value_bounds
+        scaled = 0
+        while remaining:
+            if remaining & 1:
+                scaled = scaled + addend
+            remaining >>= 1
+            if remaining:
+                doubled_bounds = (
+                    addend_bounds[0] * 2,
+                    addend_bounds[1] * 2,
+                )
+                doubled = self.new_int("mul#double", *doubled_bounds)
+                self.add_aux(doubled == addend + addend)
+                addend = doubled
+                addend_bounds = doubled_bounds
+        return scaled if factor > 0 else -scaled
+
     @staticmethod
     def _op_mul(self, a, b, node):
-        return a * b
+        if isinstance(a, int) and not isinstance(a, bool):
+            return self._linear_scale(b, a, node)
+        if isinstance(b, int) and not isinstance(b, bool):
+            return self._linear_scale(a, b, node)
+        raise CompileError(
+            "non-linear multiplication is not supported by cspuz",
+            node.line,
+            node.col,
+        )
+
+    def _symbolic_divmod(self, value, divisor: int, node):
+        if divisor <= 0:
+            raise CompileError(
+                "symbolic division/modulo requires a positive integer divisor",
+                node.line,
+                node.col,
+            )
+        value_bounds = self.ops.bounds(value)
+        if value_bounds is None:
+            raise CompileError(
+                "cannot infer finite bounds for symbolic division",
+                node.line,
+                node.col,
+            )
+        quotient = self.new_int(
+            "div#q",
+            value_bounds[0] // divisor,
+            value_bounds[1] // divisor,
+        )
+        remainder = self.new_int("div#r", 0, divisor - 1)
+        self.add_aux(
+            value == self._linear_scale(quotient, divisor, node) + remainder
+        )
+        return quotient, remainder
 
     @staticmethod
     def _op_div(self, a, b, node):
@@ -849,7 +937,13 @@ class Compiler:
             if b == 0:
                 raise CompileError("division by zero", node.line, node.col)
             return a // b
-        return a / b
+        if not isinstance(b, int) or isinstance(b, bool):
+            raise CompileError(
+                "symbolic division requires a concrete integer divisor",
+                node.line,
+                node.col,
+            )
+        return self._symbolic_divmod(a, b, node)[0]
 
     @staticmethod
     def _op_mod(self, a, b, node):
@@ -857,7 +951,13 @@ class Compiler:
             if b == 0:
                 raise CompileError("modulo by zero", node.line, node.col)
             return a % b
-        return a % b
+        if not isinstance(b, int) or isinstance(b, bool):
+            raise CompileError(
+                "symbolic modulo requires a concrete integer divisor",
+                node.line,
+                node.col,
+            )
+        return self._symbolic_divmod(a, b, node)[1]
 
     @staticmethod
     def _op_eq(self, a, b, node):

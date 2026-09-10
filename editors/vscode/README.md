@@ -5,7 +5,7 @@ Language support for `puzzle/lib/*.dsl` and `impls/*.dsl`: **syntax highlighting
 ## Requirements
 
 - **Python 3.10+** on your PATH (or set `puzzleDsl.pythonPath`).
-- **No pip packages.** The server is stdlib-only (`python -m puzzle.lsp`). `z3-solver` is optional and only used for semantic (T2) diagnostics on `impls/` files that have a matching JSON spec and sample.
+- **No required pip packages.** The server is stdlib-only (`python -m puzzle.lsp`). `cspuz` is optional and only used for semantic (T2) diagnostics on `impls/` files that have a matching JSON spec and sample.
 - Open the **repository root** (the folder that contains `puzzle/dsl/`) as the VS Code workspace.
 
 ## Install
@@ -30,7 +30,7 @@ For local development, **Run → Start Debugging** from this folder (or `npm run
 
 `puzzle/lib/*.dsl` has no companion JSON, so it **only ever gets T1**. That is expected.
 
-T2 also needs `z3-solver` installed; without it, semantic checks are skipped silently.
+T2 also needs `cspuz` installed; without it, semantic checks are skipped silently.
 
 ## Settings
 

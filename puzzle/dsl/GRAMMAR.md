@@ -1,10 +1,11 @@
 # Puzzle DSL 语法文档
 
 本文件描述 `decoders/puzzle/dsl` 中实现的网格谜题约束 DSL。该语言用于
-描述网格谜题（数独、连线等）的约束，最终被编译（lower）为 [z3](https://github.com/Z3Prover/z3)
-布尔表达式求解。语言本身与 UI 解耦，不依赖 PyQt；z3 仅在求解时按需导入。
+描述网格谜题（数独、连线等）的约束，最终被编译（lower）为
+[cspuz](https://github.com/semiexp/cspuz) 约束表达式。语言本身与 UI
+和具体求解器解耦；实际求解可选择 cspuz_core、Z3、csugar 或 Sugar。
 
-整条管线：`源码 → 词法 lexer → 语法 parser（AST）→ 编译 compiler（z3 约束）→ 求解 solver`。
+整条管线：`源码 → lexer → parser（AST）→ 中性约束操作 → cspuz 模型 → 具体后端`。
 
 ---
 
@@ -93,7 +94,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 | 类型 | 说明 |
 |------|------|
-| **标量 scalar** | Python `int` / `bool`，或 z3 表达式 |
+| **标量 scalar** | Python `int` / `bool`，或求解器表达式 |
 | **列表 list** | 可嵌套的值列表；支持 `.size` / `.append(x)` / `[i]` |
 | **RegionValue** | 单一种类（cell/corner/edge）的有序点集，可作索引或被迭代；支持 `.size` |
 | **VarValue** | 一个变量在其全部点上的量集合；直接使用时等价于其所有量组成的列表；支持 `.size`。区域划分（cc）变量的 `.id` / `.size` / `.border` 也以 `VarValue` 形式返回 |
@@ -170,19 +171,19 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 ## 6. 内置函数（Builtins）
 
-调用上下文 `ctx` 提供 `ctx.z3`（z3 模块）与 `ctx.grid`（网格）。
+调用上下文 `ctx` 提供 `ctx.ops`（中性约束操作）与 `ctx.grid`（网格）。
 
 ### 6.1 聚合函数（Aggregate）— 消费整个列表
 
 | 签名 | 说明 |
 |------|------|
 | `sum(list)` | 列表/区域中所有量之和 |
-| `distinct(list)` | 所有量两两不同（`z3.Distinct`） |
+| `distinct(list)` | 所有量两两不同（cspuz `alldifferent`） |
 | `all(list)` | 列表中所有布尔同时成立 |
 | `any(list)` | 至少一个布尔成立 |
 | `count(list)` | 元素个数（具体整数，编译期可得） |
-| `max(list)` | 最大量（z3 If 链）；空列表报错 |
-| `min(list)` | 最小量（z3 If 链）；空列表报错 |
+| `max(list)` | 最大量（条件表达式链）；空列表报错 |
+| `min(list)` | 最小量（条件表达式链）；空列表报错 |
 
 ### 6.2 逐元素函数（Element-wise）
 
@@ -331,7 +332,7 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 | `c.border[edge(...)]` | 每条 edge 的 0/1 整数：当且仅当该 edge 位于**网格边界**、或其两侧 cell 属于**不同区域**（cc id 不等）时为 1 |
 
 编码方式：在 4-连通网格上，每个区域的 `id` 等于其所有 cell 中最小的线性下标
-`r*cols+c`（即其唯一根，亦即 CC 变量自身的 z3 量），并通过生成树距离见证
+`r*cols+c`（即其唯一根，亦即 CC 变量自身的求解器量），并通过生成树距离见证
 （distance witness）保证同 id 的 cell 必然连通。`.size` / `.border` 仅在被引用时
 才生成（`.size` 为每个 cell 一个 If 求和；`.border` 为每条 edge 一个 0/1 量）。
 
@@ -339,7 +340,7 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 
 ### 8.2 常量变量（CONSTANT）
 
-常量变量不生成 z3 量，仅在其**预设点**上以 Python 整数存在。被 `x[region]` 索引或
+常量变量不生成求解器量，仅在其**预设点**上以 Python 整数存在。被 `x[region]` 索引或
 迭代时返回这些常量；若索引到**未预设的点**，编译报错
 `constant 'x' has no value at the indexed point(s)`。
 
@@ -364,24 +365,24 @@ CC 变量自身编码连通约束（id/size/border），不接受 domain/givens�
 | 名称 | 说明 |
 |------|------|
 | `parse(source)` | 解析为 AST `Program` |
-| `solve(grid, variables, regions, source, logic="AUTO", params=None, loader=None, timeout_ms=None)` | 编译并用 z3 求解，返回 `SolveResult` |
+| `solve(..., backend="auto", params=None, loader=None, timeout_ms=None)` | 编译并用选定 cspuz 后端求解，返回 `SolveResult` |
 | `compile_only(grid, variables, regions, source, params=None, loader=None)` | **仅编译**：报告约束数与 `print()` 输出，不求解 |
 | `format_model(result)` | 把结果渲染为输出面板可读文本（末尾附 `print():` 块） |
-| `is_available()` | z3 是否已安装 |
+| `is_available()` | cspuz 与至少一个具体后端是否可用 |
+| `backend_status()` | 所有后端的可用性、原因与能力 |
 | `function_table()` | 供 UI 浏览的内置函数/常量/运算符/cc 文档表 |
-| `SOLVER_LOGICS` | UI 可选的求解器后端预设元组 |
+| `SOLVER_BACKENDS` | UI 可选的 cspuz 后端元组 |
 
 `params` 将实例数据暴露给 `param("name")`；`loader(name) -> source` 解析 `import`。
 上层封装见 `puzzle.runner.solve_instance(spec, instance)`，它会从 `PuzzleSpec` /
 `Instance` 构造好网格、变量、区域与参数。
 
-### 求解器后端（`logic`）
-`solve` 的 `logic` 参数选择 z3 后端：
-- `"AUTO"`（默认）使用通用 `z3.Solver()`；
-- 其他值传入 `z3.SolverFor(logic)` 选择专用逻辑引擎。
-
-`SOLVER_LOGICS` 提供 UI 下拉的固定预设：`AUTO` / `QF_LIA` / `QF_FD` / `QF_IDL` /
-`LIA` / `QF_NIA`。无效 logic 会返回 `STATUS_ERROR`。
+### 求解器后端（`backend`）
+`backend="auto"` 无 timeout 时按 `cspuz_core → z3` 选择；带正数 timeout
+时选择能够落实超时的 Z3。也可显式指定
+`cspuz_core`、`z3`、`csugar`、`sugar` 或 `sugar_extended`。显式后端不可用时
+返回带原因的 `STATUS_ERROR`，不会静默回退。旧 `logic="AUTO"` 仍映射到 `auto`；
+其他 Z3 logic 名称不再作为后端选择器。
 
 ### SolveResult 状态
 | 常量 | 含义 |
@@ -392,8 +393,9 @@ CC 变量自身编码连通约束（id/size/border），不接受 domain/givens�
 | `STATUS_ERROR` | 编译/内部错误（带 `error_line`） |
 | `STATUS_COMPILED` | 仅编译成功（`compile_only` 返回） |
 
-z3 未安装时，`solve` / `compile_only` 会返回 `STATUS_ERROR` 并提示安装
-`pip install z3-solver`。
+cspuz 未安装时，`solve` / `compile_only` 会返回 `STATUS_ERROR` 并提示安装
+`pip install -r requirements.txt`。完整安装及后端能力见
+[`docs/CSPUZ_BACKENDS.md`](../../docs/CSPUZ_BACKENDS.md)。
 
 ---
 

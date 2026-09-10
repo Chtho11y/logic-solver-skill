@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "4x4 砖墙",
+      "unique": false,
       "rows": 4,
       "cols": 4,
       "clues": {

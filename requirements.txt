@@ -1,0 +1,3 @@
+cspuz @ git+https://github.com/semiexp/cspuz.git@1d074431984148944dde4c7d5d1636ac9cfe29e2
+psutil>=5
+z3-solver>=4.13

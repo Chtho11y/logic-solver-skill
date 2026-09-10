@@ -20,6 +20,7 @@ for p in clue_cells(a):
     if has_value(d, p):
         let found = false
         for s in dir(p, at(d, p)):
-            if has_value(a, s) and at(a, s) == at(a, p) and not found:
-                at(sz, s) == at(sz, p) + 1
-                let found = true
+            if has_value(a, s):
+                if at(a, s) == at(a, p) and not found:
+                    at(sz, s) == at(sz, p) + 1
+                    let found = true

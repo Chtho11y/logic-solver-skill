@@ -97,11 +97,27 @@ export interface Instance {
 
 export type SolveStatus = "sat" | "unsat" | "unknown" | "error" | "compiled";
 
+export interface SolverBackend {
+  name: string;
+  label: string;
+  available: boolean;
+  reason: string;
+  supportsTimeout: boolean;
+  supportsGraphPrimitives: boolean;
+}
+
+export interface SolverHealth {
+  available: boolean;
+  default: string;
+  backends: SolverBackend[];
+}
+
 export interface SolveResult {
   status: SolveStatus;
   message: string;
   constraints: number;
   debug: string[];
+  backend?: string;
   errorLine?: number;
   /** variable name -> point key -> value (only when status === "sat"). */
   values?: Record<string, Record<PointKey, number>>;

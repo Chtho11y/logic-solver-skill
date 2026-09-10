@@ -9,6 +9,7 @@ Three checks per rule:
 
     python verify.py <key> [<key> ...]
 """
+import argparse
 import sys
 from pathlib import Path
 
@@ -30,7 +31,7 @@ def _count(spec, instance):
     return r.constraint_count, ""
 
 
-def check(key):
+def check(key, backend="auto"):
     import json
     spec = load_spec(key)
     raw = json.loads((Path(__file__).resolve().parent / "impls" / f"{key}.json")
@@ -43,7 +44,7 @@ def check(key):
     n0, err = _count(spec, sm)
     if n0 is None:
         return [f"FAIL {key:16} compile: {err}"]
-    res = solve_instance(spec, sm, timeout_ms=60000)
+    res = solve_instance(spec, sm, backend=backend, timeout_ms=60000)
     if res["status"] != "sat":
         return [f"FAIL {key:16} solve: {res['status']} {res.get('message','')[:60]}"]
 
@@ -83,11 +84,14 @@ def check(key):
 
 
 if __name__ == "__main__":
-    keys = sys.argv[1:]
+    parser = argparse.ArgumentParser(description="verify puzzle implementations")
+    parser.add_argument("keys", nargs="+")
+    parser.add_argument("--backend", default="auto")
+    args = parser.parse_args()
     bad = 0
-    for k in keys:
-        for line in check(k):
+    for k in args.keys:
+        for line in check(k, args.backend):
             print(line)
             if line.startswith(("FAIL", "WARN")):
                 bad += 1
-    print(f"\n{len(keys) - bad}/{len(keys)} clean")
+    print(f"\n{len(args.keys) - bad}/{len(args.keys)} clean")

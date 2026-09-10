@@ -104,7 +104,7 @@ class DiagnosticTests(unittest.TestCase):
         from puzzle.dsl.solver import is_available
 
         if not is_available():
-            self.skipTest("z3 is not installed")
+            self.skipTest("cspuz or a concrete solver backend is not installed")
         server = make_server()
         path = ROOT / "impls" / "nurikabe.dsl"
         text = path.read_text(encoding="utf-8").replace("wall_rule", "wall_rule_renamed")

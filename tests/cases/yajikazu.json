@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "arrow ray-counting",
+      "unique": false,
       "note": "arrow ray-counting, including an arrow placed on a black cell (ignored)",
       "rows": 6,
       "cols": 6,

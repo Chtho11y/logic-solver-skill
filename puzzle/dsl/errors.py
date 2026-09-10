@@ -31,4 +31,4 @@ class ParseError(DSLError):
 
 
 class CompileError(DSLError):
-    """Raised when a well-formed program cannot be lowered to z3."""
+    """Raised when a well-formed program cannot be lowered to constraints."""

@@ -19,7 +19,16 @@ import {
   setParamEntry,
 } from "./instance";
 import { Palette } from "./Palette";
-import type { Brush, Instance, LayerSpec, PuzzleSpec, RuleEntry, Selection, SolveResult } from "./types";
+import type {
+  Brush,
+  Instance,
+  LayerSpec,
+  PuzzleSpec,
+  RuleEntry,
+  Selection,
+  SolveResult,
+  SolverBackend,
+} from "./types";
 
 export function App() {
   const [puzzles, setPuzzles] = useState<PuzzleSpec[]>([]);
@@ -34,11 +43,18 @@ export function App() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
-  const [z3, setZ3] = useState(true);
+  const [solverAvailable, setSolverAvailable] = useState(false);
+  const [backends, setBackends] = useState<SolverBackend[]>([]);
+  const [backend, setBackend] = useState("auto");
 
   useEffect(() => {
     api.puzzles().then(setPuzzles).catch(console.error);
-    api.health().then((h) => setZ3(h.z3)).catch(() => setZ3(false));
+    api.health()
+      .then((h) => {
+        setSolverAvailable(h.solver.available);
+        setBackends(h.solver.backends);
+      })
+      .catch(() => setSolverAvailable(false));
   }, []);
 
   const activeLayer = spec?.layers.find((layer) => layer.id === activeId) ?? null;
@@ -151,7 +167,11 @@ export function App() {
     setSelection(null);
     setBusy(true);
     try {
-      setResult(await api.solve(instance));
+      const backendInfo = backends.find((item) => item.name === backend);
+      setResult(await api.solve(instance, {
+        backend,
+        timeoutMs: backendInfo?.supportsTimeout === false ? null : 60000,
+      }));
     } catch (error) {
       setResult({ status: "error", message: String(error), constraints: 0, debug: [] });
     } finally {
@@ -192,6 +212,9 @@ export function App() {
     return [...byCategory.entries()];
   }, [puzzles]);
 
+  const selectedBackend = backends.find((item) => item.name === backend);
+  const canSolve = solverAvailable && (selectedBackend?.available ?? false);
+
   return (
     <div className="app">
       <header className="topbar">
@@ -217,6 +240,22 @@ export function App() {
               onChange={(e) => resize(instance.rows, +e.target.value)} />
           </span>
         )}
+        {backends.length > 0 && (
+          <select
+            value={backend}
+            onChange={(e) => {
+              setBackend(e.target.value);
+              setResult(null);
+            }}
+            title={selectedBackend?.reason || "选择 cspuz 求解后端"}
+          >
+            {backends.map((item) => (
+              <option key={item.name} value={item.name} disabled={!item.available}>
+                {item.label}{item.available ? "" : "（不可用）"}
+              </option>
+            ))}
+          </select>
+        )}
         {sample && (
           <button className="ghost" onClick={() => { setInstance(sample); setResult(null); }}>
             样例
@@ -227,16 +266,17 @@ export function App() {
             清空盘面
           </button>
         )}
-        <button className="solve" onClick={solve} disabled={!instance || busy || !z3}>
+        <button className="solve" onClick={solve} disabled={!instance || busy || !canSolve}>
           {busy ? "求解中…" : "求解"}
         </button>
         {result && (
           <span className={`status status-${result.status}`}>
             {result.status === "sat" ? "✓ 有解" : result.status === "unsat" ? "✗ 无解" : result.status}
             {result.constraints ? ` · ${result.constraints} 约束` : ""}
+            {result.backend ? ` · ${result.backend}` : ""}
           </span>
         )}
-        {!z3 && <span className="status status-error">z3 未安装</span>}
+        {!solverAvailable && <span className="status status-error">求解后端不可用</span>}
       </header>
 
       {spec && (

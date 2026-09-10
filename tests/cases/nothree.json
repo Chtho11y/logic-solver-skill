@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "isolated blacks + equal-spacing ban",
+      "unique": false,
       "note": "isolated blacks + equal-spacing ban, 6 circles pinning the ring",
       "rows": 6,
       "cols": 6,

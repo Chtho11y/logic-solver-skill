@@ -1,6 +1,6 @@
-"""Puzzle DSL: lexer + parser + AST -> z3 compiler and solver.
+"""Puzzle DSL: lexer + parser + AST -> cspuz compiler and solver.
 
-The DSL lets the user describe grid-puzzle constraints that are lowered to z3:
+The DSL describes grid-puzzle constraints lowered through a neutral model API:
 
 * types: numbers, booleans, variables (a region's quantity set), regions
   (cell / edge / corner) and lists;
@@ -9,8 +9,7 @@ The DSL lets the user describe grid-puzzle constraints that are lowered to z3:
 * predefined functions (single-element functions map over lists) and automatic
   broadcasting between lists/elements.
 
-UI-independent (no PyQt import). z3 is an optional dependency used only when
-solving (see :func:`solver.is_available`).
+UI-independent (no PyQt import). Concrete solvers are selected through cspuz.
 """
 
 from __future__ import annotations
@@ -19,6 +18,7 @@ from .builtins import DocEntry, function_table
 from .errors import CompileError, DSLError, LexError, ParseError
 from .parser import parse
 from .solver import (
+    SOLVER_BACKENDS,
     SOLVER_LOGICS,
     STATUS_COMPILED,
     STATUS_ERROR,
@@ -26,6 +26,7 @@ from .solver import (
     STATUS_UNKNOWN,
     STATUS_UNSAT,
     SolveResult,
+    backend_status,
     compile_only,
     format_model,
     is_available,
@@ -38,8 +39,10 @@ __all__ = [
     "DocEntry",
     "solve",
     "compile_only",
+    "SOLVER_BACKENDS",
     "SOLVER_LOGICS",
     "is_available",
+    "backend_status",
     "format_model",
     "SolveResult",
     "STATUS_SAT",

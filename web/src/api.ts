@@ -6,6 +6,7 @@ import type {
   PuzzleSpec,
   RuleEntry,
   SolveResult,
+  SolverHealth,
 } from "./types";
 
 const BASE = "/api";
@@ -31,7 +32,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const api = {
-  health: () => get<{ ok: boolean; z3: boolean }>("/health"),
+  health: () => get<{ ok: boolean; solver: SolverHealth }>("/health"),
 
   rules: () => get<{ rules: RuleEntry[] }>("/rules").then((r) => r.rules),
 
@@ -53,10 +54,18 @@ export const api = {
    * Solve an instance. `source` overrides the bundled DSL program, which is
    * what the in-app rule editor uses to try out a custom rule.
    */
-  solve: (instance: Instance, options: { source?: string; timeoutMs?: number } = {}) =>
+  solve: (
+    instance: Instance,
+    options: {
+      source?: string;
+      timeoutMs?: number | null;
+      backend?: string;
+    } = {},
+  ) =>
     post<SolveResult>("/solve", {
       instance,
       source: options.source,
-      timeoutMs: options.timeoutMs ?? 60000,
+      timeoutMs: options.timeoutMs === undefined ? 60000 : options.timeoutMs,
+      backend: options.backend ?? "auto",
     }),
 };

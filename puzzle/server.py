@@ -5,7 +5,7 @@
 Endpoints (all JSON):
 
 ======================  ======  ===========================================
-``/api/health``         GET     ``{"ok": true, "z3": true}``
+``/api/health``         GET     solver availability and backend catalogue
 ``/api/rules``          GET     every rule from ``rules.txt``
 ``/api/rules/search``   GET     ``?q=`` name or rule-text lookup
 ``/api/elements``       GET     the generic drawing-element catalogue
@@ -32,14 +32,21 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from puzzle.dsl import function_table, is_available  # noqa: E402
+from puzzle.backends import BackendError, backend_info, resolve_backend  # noqa: E402
+from puzzle.dsl import backend_status, function_table, is_available  # noqa: E402
 from puzzle.elements import elements_json  # noqa: E402
 from puzzle.registry import catalogue, get_rule, search_by_description, search_rules  # noqa: E402
-from puzzle.runner import solve_payload  # noqa: E402
+from puzzle.runner import DEFAULT_TIMEOUT_MS, solve_payload  # noqa: E402
 from puzzle.spec import implemented_keys, load_sample, load_spec  # noqa: E402
 
 WEB_DIST = ROOT / "web" / "dist"
 MAX_BODY = 4 * 1024 * 1024
+
+
+def _default_backend() -> str:
+    auto = backend_info("auto")
+    timeout = DEFAULT_TIMEOUT_MS if auto.supports_timeout else None
+    return resolve_backend("auto", timeout_ms=timeout)
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -91,7 +98,24 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _route_get(self, path: str, query: dict) -> None:
         if path == "/api/health":
-            return self._send_json({"ok": True, "z3": is_available()})
+            backends = backend_status()
+            try:
+                default_backend = _default_backend()
+            except BackendError:
+                default_backend = ""
+            z3 = next((b["available"] for b in backends if b["name"] == "z3"), False)
+            return self._send_json(
+                {
+                    "ok": True,
+                    "solver": {
+                        "available": is_available(),
+                        "default": default_backend,
+                        "backends": backends,
+                    },
+                    # Transitional field for older web clients.
+                    "z3": z3,
+                }
+            )
         if path == "/api/rules":
             return self._send_json({"rules": catalogue()})
         if path == "/api/rules/search":
@@ -149,7 +173,14 @@ class Handler(SimpleHTTPRequestHandler):
 
 def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
     server = HTTPServer((host, port), Handler)
-    print(f"puzzle server on http://{host}:{port}  (z3 available: {is_available()})")
+    try:
+        default_backend = _default_backend()
+    except BackendError:
+        default_backend = "unavailable"
+    print(
+        f"puzzle server on http://{host}:{port}  "
+        f"(solver: {default_backend}, available: {is_available()})"
+    )
     if not WEB_DIST.is_dir():
         print("note: web/dist not found — run the Vite dev server for the UI")
     try:

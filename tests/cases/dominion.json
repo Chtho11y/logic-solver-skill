@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "non-touching 1x2 dominoes",
+      "unique": false,
       "note": "non-touching 1x2 dominoes, letters all in one white region",
       "rows": 6,
       "cols": 6,

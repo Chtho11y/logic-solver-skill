@@ -13,7 +13,7 @@ from puzzle.dsl.builtins import BUILTIN_FUNCTIONS, DEBUG_BUILTINS, DIRECTION_CON
 from puzzle.dsl.errors import CompileError, DSLError, LexError, ParseError
 from puzzle.dsl.lexer import tokenize
 from puzzle.dsl.parser import parse
-from puzzle.dsl.solver import is_available as z3_available
+from puzzle.backends import cspuz_available
 from puzzle.dsl.tokens import (
     T_DEDENT,
     T_EOF,
@@ -303,11 +303,10 @@ class LanguageServer:
         if spec is None:
             return []
         sample = self._sample_for(uri, spec.key)
-        if sample is None or not z3_available():
+        if sample is None or not cspuz_available():
             return []
         try:
             from puzzle.dsl.compiler import compile_source
-            import z3
         except Exception:
             return []
         grid = build_grid(sample)
@@ -315,7 +314,14 @@ class LanguageServer:
         regions = build_regions(spec, sample, grid)
         params = build_params(spec, sample)
         try:
-            compile_source(text, grid, variables, regions, z3, params, make_loader())
+            compile_source(
+                text,
+                grid,
+                variables,
+                regions,
+                params=params,
+                loader=make_loader(),
+            )
         except CompileError as exc:
             return [self._diagnostic(text, exc.message, exc.line, exc.col)]
         except DSLError as exc:

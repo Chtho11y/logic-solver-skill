@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "dominoes",
+      "unique": false,
       "note": "dominoes, single white region sized by the one number",
       "rows": 6,
       "cols": 6,

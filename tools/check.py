@@ -83,7 +83,7 @@ def check_compile(keys: list[str]) -> int:
     return 1 if failures else 0
 
 
-def check_solve(keys: list[str], timeout_ms: int) -> int:
+def check_solve(keys: list[str], timeout_ms: int, backend: str = "auto") -> int:
     failures = 0
     tested = 0
     for key in keys:
@@ -93,7 +93,9 @@ def check_solve(keys: list[str], timeout_ms: int) -> int:
         tested += 1
         spec = load_spec(key)
         started = time.perf_counter()
-        result = solve_instance(spec, instance, timeout_ms=timeout_ms)
+        result = solve_instance(
+            spec, instance, backend=backend, timeout_ms=timeout_ms
+        )
         elapsed = time.perf_counter() - started
         status = result["status"]
         mark = "ok  " if status == "sat" else "FAIL"
@@ -133,11 +135,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("mode", choices=("compile", "solve"))
     parser.add_argument("keys", nargs="*")
     parser.add_argument("--timeout", type=int, default=120000)
+    parser.add_argument("--backend", default="auto")
     args = parser.parse_args(argv)
     keys = args.keys or implemented_keys()
     if args.mode == "compile":
         return check_compile(keys)
-    return check_solve(keys, args.timeout)
+    return check_solve(keys, args.timeout, args.backend)
 
 
 if __name__ == "__main__":

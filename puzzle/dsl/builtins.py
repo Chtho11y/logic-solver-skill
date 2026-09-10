@@ -15,7 +15,7 @@ Families of builtins:
 Each :class:`BuiltinFunction` also carries a human-readable ``signature`` and
 ``doc`` so the UI can render a browsable function table.
 
-The call context ``ctx`` exposes ``ctx.z3`` (the z3 module) and ``ctx.grid``.
+The call context exposes backend-neutral expression operations as ``ctx.ops``.
 UI-independent (no PyQt import).
 """
 
@@ -55,7 +55,7 @@ def _bool_exprs(ctx, values: list) -> list:
     out = []
     for item in values:
         if isinstance(item, bool):
-            out.append(ctx.z3.BoolVal(item))
+            out.append(ctx.ops.BoolVal(item))
         else:
             out.append(item)
     return out
@@ -75,28 +75,28 @@ def _fn_sum(ctx, args, pos):
     items = _flatten_args(args)
     if not items:
         return 0
-    return ctx.z3.Sum(items)
+    return ctx.ops.Sum(items)
 
 
 def _fn_distinct(ctx, args, pos):
     items = _flatten_args(args)
     if len(items) < 2:
-        return ctx.z3.BoolVal(True)
-    return ctx.z3.Distinct(items)
+        return ctx.ops.BoolVal(True)
+    return ctx.ops.Distinct(items)
 
 
 def _fn_all(ctx, args, pos):
     items = _bool_exprs(ctx, _flatten_args(args))
     if not items:
-        return ctx.z3.BoolVal(True)
-    return ctx.z3.And(items)
+        return ctx.ops.BoolVal(True)
+    return ctx.ops.And(items)
 
 
 def _fn_any(ctx, args, pos):
     items = _bool_exprs(ctx, _flatten_args(args))
     if not items:
-        return ctx.z3.BoolVal(False)
-    return ctx.z3.Or(items)
+        return ctx.ops.BoolVal(False)
+    return ctx.ops.Or(items)
 
 
 def _element_count(value: Any) -> int:
@@ -119,7 +119,7 @@ def _fn_max(ctx, args, pos):
         raise CompileError("max() of an empty list", pos.line, pos.col)
     acc = items[0]
     for item in items[1:]:
-        acc = ctx.z3.If(acc >= item, acc, item)
+        acc = ctx.ops.If(acc >= item, acc, item)
     return acc
 
 
@@ -129,7 +129,7 @@ def _fn_min(ctx, args, pos):
         raise CompileError("min() of an empty list", pos.line, pos.col)
     acc = items[0]
     for item in items[1:]:
-        acc = ctx.z3.If(acc <= item, acc, item)
+        acc = ctx.ops.If(acc <= item, acc, item)
     return acc
 
 
@@ -139,7 +139,7 @@ def _fn_min(ctx, args, pos):
 def _fn_abs(ctx, value):
     if isinstance(value, int):
         return abs(value)
-    return ctx.z3.If(value >= 0, value, -value)
+    return ctx.ops.If(value >= 0, value, -value)
 
 
 # -- debug helpers ------------------------------------------------------------
@@ -616,7 +616,7 @@ def _fn_ite(ctx, args, pos):
     cond = args[0]
     if isinstance(cond, bool):
         return args[1] if cond else args[2]
-    return ctx.z3.If(cond, to_numeric(args[1]), to_numeric(args[2]))
+    return ctx.ops.If(cond, to_numeric(args[1]), to_numeric(args[2]))
 
 
 def _fn_b2i(ctx, value):
@@ -624,18 +624,18 @@ def _fn_b2i(ctx, value):
         return 1 if value else 0
     if isinstance(value, int):
         return value
-    return ctx.z3.If(value, 1, 0)
+    return ctx.ops.If(value, 1, 0)
 
 
 def _fn_count_true(ctx, args, pos):
     items = _bool_exprs(ctx, _flatten_args(args))
     if not items:
         return 0
-    return ctx.z3.Sum([ctx.z3.If(item, 1, 0) for item in items])
+    return ctx.ops.Sum([ctx.ops.If(item, 1, 0) for item in items])
 
 
 def _fn_num_eq(ctx, args, pos):
-    """How many quantities of ``list`` equal ``value`` (a z3 integer term)."""
+    """How many quantities of ``list`` equal ``value`` (an integer term)."""
 
     if len(args) != 2:
         raise CompileError("num_eq(list, value) takes two arguments", pos.line, pos.col)
@@ -643,7 +643,7 @@ def _fn_num_eq(ctx, args, pos):
     value = to_numeric(args[1])
     if not items:
         return 0
-    return ctx.z3.Sum([ctx.z3.If(item == value, 1, 0) for item in items])
+    return ctx.ops.Sum([ctx.ops.If(item == value, 1, 0) for item in items])
 
 
 def _fn_at_most(ctx, args, pos):
@@ -684,28 +684,37 @@ def _build_value_cc(ctx, var: VarValue, deltas) -> dict:
     *connected through cells of the same value*.
     """
 
-    z3 = ctx.z3
+    ops = ctx.ops
     grid = ctx.grid
     cols = grid.cols
     cells = sort_points(var.order)
     cell_set = set(cells)
     tag = f"{var.name}#cc{len(deltas)}"
-    ids = {p: z3.Int(f"{tag}#id#r{p[0]}c{p[1]}") for p in cells}
-    dist = {p: z3.Int(f"{tag}#d#r{p[0]}c{p[1]}") for p in cells}
+    max_linear_id = max((r * cols + c for r, c in cells), default=0)
+    ids = {
+        p: ctx.new_int(f"{tag}#id#r{p[0]}c{p[1]}", 0, max_linear_id)
+        for p in cells
+    }
+    dist = {
+        p: ctx.new_int(f"{tag}#d#r{p[0]}c{p[1]}", 0, max(0, len(cells) - 1))
+        for p in cells
+    }
     for (r, c) in cells:
         lin = r * cols + c
         idp, dp, xp = ids[(r, c)], dist[(r, c)], var.quantities[(r, c)]
-        ctx.add_aux(z3.And(idp >= 0, idp <= lin))
+        ctx.add_aux(ops.And(idp >= 0, idp <= lin))
         ctx.add_aux(dp >= 0)
         ctx.add_aux((dp == 0) == (idp == lin))
         neighbours = [(r + dr, c + dc) for dr, dc in deltas if (r + dr, c + dc) in cell_set]
         parents = [
-            z3.And(var.quantities[n] == xp, ids[n] == idp, dist[n] == dp - 1)
+            ops.And(var.quantities[n] == xp, ids[n] == idp, dist[n] == dp - 1)
             for n in neighbours
         ]
-        ctx.add_aux(z3.Implies(dp > 0, z3.Or(parents) if parents else z3.BoolVal(False)))
+        ctx.add_aux(
+            ops.Implies(dp > 0, ops.Or(parents) if parents else ops.BoolVal(False))
+        )
         for n in neighbours:
-            ctx.add_aux(z3.Implies(var.quantities[n] == xp, ids[n] == idp))
+            ctx.add_aux(ops.Implies(var.quantities[n] == xp, ids[n] == idp))
     return {"id": ids, "dist": dist, "cells": cells}
 
 
@@ -733,12 +742,19 @@ def _ensure_cc_size(ctx, var: VarValue, deltas) -> dict:
     cc = _value_cc(ctx, var, deltas)
     if "size" in cc:
         return cc
-    z3 = ctx.z3
+    ops = ctx.ops
     cells = cc["cells"]
     ids = cc["id"]
-    sizes = {p: z3.Int(f"{var.name}#cc{len(deltas)}#n#r{p[0]}c{p[1]}") for p in cells}
+    sizes = {
+        p: ctx.new_int(
+            f"{var.name}#cc{len(deltas)}#n#r{p[0]}c{p[1]}", 1, len(cells)
+        )
+        for p in cells
+    }
     for p in cells:
-        ctx.add_aux(sizes[p] == z3.Sum([z3.If(ids[q] == ids[p], 1, 0) for q in cells]))
+        ctx.add_aux(
+            sizes[p] == ops.Sum([ops.If(ids[q] == ids[p], 1, 0) for q in cells])
+        )
     cc["size"] = sizes
     return cc
 
@@ -763,13 +779,20 @@ def _make_cc_count(deltas, label: str):
         var = _expect_cell_var(args[0], label, pos)
         value = to_numeric(args[1])
         cc = _value_cc(ctx, var, deltas)
-        z3 = ctx.z3
+        ops = ctx.ops
         cols = ctx.grid.cols
         terms = [
-            z3.If(z3.And(cc["id"][p] == p[0] * cols + p[1], var.quantities[p] == value), 1, 0)
+            ops.If(
+                ops.And(
+                    cc["id"][p] == p[0] * cols + p[1],
+                    var.quantities[p] == value,
+                ),
+                1,
+                0,
+            )
             for p in cc["cells"]
         ]
-        return z3.Sum(terms) if terms else 0
+        return ops.Sum(terms) if terms else 0
 
     return fn
 
@@ -795,7 +818,7 @@ def _fn_drop_covers(ctx, args, pos):
         raise CompileError("drop_covers(var, start_row) takes two arguments", pos.line, pos.col)
     var = _expect_cell_var(args[0], "drop_covers", pos)
     start = _as_int(args[1], "drop_covers")
-    z3 = ctx.z3
+    ops = ctx.ops
     grid = ctx.grid
     rows, cols = grid.rows, grid.cols
     if not 0 <= start <= rows:
@@ -804,17 +827,20 @@ def _fn_drop_covers(ctx, args, pos):
     cells = cc["cells"]
     ids = cc["id"]
     drop = ctx.memo(("drop", var.name), lambda: {
-        p: z3.Int(f"{var.name}#drop#r{p[0]}c{p[1]}") for p in cells
+        p: ctx.new_int(
+            f"{var.name}#drop#r{p[0]}c{p[1]}", 0, max(0, rows - 1 - p[0])
+        )
+        for p in cells
     })
     parts = []
     for p in cells:
         ctx.add_aux(drop[p] >= 0)
         ctx.add_aux(drop[p] <= max(0, rows - 1 - p[0]))
-        parts.append(z3.Implies(var.quantities[p] != 1, drop[p] == 0))
+        parts.append(ops.Implies(var.quantities[p] != 1, drop[p] == 0))
     for p in cells:
         for q in cells:
             if p < q:
-                parts.append(z3.Implies(ids[p] == ids[q], drop[p] == drop[q]))
+                parts.append(ops.Implies(ids[p] == ids[q], drop[p] == drop[q]))
     by_col: dict[int, list[Point]] = {}
     for p in cells:
         by_col.setdefault(p[1], []).append(p)
@@ -822,16 +848,23 @@ def _fn_drop_covers(ctx, args, pos):
         column.sort()
         for i, p in enumerate(column):
             for q in column[i + 1:]:
-                both = z3.And(var.quantities[p] == 1, var.quantities[q] == 1)
-                parts.append(z3.Implies(both, p[0] + drop[p] < q[0] + drop[q]))
+                both = ops.And(var.quantities[p] == 1, var.quantities[q] == 1)
+                parts.append(ops.Implies(both, p[0] + drop[p] < q[0] + drop[q]))
         for dest_r in range(rows):
             hits = [
-                z3.If(z3.And(var.quantities[p] == 1, p[0] + drop[p] == dest_r), 1, 0)
+                ops.If(
+                    ops.And(
+                        var.quantities[p] == 1,
+                        p[0] + drop[p] == dest_r,
+                    ),
+                    1,
+                    0,
+                )
                 for p in column
             ]
-            total = z3.Sum(hits) if hits else 0
+            total = ops.Sum(hits) if hits else 0
             parts.append(total == (1 if dest_r >= start else 0))
-    return z3.And(parts) if parts else z3.BoolVal(True)
+    return ops.And(parts) if parts else ops.BoolVal(True)
 
 
 # -- loops on the corner / cell lattice ---------------------------------------
@@ -880,7 +913,7 @@ def _fn_runs(ctx, args, pos):
 
     if len(args) != 2:
         raise CompileError("runs(list, lengths) takes two arguments", pos.line, pos.col)
-    z3 = ctx.z3
+    ops = ctx.ops
     seq = flatten_scalars(args[0])
     raw = to_numeric(args[1])
     if not isinstance(raw, list):
@@ -889,20 +922,21 @@ def _fn_runs(ctx, args, pos):
     lengths = [n for n in lengths if n > 0]
     n = len(seq)
     if not lengths:
-        return z3.And([item == 0 for item in seq]) if seq else z3.BoolVal(True)
+        return ops.And([item == 0 for item in seq]) if seq else ops.BoolVal(True)
     if sum(lengths) + len(lengths) - 1 > n:
-        return z3.BoolVal(False)
-    starts = [ctx.new_int("runs#s") for _ in lengths]
+        return ops.BoolVal(False)
+    starts = [ctx.new_int("runs#s", 0, n) for _ in lengths]
     parts = [starts[0] >= 0]
     for i in range(1, len(lengths)):
         parts.append(starts[i] >= starts[i - 1] + lengths[i - 1] + 1)
     parts.append(starts[-1] + lengths[-1] <= n)
     for j, item in enumerate(seq):
         covered = [
-            z3.And(starts[i] <= j, j < starts[i] + lengths[i]) for i in range(len(lengths))
+            ops.And(starts[i] <= j, j < starts[i] + lengths[i])
+            for i in range(len(lengths))
         ]
-        parts.append((item == 1) == z3.Or(covered))
-    return z3.And(parts)
+        parts.append((item == 1) == ops.Or(covered))
+    return ops.And(parts)
 
 
 def _expect_edge_var(value, name: str, pos) -> VarValue:
@@ -957,7 +991,7 @@ def _fn_deg(ctx, args, pos):
     if kind is not PointKind.CORNER:
         raise CompileError("deg() expects a corner", pos.line, pos.col)
     graph = ctx.memo(("cornergraph",), lambda: _corner_graph(ctx.grid))
-    return ctx.z3.Sum([var.quantities[e] for _, e in graph[point]])
+    return ctx.ops.Sum([var.quantities[e] for _, e in graph[point]])
 
 
 def _fn_cdeg(ctx, args, pos):
@@ -966,53 +1000,63 @@ def _fn_cdeg(ctx, args, pos):
     var = _expect_edge_var(args[0], "cdeg", pos)
     cell = _expect_cell(args[1], "cdeg", pos)
     graph, _ = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
-    return ctx.z3.Sum([var.quantities[e] for _, e in graph[cell]])
+    return ctx.ops.Sum([var.quantities[e] for _, e in graph[cell]])
 
 
 def _link_connect(ctx, var: VarValue, graph: dict, cols_hint: int, tag: str):
     """Single-connected-component encoding for the edges selected by ``var``.
 
-    Returns the z3 boolean "the selected edges form at most/exactly one
+    Returns the boolean term "the selected edges form at most/exactly one
     connected component" together with per-node ``used`` expressions.
     """
 
-    z3 = ctx.z3
+    ops = ctx.ops
     nodes = sorted(graph.keys())
     index = {node: i for i, node in enumerate(nodes)}
-    ids = {n: ctx.new_int(f"{tag}#id") for n in nodes}
-    dist = {n: ctx.new_int(f"{tag}#d") for n in nodes}
+    ids = {
+        n: ctx.new_int(f"{tag}#id", 0, max(0, len(nodes) - 1))
+        for n in nodes
+    }
+    dist = {
+        n: ctx.new_int(f"{tag}#d", 0, max(0, len(nodes) - 1))
+        for n in nodes
+    }
     used = {}
     for node in nodes:
         incident = [var.quantities[e] for _, e in graph[node]]
-        used[node] = z3.Sum(incident) > 0 if incident else z3.BoolVal(False)
+        used[node] = ops.Sum(incident) > 0 if incident else ops.BoolVal(False)
     for node in nodes:
         lin = index[node]
         idn, dn = ids[node], dist[node]
-        ctx.add_aux(z3.And(idn >= 0, idn <= lin))
+        ctx.add_aux(ops.And(idn >= 0, idn <= lin))
         ctx.add_aux(dn >= 0)
         ctx.add_aux((dn == 0) == (idn == lin))
         parents = [
-            z3.And(var.quantities[e] == 1, ids[nb] == idn, dist[nb] == dn - 1)
+            ops.And(var.quantities[e] == 1, ids[nb] == idn, dist[nb] == dn - 1)
             for nb, e in graph[node]
         ]
-        ctx.add_aux(z3.Implies(dn > 0, z3.Or(parents) if parents else z3.BoolVal(False)))
+        ctx.add_aux(
+            ops.Implies(dn > 0, ops.Or(parents) if parents else ops.BoolVal(False))
+        )
         for nb, e in graph[node]:
-            ctx.add_aux(z3.Implies(var.quantities[e] == 1, ids[nb] == idn))
-    roots = z3.Sum([z3.If(z3.And(used[n], dist[n] == 0), 1, 0) for n in nodes])
+            ctx.add_aux(ops.Implies(var.quantities[e] == 1, ids[nb] == idn))
+    roots = ops.Sum(
+        [ops.If(ops.And(used[n], dist[n] == 0), 1, 0) for n in nodes]
+    )
     return roots, used
 
 
 def _loop_common(ctx, var, graph, tag, degrees, single):
-    z3 = ctx.z3
+    ops = ctx.ops
     key = (tag, var.name)
     roots, _used = ctx.memo(key, lambda: _link_connect(ctx, var, graph, ctx.grid.cols, tag))
     parts = []
     for node, links in graph.items():
-        total = z3.Sum([var.quantities[e] for _, e in links]) if links else 0
-        parts.append(z3.Or([total == d for d in degrees]))
+        total = ops.Sum([var.quantities[e] for _, e in links]) if links else 0
+        parts.append(ops.Or([total == d for d in degrees]))
     if single:
         parts.append(roots == 1)
-    return z3.And(parts)
+    return ops.And(parts)
 
 
 def _fn_loop(ctx, args, pos):
@@ -1071,10 +1115,10 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
         "count", _fn_count, signature="count(list)", doc="Number of elements (concrete integer)."
     ),
     "max": BuiltinFunction(
-        "max", _fn_max, signature="max(list)", doc="Maximum quantity (z3 If-chain)."
+        "max", _fn_max, signature="max(list)", doc="Maximum quantity (conditional chain)."
     ),
     "min": BuiltinFunction(
-        "min", _fn_min, signature="min(list)", doc="Minimum quantity (z3 If-chain)."
+        "min", _fn_min, signature="min(list)", doc="Minimum quantity (conditional chain)."
     ),
     "row": BuiltinFunction(
         "row", _fn_row, signature="row(i)", doc="The cells of row i (a region)."

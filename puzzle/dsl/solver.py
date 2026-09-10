@@ -1,8 +1,7 @@
-"""Solve a puzzle DSL program against an editor state using z3.
+"""Compile and solve a puzzle DSL program through cspuz.
 
-This is the single entry point the UI calls. z3 is imported lazily so the
-editor keeps working (with solving disabled) when the optional ``z3-solver``
-dependency is not installed.
+This is the single entry point the UI calls. cspuz owns the constraint model;
+the concrete solver (cspuz_core, Z3, csugar or Sugar) is selected at runtime.
 
 UI-independent (no PyQt import).
 """
@@ -12,6 +11,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from ..backends import (
+    BACKEND_NAMES,
+    BackendError,
+    BackendTimeoutError,
+    BackendUnknownError,
+    backend_configuration,
+    cspuz_available,
+    list_backends,
+    normalize_backend,
+    resolve_backend,
+)
 from ..grid import Grid
 from ..models import Point, PointKind
 from .errors import DSLError
@@ -23,17 +33,10 @@ STATUS_UNKNOWN = "unknown"
 STATUS_ERROR = "error"
 STATUS_COMPILED = "compiled"
 
-# Fixed list of solver backends offered in the UI. "AUTO" lets z3 pick the
-# tactic via ``z3.Solver()``; every other entry is passed to
-# ``z3.SolverFor(logic)`` to select a specialized logic engine.
-SOLVER_LOGICS: tuple[str, ...] = (
-    "AUTO",
-    "QF_LIA",
-    "QF_FD",
-    "QF_IDL",
-    "LIA",
-    "QF_NIA",
-)
+# Concrete solvers offered by cspuz. ``SOLVER_LOGICS`` remains as a deprecated
+# import alias for clients built against the old Z3-only API.
+SOLVER_BACKENDS: tuple[str, ...] = BACKEND_NAMES
+SOLVER_LOGICS: tuple[str, ...] = SOLVER_BACKENDS
 
 
 @dataclass
@@ -48,6 +51,7 @@ class SolveResult:
     error_line: int | None = None
     # Debug lines emitted by print() during compilation.
     debug: list[str] = field(default_factory=list)
+    backend: str = ""
 
     @property
     def ok(self) -> bool:
@@ -55,13 +59,31 @@ class SolveResult:
 
 
 def is_available() -> bool:
-    """Whether the z3 solver backend can be imported."""
+    """Whether cspuz and at least one concrete backend are available."""
 
-    try:
-        import z3  # noqa: F401
-    except Exception:
-        return False
-    return True
+    return cspuz_available() and any(
+        info.available for info in list_backends() if info.name != "auto"
+    )
+
+
+def backend_status() -> list[dict[str, Any]]:
+    """JSON-friendly runtime status for every selectable backend."""
+
+    return [info.to_json() for info in list_backends()]
+
+
+def _select_backend(backend: str | None, logic: str | None) -> str:
+    if backend is not None:
+        return normalize_backend(backend)
+    if logic is None or str(logic).strip().lower() in ("", "auto"):
+        return "auto"
+    normalized = str(logic).strip().lower()
+    if normalized in SOLVER_BACKENDS:
+        return normalize_backend(normalized)
+    raise BackendError(
+        f"Z3 logic {logic!r} is no longer a backend selector; "
+        f"use backend='z3' or one of {', '.join(SOLVER_BACKENDS)}"
+    )
 
 
 def solve(
@@ -69,94 +91,125 @@ def solve(
     variables,
     regions,
     source: str,
-    logic: str = "AUTO",
+    logic: str | None = "AUTO",
     params: dict | None = None,
     loader: Callable[[str], str] | None = None,
     timeout_ms: int | None = None,
+    *,
+    backend: str | None = None,
 ) -> SolveResult:
     """Compile ``source`` and solve it; return a structured result.
 
-    ``logic`` selects the z3 backend: ``"AUTO"`` (default) uses the general
-    ``z3.Solver()``; any other value is passed to ``z3.SolverFor(logic)`` to
-    pick a specialized logic engine. ``params`` feeds ``param("name")`` and
-    ``loader`` resolves ``import "module"``.
+    ``backend`` selects a cspuz concrete solver. The old ``logic="AUTO"``
+    argument remains accepted as an alias for ``backend="auto"``.
     """
 
-    try:
-        import z3
-    except Exception:
+    if not cspuz_available():
         return SolveResult(
             STATUS_ERROR,
-            "z3 is not installed. Run `pip install z3-solver` to enable solving.",
+            "cspuz is not installed. Run `pip install -r requirements.txt`.",
         )
 
     from .compiler import compile_source
 
+    compiled = None
+    resolved = ""
     try:
-        compiled = compile_source(source, grid, variables, regions, z3, params, loader)
+        selected = _select_backend(backend, logic)
+        with backend_configuration(selected, timeout_ms) as resolved:
+            compiled = compile_source(
+                source,
+                grid,
+                variables,
+                regions,
+                params=params,
+                loader=loader,
+            )
+            compiled.model.add_constraints(compiled.constraints)
+            satisfiable = compiled.model.find_answer(resolved, timeout_ms)
     except DSLError as exc:
         return SolveResult(STATUS_ERROR, str(exc), error_line=exc.line)
+    except BackendTimeoutError as exc:
+        return SolveResult(
+            STATUS_UNKNOWN,
+            str(exc),
+            constraint_count=len(compiled.constraints) if compiled else 0,
+            debug=list(compiled.debug) if compiled else [],
+            backend=resolved,
+        )
+    except BackendUnknownError as exc:
+        return SolveResult(
+            STATUS_UNKNOWN,
+            str(exc),
+            constraint_count=len(compiled.constraints) if compiled else 0,
+            debug=list(compiled.debug) if compiled else [],
+            backend=resolved,
+        )
+    except BackendError as exc:
+        return SolveResult(STATUS_ERROR, str(exc), backend=resolved)
     except Exception as exc:  # defensive: never crash the UI thread
-        return SolveResult(STATUS_ERROR, f"internal compile error: {exc}")
+        phase = "solve" if compiled is not None else "compile"
+        return SolveResult(
+            STATUS_ERROR,
+            f"internal {phase} error: {exc}",
+            constraint_count=len(compiled.constraints) if compiled else 0,
+            debug=list(compiled.debug) if compiled else [],
+            backend=resolved,
+        )
 
     debug = list(compiled.debug)
-    if logic and logic != "AUTO":
-        try:
-            solver = z3.SolverFor(logic)
-        except Exception as exc:
-            return SolveResult(STATUS_ERROR, f"invalid solver logic {logic!r}: {exc}")
-    else:
-        solver = z3.Solver()
-    if timeout_ms:
-        solver.set("timeout", int(timeout_ms))
-    for constraint in compiled.constraints:
-        solver.add(constraint)
-
-    check = solver.check()
     count = len(compiled.constraints)
 
-    if check == z3.sat:
-        model = solver.model()
+    if satisfiable:
         values: dict[str, dict[Point, int]] = {}
         kinds: dict[str, PointKind] = {}
+        missing: list[str] = []
 
-        def read(quantities: dict) -> dict[Point, int]:
+        def read(name: str, quantities: dict) -> dict[Point, int]:
             out: dict[Point, int] = {}
-            for point, z3var in quantities.items():
-                # Constant variables store plain Python ints; everything else is
-                # a z3 expression evaluated against the model. (cc variables echo
-                # their own quantities, which are the region ids.)
-                if not z3.is_expr(z3var):
-                    out[point] = int(z3var)
-                    continue
-                evaluated = model.eval(z3var, model_completion=True)
-                try:
-                    out[point] = int(evaluated.as_long())
-                except Exception:
-                    out[point] = 0
+            for point, term in quantities.items():
+                value = compiled.model.value(term)
+                if value is None:
+                    missing.append(f"{name}[{point}]")
+                else:
+                    out[point] = int(value)
             return out
 
         for variable in compiled.variables:
-            values[variable.name] = read(compiled.var_z3[variable.name])
+            values[variable.name] = read(
+                variable.name, compiled.var_terms[variable.name]
+            )
             kinds[variable.name] = variable.kind
         for name, quantities in compiled.derived.items():
-            values[name] = read(quantities)
+            values[name] = read(name, quantities)
             kinds[name] = compiled.derived_kinds[name]
+        if missing:
+            shown = ", ".join(missing[:3])
+            suffix = " …" if len(missing) > 3 else ""
+            return SolveResult(
+                STATUS_UNKNOWN,
+                f"{resolved} returned an incomplete model: {shown}{suffix}",
+                constraint_count=count,
+                debug=debug,
+                backend=resolved,
+            )
         return SolveResult(
             STATUS_SAT,
-            "Satisfiable — model found.",
+            f"Satisfiable — model found with {resolved}.",
             constraint_count=count,
             values=values,
             kinds=kinds,
             debug=debug,
+            backend=resolved,
         )
 
-    if check == z3.unsat:
-        return SolveResult(
-            STATUS_UNSAT, "Unsatisfiable — no model exists.", constraint_count=count, debug=debug
-        )
-
-    return SolveResult(STATUS_UNKNOWN, "Solver returned unknown.", constraint_count=count, debug=debug)
+    return SolveResult(
+        STATUS_UNSAT,
+        f"Unsatisfiable — no model exists ({resolved}).",
+        constraint_count=count,
+        debug=debug,
+        backend=resolved,
+    )
 
 
 def compile_only(
@@ -169,18 +222,23 @@ def compile_only(
 ) -> SolveResult:
     """Compile ``source`` without solving; report constraint count and print()."""
 
-    try:
-        import z3
-    except Exception:
+    if not cspuz_available():
         return SolveResult(
             STATUS_ERROR,
-            "z3 is not installed. Run `pip install z3-solver` to enable compiling.",
+            "cspuz is not installed. Run `pip install -r requirements.txt`.",
         )
 
     from .compiler import compile_source
 
     try:
-        compiled = compile_source(source, grid, variables, regions, z3, params, loader)
+        compiled = compile_source(
+            source,
+            grid,
+            variables,
+            regions,
+            params=params,
+            loader=loader,
+        )
     except DSLError as exc:
         return SolveResult(STATUS_ERROR, str(exc), error_line=exc.line)
     except Exception as exc:  # defensive: never crash the UI thread

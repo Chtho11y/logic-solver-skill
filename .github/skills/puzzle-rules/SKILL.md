@@ -1,12 +1,12 @@
 ---
 name: puzzle-rules
-description: 'Look up grid-puzzle rules by name (中文/English/pzplus key) or identify a puzzle from a rule description, and implement new rules end-to-end — z3 solver in the puzzle DSL plus the front-end editor/solution layers. Use whenever the user mentions a logic-puzzle name (数独/数墙/Nurikabe/Masyu/…), asks what a rule means, asks to add or fix a solver under impls/, or asks for a custom/new puzzle rule.'
+description: 'Look up grid-puzzle rules by name (中文/English/pzplus key) or identify a puzzle from a rule description, and implement new rules end-to-end — cspuz-backed solver in the puzzle DSL plus the front-end editor/solution layers. Use whenever the user mentions a logic-puzzle name (数独/数墙/Nurikabe/Masyu/…), asks what a rule means, asks to add or fix a solver under impls/, or asks for a custom/new puzzle rule.'
 ---
 
 # Puzzle rules: identify, implement, render
 
 This repository solves ~236 grid-puzzle rules (catalogued in `rules.txt`) with a
-constraint DSL lowered to z3, and renders them with a puzzle-agnostic layer
+constraint DSL lowered through cspuz, and renders them with a puzzle-agnostic layer
 front-end. **Always start with the `puzzle-rules` tool** — never grep
 `rules.txt` by hand and never guess a rule's wording.
 
@@ -34,7 +34,7 @@ means a solver already exists.
 | --- | --- |
 | `rules.txt` | The rule catalogue (tab separated, 8 columns). Source of truth for names. |
 | `puzzle/models.py`, `puzzle/grid.py` | Board geometry: `cell (r,c)`, `corner (r,c)`, `edge ("H"\|"V", r, c)`. |
-| `puzzle/dsl/` | Lexer → parser → compiler → z3 solver. Grammar in `puzzle/dsl/GRAMMAR.md`. |
+| `puzzle/dsl/` | Lexer → parser → compiler → cspuz multi-backend solver. Grammar in `puzzle/dsl/GRAMMAR.md`. |
 | `puzzle/lib/*.dsl` | Shared templates: `core`, `shading`, `regions`, `loops`, `fill`, `outside`. |
 | `puzzle/elements.py` | The generic drawing elements (number/shade/circle/arrow/link/…). |
 | `puzzle/spec.py` | `PuzzleSpec` (variables + layers) and `Instance` (board data). |

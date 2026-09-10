@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "six dominoes (n=2) tiled so every 2x2 wi",
+      "unique": false,
       "note": "six dominoes (n=2) tiled so every 2x2 window has a black",
       "rows": 6,
       "cols": 6,

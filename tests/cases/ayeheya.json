@@ -4,6 +4,7 @@
   "cases": [
     {
       "name": "per-region 180deg symmetry + region blac",
+      "unique": false,
       "note": "per-region 180deg symmetry + region black counts on a diagonal lattice",
       "rows": 6,
       "cols": 6,

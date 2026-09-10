@@ -1,8 +1,8 @@
 """Turn a (spec, instance) pair into a solved board.
 
 This is the bridge between the JSON world (front-end, samples, agent tools) and
-the DSL solver: it builds the grid/variables/regions, runs z3 and echoes every
-variable back as a JSON-friendly ``{layer: {point: value}}`` map.
+the DSL solver: it builds the grid/variables/regions, runs the selected cspuz
+backend and echoes every variable as ``{layer: {point: value}}``.
 """
 
 from __future__ import annotations
@@ -22,13 +22,17 @@ from .spec import (
     make_loader,
 )
 
+DEFAULT_TIMEOUT_MS = 60000
+
 
 def solve_instance(
     spec: PuzzleSpec,
     instance: Instance,
-    logic: str = "AUTO",
-    timeout_ms: int | None = 60000,
+    backend: str = "auto",
+    timeout_ms: int | None = DEFAULT_TIMEOUT_MS,
     source: str | None = None,
+    *,
+    logic: str | None = None,
 ) -> dict[str, Any]:
     """Solve one puzzle instance and return a JSON-serialisable result."""
 
@@ -46,6 +50,7 @@ def solve_instance(
         regions,
         program,
         logic=logic,
+        backend=backend if logic is None else None,
         params=params,
         loader=make_loader(),
         timeout_ms=timeout_ms,
@@ -55,6 +60,7 @@ def solve_instance(
         "message": result.message,
         "constraints": result.constraint_count,
         "debug": result.debug,
+        "backend": result.backend,
     }
     if result.error_line is not None:
         payload["errorLine"] = result.error_line
@@ -72,10 +78,13 @@ def solve_payload(payload: dict) -> dict[str, Any]:
 
     instance = Instance.from_json(payload["instance"])
     spec = load_spec(instance.puzzle)
+    requested_backend = payload.get("backend")
     return solve_instance(
         spec,
         instance,
-        logic=payload.get("logic", "AUTO"),
-        timeout_ms=payload.get("timeoutMs", 60000),
+        backend=requested_backend or "auto",
+        timeout_ms=payload.get("timeoutMs", DEFAULT_TIMEOUT_MS),
         source=payload.get("source"),
+        # The new backend field takes precedence over deprecated logic.
+        logic=None if requested_backend is not None else payload.get("logic"),
     )
