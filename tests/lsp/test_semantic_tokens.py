@@ -51,7 +51,7 @@ class SemanticTokenTests(unittest.TestCase):
         self.assertEqual(tok[3], "keyword")
 
     def test_function_declaration(self) -> None:
-        tok = self._at("island_rule", after_def=True)
+        tok = self._at("black_connected", after_def=True)
         self.assertEqual(tok[3], "function")
         self.assertEqual(tok[4], mod_mask("declaration"))
 

@@ -21,7 +21,7 @@ T_EOF = "EOF"
 KEYWORDS = frozenset(
     {
         "if", "elif", "else", "for", "in", "let", "and", "or", "not",
-        "true", "false", "def", "return", "import",
+        "true", "false", "def", "return", "import", "use",
     }
 )
 

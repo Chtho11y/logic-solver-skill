@@ -67,14 +67,10 @@ def no_diag_adjacent(x, v):
 
 
 # -- connectivity -------------------------------------------------------------
+# `connected` / `connected8` are compiler builtins. They pick a native graph
+# operator when the selected backend supports `graph_vertex_connected`, and a
+# compact spanning-tree encoding otherwise. They no longer go through cc_count.
 
-def connected(x, v):
-    # All cells holding `v` form (at most) one orthogonally connected group.
-    return cc_count(x, v) <= 1
-
-def connected8(x, v):
-    # ... one diagonally connected group.
-    return cc8_count(x, v) <= 1
 
 def group_count(x, v, n):
     return cc_count(x, v) == n

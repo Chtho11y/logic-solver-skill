@@ -17,8 +17,11 @@ from ..backends import (
     BackendTimeoutError,
     BackendUnknownError,
     backend_configuration,
+    create_model,
     cspuz_available,
+    effective_timeout_ms,
     list_backends,
+    merge_backend_request,
     normalize_backend,
     resolve_backend,
 )
@@ -110,20 +113,27 @@ def solve(
             "cspuz is not installed. Run `pip install -r requirements.txt`.",
         )
 
-    from .compiler import compile_source
+    from .compiler import compile_program, declared_backend
+    from .parser import parse
 
     compiled = None
     resolved = ""
     try:
-        selected = _select_backend(backend, logic)
-        with backend_configuration(selected, timeout_ms) as resolved:
-            compiled = compile_source(
-                source,
+        program = parse(source)
+        program.module = "<main>"
+        declared = declared_backend(program)
+        api_backend = _select_backend(backend, logic)
+        requested = merge_backend_request(api=api_backend, dsl=declared)
+        timeout_ms = effective_timeout_ms(requested, api_backend, timeout_ms)
+        with backend_configuration(requested, timeout_ms) as resolved:
+            compiled = compile_program(
+                program,
                 grid,
                 variables,
                 regions,
                 params=params,
                 loader=loader,
+                model=create_model(resolved),
             )
             compiled.model.add_constraints(compiled.constraints)
             satisfiable = compiled.model.find_answer(resolved, timeout_ms)
@@ -241,6 +251,8 @@ def compile_only(
         )
     except DSLError as exc:
         return SolveResult(STATUS_ERROR, str(exc), error_line=exc.line)
+    except BackendError as exc:
+        return SolveResult(STATUS_ERROR, str(exc))
     except Exception as exc:  # defensive: never crash the UI thread
         return SolveResult(STATUS_ERROR, f"internal compile error: {exc}")
 
@@ -250,6 +262,7 @@ def compile_only(
         f"Compiled successfully — {count} constraint(s) generated.",
         constraint_count=count,
         debug=list(compiled.debug),
+        backend=compiled.backend,
     )
 
 

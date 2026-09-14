@@ -34,7 +34,7 @@ means a solver already exists.
 | --- | --- |
 | `rules.txt` | The rule catalogue (tab separated, 8 columns). Source of truth for names. |
 | `puzzle/models.py`, `puzzle/grid.py` | Board geometry: `cell (r,c)`, `corner (r,c)`, `edge ("H"\|"V", r, c)`. |
-| `puzzle/dsl/` | Lexer → parser → compiler → cspuz multi-backend solver. Grammar in `puzzle/dsl/GRAMMAR.md`. |
+| `puzzle/dsl/` | Lexer → parser → compiler → cspuz multi-backend solver. Grammar in `puzzle/dsl/GRAMMAR.md`. `use <backend>` selects the solver; omit it for the best available. |
 | `puzzle/lib/*.dsl` | Shared templates: `core`, `shading`, `regions`, `loops`, `fill`, `outside`. |
 | `puzzle/elements.py` | The generic drawing elements (number/shade/circle/arrow/link/…). |
 | `puzzle/spec.py` | `PuzzleSpec` (variables + layers) and `Instance` (board data). |

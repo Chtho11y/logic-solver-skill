@@ -38,10 +38,9 @@ class IndexTests(unittest.TestCase):
         entry = self.index.files[path_to_uri(path.resolve())]
         got = {sym.name: sym.line for sym in entry.symbols if not sym.nested}
         self.assertEqual(got, expected)
-        self.assertIn("island_rule", got)
-        self.assertIn("wall_rule", got)
-        self.assertEqual(got["island_rule"], 42)
-        self.assertEqual(got["wall_rule"], 47)
+        self.assertIn("black_connected", got)
+        self.assertNotIn("island_rule", got)
+        self.assertNotIn("wall_rule", got)
 
     def test_parse_failure_keeps_previous(self) -> None:
         path = ROOT / "puzzle" / "lib" / "core.dsl"
@@ -58,10 +57,14 @@ class IndexTests(unittest.TestCase):
     def test_visible_functions_follow_imports(self) -> None:
         nurikabe = path_to_uri((ROOT / "impls" / "nurikabe.dsl").resolve())
         visible = self.index.visible_functions(nurikabe)
-        self.assertIn("wall_rule", visible)
-        self.assertTrue(visible["wall_rule"].uri.endswith("shading.dsl") or "shading.dsl" in visible["wall_rule"].uri)
+        self.assertIn("black_connected", visible)
+        self.assertTrue(
+            visible["black_connected"].uri.endswith("shading.dsl")
+            or "shading.dsl" in visible["black_connected"].uri
+        )
         self.assertIn("no2x2", visible)
-        self.assertIn("island_rule", visible)
+        self.assertNotIn("island_rule", visible)
+        self.assertNotIn("wall_rule", visible)
 
 
 if __name__ == "__main__":

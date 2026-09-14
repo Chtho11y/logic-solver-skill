@@ -139,7 +139,14 @@ class ImportStmt(Node):
     path: str = ""
 
 
-Stmt = Union[LetStmt, ExprStmt, IfStmt, ForStmt, DefStmt, ReturnStmt, ImportStmt]
+@dataclass
+class UseStmt(Node):
+    """``use cspuz_core`` -- select the solver backend for this program."""
+
+    backend: str = ""
+
+
+Stmt = Union[LetStmt, ExprStmt, IfStmt, ForStmt, DefStmt, ReturnStmt, ImportStmt, UseStmt]
 
 
 @dataclass

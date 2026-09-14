@@ -676,6 +676,42 @@ def _expect_cell_var(value, name: str, pos) -> VarValue:
     return value
 
 
+def _grid_edges(cells, deltas) -> list[tuple[int, int]]:
+    index = {point: i for i, point in enumerate(cells)}
+    edges: list[tuple[int, int]] = []
+    for i, (row, col) in enumerate(cells):
+        for dr, dc in deltas:
+            neighbour = index.get((row + dr, col + dc))
+            if neighbour is not None and i < neighbour:
+                edges.append((i, neighbour))
+    return edges
+
+
+def _make_connected(deltas, label: str):
+    def fn(ctx, args, pos):
+        if len(args) != 2:
+            raise CompileError(f"{label}(var, value) takes two arguments", pos.line, pos.col)
+        var = _expect_cell_var(args[0], label, pos)
+        value = to_numeric(args[1])
+        if isinstance(value, list):
+            raise CompileError(f"{label}() value must be a scalar", pos.line, pos.col)
+        cells = sort_points(var.order)
+        key = (
+            "connected",
+            var.name,
+            value if isinstance(value, (int, bool)) else id(value),
+            len(deltas),
+        )
+
+        def build():
+            flags = [var.quantities[point] == value for point in cells]
+            return ctx.ops.vertices_connected(flags, _grid_edges(cells, deltas))
+
+        return ctx.memo(key, build)
+
+    return fn
+
+
 def _build_value_cc(ctx, var: VarValue, deltas) -> dict:
     """Encode maximal same-valued connected components of a cell variable.
 
@@ -983,6 +1019,27 @@ def _cell_graph(grid) -> tuple[dict, list]:
     return graph, outer
 
 
+def _indexed_link_edges(graph: dict, var: VarValue) -> tuple[int, list[tuple[int, int]], list]:
+    """Turn a neighbour dict into vertex count, undirected ``(u, v)`` pairs, flags."""
+
+    nodes = sorted(graph.keys())
+    index = {node: i for i, node in enumerate(nodes)}
+    seen: set[tuple[int, int]] = set()
+    pairs: list[tuple[int, int]] = []
+    flags = []
+    for node in nodes:
+        for neighbour, edge in graph[node]:
+            a, b = index[node], index[neighbour]
+            if a > b:
+                a, b = b, a
+            if (a, b) in seen:
+                continue
+            seen.add((a, b))
+            pairs.append((a, b))
+            flags.append(var.quantities[edge] == 1)
+    return len(nodes), pairs, flags
+
+
 def _fn_deg(ctx, args, pos):
     if len(args) != 2:
         raise CompileError("deg(var, corner) takes two arguments", pos.line, pos.col)
@@ -1035,9 +1092,10 @@ def _link_connect(ctx, var: VarValue, graph: dict, cols_hint: int, tag: str):
             ops.And(var.quantities[e] == 1, ids[nb] == idn, dist[nb] == dn - 1)
             for nb, e in graph[node]
         ]
-        ctx.add_aux(
-            ops.Implies(dn > 0, ops.Or(parents) if parents else ops.BoolVal(False))
-        )
+        if parents:
+            ctx.add_aux(ops.Implies(dn > 0, ops.Or(parents)))
+        else:
+            ctx.add_aux(dn == 0)
         for nb, e in graph[node]:
             ctx.add_aux(ops.Implies(var.quantities[e] == 1, ids[nb] == idn))
     roots = ops.Sum(
@@ -1052,8 +1110,11 @@ def _loop_common(ctx, var, graph, tag, degrees, single):
     roots, _used = ctx.memo(key, lambda: _link_connect(ctx, var, graph, ctx.grid.cols, tag))
     parts = []
     for node, links in graph.items():
-        total = ops.Sum([var.quantities[e] for _, e in links]) if links else 0
-        parts.append(ops.Or([total == d for d in degrees]))
+        if links:
+            total = ops.Sum([var.quantities[e] for _, e in links])
+            parts.append(ops.Or([total == d for d in degrees]))
+        elif 0 not in degrees:
+            parts.append(ops.BoolVal(False))
     if single:
         parts.append(roots == 1)
     return ops.And(parts)
@@ -1064,6 +1125,12 @@ def _fn_loop(ctx, args, pos):
         raise CompileError("loop(var) takes exactly one argument", pos.line, pos.col)
     var = _expect_edge_var(args[0], "loop", pos)
     graph = ctx.memo(("cornergraph",), lambda: _corner_graph(ctx.grid))
+    if ctx.features.graph_vertex_connected:
+        n, pairs, flags = _indexed_link_edges(graph, var)
+        return ctx.memo(
+            ("loop#prim", var.name),
+            lambda: ctx.ops.edges_single_cycle(flags, pairs, n, nonempty=True),
+        )
     return _loop_common(ctx, var, graph, "loop", (0, 2), True)
 
 
@@ -1074,6 +1141,12 @@ def _fn_cloop(ctx, args, pos):
     graph, outer = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
     for edge in outer:
         ctx.add_aux(var.quantities[edge] == 0)
+    if ctx.features.graph_vertex_connected:
+        n, pairs, flags = _indexed_link_edges(graph, var)
+        return ctx.memo(
+            ("cloop#prim", var.name),
+            lambda: ctx.ops.edges_single_cycle(flags, pairs, n, nonempty=True),
+        )
     return _loop_common(ctx, var, graph, "cloop", (0, 2), True)
 
 
@@ -1082,6 +1155,12 @@ def _fn_connect_edges(ctx, args, pos):
         raise CompileError("connect_edges(var) takes exactly one argument", pos.line, pos.col)
     var = _expect_edge_var(args[0], "connect_edges", pos)
     graph = ctx.memo(("cornergraph",), lambda: _corner_graph(ctx.grid))
+    if ctx.features.graph_vertex_connected:
+        n, pairs, flags = _indexed_link_edges(graph, var)
+        return ctx.memo(
+            ("cedges#prim", var.name),
+            lambda: ctx.ops.edges_connected(flags, pairs, n, nonempty=True),
+        )
     roots, _ = ctx.memo(("loop", var.name), lambda: _link_connect(ctx, var, graph, ctx.grid.cols, "loop"))
     return roots == 1
 
@@ -1093,8 +1172,54 @@ def _fn_connect_links(ctx, args, pos):
     graph, outer = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
     for edge in outer:
         ctx.add_aux(var.quantities[edge] == 0)
+    if ctx.features.graph_vertex_connected:
+        n, pairs, flags = _indexed_link_edges(graph, var)
+        return ctx.memo(
+            ("clinks#prim", var.name),
+            lambda: ctx.ops.edges_connected(flags, pairs, n, nonempty=True),
+        )
     roots, _ = ctx.memo(("cloop", var.name), lambda: _link_connect(ctx, var, graph, ctx.grid.cols, "cloop"))
     return roots == 1
+
+
+def _fn_island_rule(ctx, args, pos):
+    """Blacks isolated + whites connected; encoding depends on the backend."""
+
+    if len(args) != 1:
+        raise CompileError("island_rule(var) takes exactly one argument", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "island_rule", pos)
+    cells = sort_points(ctx.grid.cells())
+    missing = [p for p in cells if p not in var.quantities]
+    if missing:
+        raise CompileError("island_rule() needs a cell variable on the full grid", pos.line, pos.col)
+    blacks = [var.quantities[p] == 1 for p in cells]
+    pairs = _grid_edges(cells, _CC4)
+    return ctx.memo(
+        ("island", var.name),
+        lambda: ctx.ops.vertices_isolated_and_complement_connected(
+            blacks, pairs, (ctx.grid.rows, ctx.grid.cols)
+        ),
+    )
+
+
+def _fn_wall_rule(ctx, args, pos):
+    """Blacks connected + no black 2x2. Connectivity follows ``connected()``."""
+
+    if len(args) != 1:
+        raise CompileError("wall_rule(var) takes exactly one argument", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "wall_rule", pos)
+    connected = _make_connected(_CC4, "connected")(ctx, [var, 1], pos)
+    cells = sort_points(var.order)
+    index = {p: i for i, p in enumerate(cells)}
+    windows = []
+    for r, c in cells:
+        block = [(r, c), (r, c + 1), (r + 1, c), (r + 1, c + 1)]
+        if all(p in index for p in block):
+            total = ctx.ops.Sum([var.quantities[p] for p in block])
+            windows.append(total < 4)
+    if not windows:
+        return connected
+    return ctx.ops.And(connected, *windows)
 
 
 AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
@@ -1272,6 +1397,18 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
         "exactly", _fn_exactly, signature="exactly(list, k)", doc="Exactly k booleans hold."
     ),
     # -- connectivity of equal-valued cells -----------------------------
+    "connected": BuiltinFunction(
+        "connected", _make_connected(_CC4, "connected"), signature="connected(var, value)",
+        doc="Cells holding value form at most one 4-connected group (empty is "
+            "allowed). Uses a native graph operator when the selected backend "
+            "supports graph_vertex_connected; otherwise a compact spanning-tree "
+            "encoding that does not build cc_id/cc_size.",
+    ),
+    "connected8": BuiltinFunction(
+        "connected8", _make_connected(_CC8, "connected8"), signature="connected8(var, value)",
+        doc="Cells holding value form at most one 8-connected group (includes "
+            "diagonals). Same backend-aware encoding as connected().",
+    ),
     "cc_id": BuiltinFunction(
         "cc_id", _make_cc_id(_CC4, "cc_id"), signature="cc_id(var)",
         doc="Per-cell id of the 4-connected component of equal-valued cells.",
@@ -1319,19 +1456,37 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     ),
     "loop": BuiltinFunction(
         "loop", _fn_loop, signature="loop(var)",
-        doc="Edge variable forms exactly one closed loop on the corner lattice.",
+        doc="Edge variable forms exactly one nonempty closed loop on the corner "
+            "lattice (degree 0-or-2). Uses a line-graph GRAPH_ACTIVE_VERTICES_CONNECTED "
+            "when the backend supports graph_vertex_connected; otherwise the "
+            "existing spanning-tree encoding.",
     ),
     "cloop": BuiltinFunction(
         "cloop", _fn_cloop, signature="cloop(var)",
-        doc="Edge variable forms exactly one closed loop through cell centres.",
+        doc="Edge variable forms exactly one nonempty closed loop through cell "
+            "centres; outer edges are forced to 0. Same backend-aware encoding "
+            "as loop().",
     ),
     "connect_edges": BuiltinFunction(
         "connect_edges", _fn_connect_edges, signature="connect_edges(var)",
-        doc="Selected corner-lattice edges form a single connected component.",
+        doc="Selected corner-lattice edges form a single nonempty connected "
+            "component. Uses line-graph vertex connectivity when the backend "
+            "supports graph_vertex_connected.",
     ),
     "connect_links": BuiltinFunction(
         "connect_links", _fn_connect_links, signature="connect_links(var)",
-        doc="Selected cell-to-cell links form a single connected component.",
+        doc="Selected cell-to-cell links form a single connected component. "
+            "Same backend-aware encoding as connect_edges().",
+    ),
+    "island_rule": BuiltinFunction(
+        "island_rule", _fn_island_rule, signature="island_rule(var)",
+        doc="涂黑格互不相邻 + 留白连通. Native backends use connected(white) "
+            "and an orthogonal adjacency ban; Z3 uses cspuz's diagonal-rank "
+            "not-adjacent-and-not-segmenting encoding.",
+    ),
+    "wall_rule": BuiltinFunction(
+        "wall_rule", _fn_wall_rule, signature="wall_rule(var)",
+        doc="涂黑格连通 + 无全黑 2x2. Connectivity follows connected().",
     ),
 }
 
@@ -1434,6 +1589,20 @@ def function_table() -> list[DocEntry]:
     ]
     for name, sig, doc in operators:
         entries.append(DocEntry(name, sig, doc, "Operator"))
+
+    keywords = [
+        (
+            "use",
+            "use cspuz_core",
+            "Select the solver backend for this program (`auto`, `cspuz_core`, "
+            "`z3`, `csugar`, `sugar`, `sugar_extended`). Default is the best "
+            "available backend. Optional encodings (graph connectivity, "
+            "division, single-path, timeout) are enabled only when that "
+            "backend advertises them.",
+        ),
+    ]
+    for name, sig, doc in keywords:
+        entries.append(DocEntry(name, sig, doc, "Keyword"))
 
     cc_members = [
         ("cc", "c[cell(0,0)]",
