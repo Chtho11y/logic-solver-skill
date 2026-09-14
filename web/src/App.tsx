@@ -18,6 +18,7 @@ import {
   setClue,
   setParamEntry,
 } from "./instance";
+import { DslEditor } from "./DslEditor";
 import { Palette } from "./Palette";
 import type {
   Brush,
@@ -46,6 +47,8 @@ export function App() {
   const [solverAvailable, setSolverAvailable] = useState(false);
   const [backends, setBackends] = useState<SolverBackend[]>([]);
   const [backend, setBackend] = useState("auto");
+  const [dslSource, setDslSource] = useState("");
+  const [originalSource, setOriginalSource] = useState("");
 
   useEffect(() => {
     api.puzzles().then(setPuzzles).catch(console.error);
@@ -71,6 +74,9 @@ export function App() {
     setResult(null);
     setSelection(null);
     setDraft("");
+    const source = data.puzzle.source ?? "";
+    setDslSource(source);
+    setOriginalSource(source);
     const firstInput = data.puzzle.layers.find((layer) => layer.role === "input");
     setActiveId(firstInput?.id ?? data.puzzle.layers[0]?.id ?? "");
   }
@@ -171,6 +177,7 @@ export function App() {
       setResult(await api.solve(instance, {
         backend,
         timeoutMs: backendInfo?.supportsTimeout === false ? null : 60000,
+        source: dslSource.trim() ? dslSource : undefined,
       }));
     } catch (error) {
       setResult({ status: "error", message: String(error), constraints: 0, debug: [] });
@@ -269,6 +276,9 @@ export function App() {
         <button className="solve" onClick={solve} disabled={!instance || busy || !canSolve}>
           {busy ? "求解中…" : "求解"}
         </button>
+        {dslSource !== originalSource && spec && (
+          <span className="dsl-dirty">使用编辑器中的 DSL</span>
+        )}
         {result && (
           <span className={`status status-${result.status}`}>
             {result.status === "sat" ? "✓ 有解" : result.status === "unsat" ? "✗ 无解" : result.status}
@@ -279,41 +289,57 @@ export function App() {
         {!solverAvailable && <span className="status status-error">求解后端不可用</span>}
       </header>
 
-      {spec && (
-        <Palette
-          spec={spec}
-          visible={visible}
-          setVisible={setVisible}
-          activeId={activeId}
-          setActiveId={(id) => { setActiveId(id); select(null); }}
-          brush={brush}
-          setBrush={(b) => activeLayer && setBrushes({ ...brushes, [activeLayer.id]: b })}
-          onClearLayer={(layer) => {
-            setInstance((prev) => (prev ? clearLayer(prev, layer) : prev));
-            setResult(null);
-          }}
-        />
-      )}
-
-      <main className="board-area">
-        {spec && instance ? (
-          <Board
+      {spec ? (
+        <div className="workspace">
+          <Palette
             spec={spec}
-            instance={instance}
-            result={result}
-            viewport={viewport}
             visible={visible}
-            activeLayer={activeLayer}
+            setVisible={setVisible}
+            activeId={activeId}
+            setActiveId={(id) => { setActiveId(id); select(null); }}
             brush={brush}
-            selection={selection}
-            draft={draft}
-            onEdit={edit}
-            onSelect={select}
+            setBrush={(b) => activeLayer && setBrushes({ ...brushes, [activeLayer.id]: b })}
+            onClearLayer={(layer) => {
+              setInstance((prev) => (prev ? clearLayer(prev, layer) : prev));
+              setResult(null);
+            }}
           />
-        ) : (
+          <main className="board-area">
+            {instance ? (
+              <Board
+                spec={spec}
+                instance={instance}
+                result={result}
+                viewport={viewport}
+                visible={visible}
+                activeLayer={activeLayer}
+                brush={brush}
+                selection={selection}
+                draft={draft}
+                onEdit={edit}
+                onSelect={select}
+              />
+            ) : (
+              <div className="empty">从上方选择一个谜题开始</div>
+            )}
+          </main>
+          <DslEditor
+            source={dslSource}
+            original={originalSource}
+            errorLine={result?.errorLine}
+            errorMessage={result?.status === "error" ? result.message : ""}
+            onChange={(text) => {
+              setDslSource(text);
+              setResult(null);
+            }}
+            onSolve={solve}
+          />
+        </div>
+      ) : (
+        <main className="board-area">
           <div className="empty">从上方选择一个谜题开始</div>
-        )}
-      </main>
+        </main>
+      )}
 
       {rule && (
         <footer className="rulebar">

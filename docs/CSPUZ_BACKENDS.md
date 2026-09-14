@@ -81,6 +81,11 @@ island_rule(x)
 - `island_rule`：图原语后端 = 白格 `connected` + 黑格正交不相邻；Z3 = cspuz
   的对角 rank「不邻接且不分割」编码。不要在 `cspuz_core` 上改用那套展开。
 - `wall_rule`：黑格 `connected`（P0）+ 无全黑 2x2。
+- `cc_size` / `cc8_size` / `type: cc` 的 `.size` / `groups_of_size`：在支持
+  `graph_division` 的后端（目前仅 `cspuz_core`）上使用原生 `GRAPH_DIVISION`；
+  其余后端使用 cspuz 的生成树 + 下游尺寸展开。只问大小时不构建 `cc_id`。
+  `type: cc` 的答案键仍是最小线性下标 `r*cols+c`；`cc_count` / `cc_id` /
+  `cc_root` 仍走那棵树（与 size 双编码，nurikabe 会同时用到）。
 - `find_answer()` 完整模型读取，保持现有前端 `values/kinds` 协议。
 
 这些能力覆盖当前 `impls/` 下的全部 DSL，无需修改题型文件。
@@ -118,19 +123,20 @@ island_rule(x)
 - 题目序列化组合器：`Grid`、`OneOf`、`Spaces`、`HexInt` 等，可扩展
   puzz.link / pzpr 风格 URL 的导入导出。
 
-`connected` / `connected8` / `loop` / `cloop` / `island_rule` / `wall_rule`
-已按后端能力切换。`cc_id` / `cc_size` / `type: cc` 仍用最小线性下标，没有改成
-图原语。下一步若继续切图原语，优先 `graph_division`（fillomino/shikaku 一类），
-而不是先把 Bool 数组暴露给 DSL。
+`connected` / `connected8` / `loop` / `cloop` / `island_rule` / `wall_rule` /
+`cc_size`（及 `groups_of_size`、CC 变量 `.size`）已按后端能力切换。
+`cc_id` / `cc_count` / `type: cc` 的区域编号仍是最小线性下标，没有改成
+`GRAPH_DIVISION` 内部的 group id。下一步若继续切图原语，可考虑
+`active_edges_acyclic` / 单路径，而不是先把 Bool 数组暴露给 DSL。
 
 ## 性能（Z3 vs 原生）
 
 用 `python -m tools.bench_backends --samples`（或 `--all-samples`）对比
 `find_answer()`，不要拿 `Solver.solve()` 的 irrefutable 答案键来比。
 
-本环境实测（cspuz `1d07443` + cspuz_core `0a51e897`，P0–P2 落地后）：
+本环境实测（cspuz `1d07443` + cspuz_core `0a51e897`）：
 
-12×12 微基准（无额外线索，只跑对应 builtin）：
+12×12 微基准（P0–P2，无额外线索，只跑对应 builtin）：
 
 | encoding | Z3 | cspuz_core | Z3/core |
 |---|---|---|---|
@@ -141,16 +147,37 @@ island_rule(x)
 | `loop` | 488ms | 38ms | 13× |
 | `cloop` | 409ms | 24ms | 17× |
 
-79 个 `impls/samples`（状态一致：77 sat + 2 unsat）：Z3 **21.42s** vs
-`cspuz_core` **3.48s**（约 **6.2×**）。回路样本更明显，例如 slither 10×、masyu 9×。
-最慢仍是 `connected8` 的 tetrochain / tetrochaink。
+P3 之后 8×8 `cc_size` / `groups_of_size`（空盘，`find_answer`）：
+
+| encoding | Z3 | cspuz_core | Z3/core |
+|---|---|---|---|
+| `cc_size` | 1.40s | 7.8ms | 178× |
+| `groups_of_size`（每黑组 4 格） | 15.59s | 8.1ms | ~1900× |
+
+相关样本（P3 后）：
+
+| puzzle | size | Z3 | cspuz_core |
+|---|---|---|---|
+| tetrochain | 6×6 | 664ms | 8.4ms |
+| tetrochaink | 6×6 | 1.45s | 8.1ms |
+| nurikabe | 5×5 | 394ms | 14ms |
+| fillomino | 3×3 | 45ms | 4.9ms |
+| shikaku | 4×4 | 184ms | 11ms |
+
+P0–P2 时 tetrochain 一类会被 O(N²) `cc_size` 拖住。换成 `graph_division` 后
+6×6 样本在 Z3 上大约从数秒降到亚秒，`cspuz_core` 上大约 8ms。
+`groups_of_size` 空盘在 Z3 上仍偏慢（展开后的搜索空间），原生传播则很快。
+
+79 个 `impls/samples`（P0–P2 时状态一致：77 sat + 2 unsat）：Z3 **21.42s** vs
+`cspuz_core` **3.48s**（约 **6.2×**）。本轮未重跑全样本。
 
 P0 单独落地时另一次全样本对比约为 4.8×（Z3 ~49s / core ~10s）；机器和搜索运气会让
 绝对秒数波动，相对倍数和微基准更稳。
 
-图原语必须作为 CSP **顶层语句**交给 cspuz_core。`loop` / `island_rule` 会把
-度数、禁邻接和连通合进一个 `And`，适配层在 `add_constraints` 时把 `And` 拆开，
-避免 parser 把 `graph-active-vertices-connected` 当成普通布尔子表达式而 panic。
+图原语必须作为 CSP **顶层语句**交给 cspuz_core。`loop` / `island_rule` /
+`graph_division` 会把若干布尔条件合进一个 `And`，适配层在 `add_constraints`
+时把 `And` 拆开，避免 parser 把 `graph-active-vertices-connected` /
+`graph-division` 当成普通布尔子表达式而 panic。
 
 ## 兼容边界
 

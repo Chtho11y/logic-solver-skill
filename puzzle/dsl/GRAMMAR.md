@@ -257,7 +257,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `island_rule(var)` | 涂黑格互不相邻 + 留白连通。`cspuz_core`/`csugar` 上是 `connected(white)` + 正交禁邻；Z3 上用 cspuz 的对角 rank「不分割」编码，不要在原生后端上套那套展开 |
 | `wall_rule(var)` | 涂黑格连通 + 无全黑 2x2；连通部分与 `connected(var, 1)` 相同 |
 | `cc_id(var)` | 每格所在 4-连通同值分量的 id（分量内最小线性下标） |
-| `cc_size(var)` | 每格所在分量的格数（O(N²)，谨慎使用） |
+| `cc_size(var)` | 每格所在分量的格数。`cspuz_core` 上用原生 `GRAPH_DIVISION`；Z3 上用 O(N) 生成树/下游尺寸展开。只问大小时**不会**构建 `cc_id` |
 | `cc_count(var, value)` | 取值为 value 的分量个数；需要精确组数时用这个，不要用它来写 `connected` |
 | `cc_root(var, cell)` | 该格是否为其分量的代表元 |
 | `cc8_id` / `cc8_size` / `cc8_count` / `cc8_root` | 上述的 8-连通（含对角）版本 |
@@ -334,13 +334,13 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 |--------|------|
 | `c` | 直接使用即每个 cell 的区域 id 量集合（等价 `c.id`） |
 | `c.id[cell(r,c)]` | 每个 cell 的区域 id；id 相等 ⟺ 连通；id = 区域内最小线性下标 `r*cols+c` |
-| `c.size[cell(r,c)]` | 每个 cell 所在区域的 cell 数；O(N²)，谨慎使用 |
+| `c.size[cell(r,c)]` | 每个 cell 所在区域的 cell 数；`graph_division`（id 仍是最小线性下标） |
 | `c.border[edge(...)]` | 每条 edge 的 0/1 整数：当且仅当该 edge 位于**网格边界**、或其两侧 cell 属于**不同区域**（cc id 不等）时为 1 |
 
 编码方式：在 4-连通网格上，每个区域的 `id` 等于其所有 cell 中最小的线性下标
 `r*cols+c`（即其唯一根，亦即 CC 变量自身的求解器量），并通过生成树距离见证
 （distance witness）保证同 id 的 cell 必然连通。`.size` / `.border` 仅在被引用时
-才生成（`.size` 为每个 cell 一个 If 求和；`.border` 为每条 edge 一个 0/1 量）。
+才生成（`.size` 走 `graph_division`，与 id 编码独立；`.border` 为每条 edge 一个 0/1 量）。
 
 > 注意：旧版本通过普通 cell 变量的 `x.cc` 派生连通分量的写法**已移除**。请改为新建一个 CC 类型变量并引用 `c.id` / `c.size` / `c.border`。
 
@@ -482,5 +482,5 @@ print(row(0))
 1. `x[p]` 是**列表**，而 `and` 在两个列表上是**合并**而非逻辑与。需要标量时用 `at(x, p)`。
 2. 守卫不阻止 `let` 执行。想要“条件性累加”时，条件必须是编译期常量
    （`region_id` / `row_of` / `has_value` / 常量变量的值 / `.size` 都是）。
-3. `cc_size` 是 O(N²) 编码，大盘面谨慎。只要求「某种颜色连通」时用 `connected` / `connected8`，不要写 `cc_count(...) <= 1`。
+3. 只要求「某种颜色连通」时用 `connected` / `connected8`，不要写 `cc_count(...) <= 1`。`cc_size` / `groups_of_size` 已改走 `graph_division`，不必再为 O(N²) 求和担心；需要精确组数时仍用 `cc_count`（会构建最小线性下标 id）。
 4. `loop` / `cloop` 在 Z3 上会为每个节点生成 id/距离辅助量；同一变量多次调用会复用缓存。支持图原语的后端改为对选中边的线图做 `GRAPH_ACTIVE_VERTICES_CONNECTED`，并额外禁止空回路。

@@ -33,7 +33,7 @@ from ..backends.features import DEFAULT_FEATURES
 from ..grid import Grid
 from ..models import Point, PointKind, Variable, VarType
 from . import ast_nodes as ast
-from .builtins import BUILTIN_FUNCTIONS, BuiltinFunction, make_constants
+from .builtins import BUILTIN_FUNCTIONS, BuiltinFunction, _grid_edges, make_constants
 from .errors import CompileError
 from .parser import parse
 from .values import (
@@ -794,8 +794,10 @@ class Compiler:
     def _ensure_cc_size(self, name: str) -> None:
         """Generate cc.size terms: the count of cells sharing each id.
 
-        O(N^2) in the number of cells (an ``If`` sum per cell); only emitted
-        when ``.size`` is actually referenced. Cached per variable name.
+        Connectivity of the ids themselves stays on the min-linear-index
+        spanning tree (the answer key for fillomino/shikaku/araf). Size is
+        ``graph_division`` on borders ``id[u] != id[v]``, not an O(N²) sum.
+        Cached per variable name; only emitted when ``.size`` is referenced.
         """
 
         self._ensure_cc(name)
@@ -805,13 +807,16 @@ class Compiler:
         ops = self.ops
         id_vars = cc["id"]
         cells = sort_points(id_vars.keys())
+        n = len(cells)
         size_vars: dict[Point, Any] = {
-            p: ops.Int(f"{name}#cc_size#r{p[0]}c{p[1]}", 1, len(cells))
+            p: ops.Int(f"{name}#cc_size#r{p[0]}c{p[1]}", 1, max(1, n))
             for p in cells
         }
-        for p in cells:
-            terms = [ops.If(id_vars[d] == id_vars[p], 1, 0) for d in cells]
-            self._constraints.append(size_vars[p] == ops.Sum(terms))
+        edges = _grid_edges(cells, ((-1, 0), (1, 0), (0, -1), (0, 1)))
+        borders = [id_vars[cells[u]] != id_vars[cells[v]] for u, v in edges]
+        self._constraints.append(
+            ops.graph_division([size_vars[p] for p in cells], edges, borders)
+        )
         cc["size"] = size_vars
 
     def _ensure_cc_border(self, name: str) -> None:

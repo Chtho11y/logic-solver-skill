@@ -31,6 +31,8 @@ MICROS = (
     ("wall_rule", "cell", "wall_rule(x)\n"),
     ("loop", "edge", "loop(e)\n"),
     ("cloop", "edge", "cloop(e)\n"),
+    ("cc_size", "cell", "let sz = cc_size(x)\nfor p in cells():\n    at(sz, p) >= 1\n"),
+    ("groups_of_size", "cell", "let sz = cc_size(x)\nfor p in cells():\n    at(x, p) == 1 => at(sz, p) == 4\n"),
 )
 
 SAMPLE_FOCUS = (
