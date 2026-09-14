@@ -775,24 +775,32 @@ def _make_cc_id(deltas, label: str):
 
 
 def _ensure_cc_size(ctx, var: VarValue, deltas) -> dict:
-    cc = _value_cc(ctx, var, deltas)
-    if "size" in cc:
-        return cc
-    ops = ctx.ops
-    cells = cc["cells"]
-    ids = cc["id"]
-    sizes = {
-        p: ctx.new_int(
-            f"{var.name}#cc{len(deltas)}#n#r{p[0]}c{p[1]}", 1, len(cells)
-        )
-        for p in cells
-    }
-    for p in cells:
-        ctx.add_aux(
-            sizes[p] == ops.Sum([ops.If(ids[q] == ids[p], 1, 0) for q in cells])
-        )
-    cc["size"] = sizes
-    return cc
+    """Per-cell component size via ``graph_division``, without building cc ids.
+
+    ``groups_of_size`` and other size-only callers skip the min-linear-index
+    spanning tree. ``cc_id`` / ``cc_count`` / ``cc_root`` still build that tree
+    independently when requested (nurikabe uses size and count together).
+    """
+
+    def build():
+        ops = ctx.ops
+        cells = sort_points(var.order)
+        n = len(cells)
+        sizes = {
+            p: ctx.new_int(
+                f"{var.name}#cc{len(deltas)}#n#r{p[0]}c{p[1]}", 1, max(1, n)
+            )
+            for p in cells
+        }
+        edges = _grid_edges(cells, deltas)
+        borders = [
+            var.quantities[cells[u]] != var.quantities[cells[v]]
+            for u, v in edges
+        ]
+        ctx.add_aux(ops.graph_division([sizes[p] for p in cells], edges, borders))
+        return {"size": sizes, "cells": cells}
+
+    return ctx.memo(("ccsize", var.name, len(deltas)), build)
 
 
 def _make_cc_size(deltas, label: str):
@@ -1415,7 +1423,8 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     ),
     "cc_size": BuiltinFunction(
         "cc_size", _make_cc_size(_CC4, "cc_size"), signature="cc_size(var)",
-        doc="Per-cell size of that component (O(N²), use sparingly).",
+        doc="Per-cell size of that component. Uses graph_division (native on "
+            "cspuz_core, O(N) expansion on Z3) and does not build cc_id.",
     ),
     "cc_count": BuiltinFunction(
         "cc_count", _make_cc_count(_CC4, "cc_count"), signature="cc_count(var, value)",
@@ -1431,7 +1440,7 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     ),
     "cc8_size": BuiltinFunction(
         "cc8_size", _make_cc_size(_CC8, "cc8_size"), signature="cc8_size(var)",
-        doc="Per-cell size of the 8-connected component.",
+        doc="Per-cell size of the 8-connected component. Same graph_division encoding as cc_size.",
     ),
     "cc8_count": BuiltinFunction(
         "cc8_count", _make_cc_count(_CC8, "cc8_count"), signature="cc8_count(var, value)",
@@ -1611,7 +1620,7 @@ def function_table() -> list[DocEntry]:
         ("c.id", "c.id[cell(0,0)]",
          "Per-cell region id; equal id ⟹ connected, id = region's min r*cols+c."),
         ("c.size", "c.size[cell(0,0)]",
-         "Per-cell region size (count of cells sharing its id); O(N²), use with care."),
+         "Per-cell region size (count of cells sharing its id); graph_division."),
         ("c.border", "c.border[edge_of(cell(0,0))]",
          "Per-edge 0/1: 1 iff the edge is on the grid boundary or separates two "
          "different regions."),

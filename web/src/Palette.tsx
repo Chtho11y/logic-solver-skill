@@ -108,8 +108,10 @@ export function Palette(props: PaletteProps) {
   }
 
   return (
-    <div className="palette">
+    <div className="palette tool-rail">
+      <div className="rail-title">图层</div>
       <div className="palette-row chips">{chips()}</div>
+      <div className="rail-title">画笔</div>
       <div className="palette-row swatches">{swatches()}</div>
     </div>
   );

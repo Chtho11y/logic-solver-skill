@@ -316,8 +316,9 @@ class CspuzModel(ConstraintModel):
 
     def add_constraints(self, constraints: Any) -> None:
         # Native graph operators must be top-level CSP statements. Nesting them
-        # inside ``And`` (loop/island encodings) makes cspuz_core's parser treat
-        # ``graph-active-vertices-connected`` as a bool-expr and panic.
+        # inside ``And`` (loop/island/division encodings) makes cspuz_core's
+        # parser treat ``graph-active-vertices-connected`` / ``graph-division``
+        # as a bool-expr and panic.
         for item in _flatten_bool_constraints(constraints):
             if item is True:
                 continue
@@ -482,6 +483,98 @@ class CspuzModel(ConstraintModel):
             complement = [self.Not(flag) for flag in flags]
             return self.And(isolated, self.vertices_connected(complement, edge_pairs))
         return self.And(isolated, self._blacks_do_not_segment(flags, shape))
+
+    def graph_division(
+        self,
+        group_size: Any,
+        edges: Any,
+        is_border: Any,
+    ) -> Any:
+        """Partition vertices by border edges; each vertex gets its group size.
+
+        Native backends emit ``GRAPH_DIVISION`` (a statement, not a bool
+        subexpression). Z3 expands the same spanning-tree / downstream-size
+        encoding cspuz uses when the primitive is off, which is O(N) rather
+        than the previous per-cell O(N²) ``If`` sum.
+        """
+
+        sizes = list(group_size)
+        edge_list = [(int(u), int(v)) for u, v in edges]
+        borders = [self._bool_like(flag) for flag in is_border]
+        n = len(sizes)
+        m = len(edge_list)
+        if len(borders) != m:
+            raise BackendError(
+                "graph_division needs one border flag per edge "
+                f"(got {len(borders)} flags and {m} edges)"
+            )
+        if n == 0:
+            return self.BoolVal(True)
+        if self.features.graph_division:
+            return self._graph_division_primitive(sizes, edge_list, borders)
+        return self._graph_division_expanded(sizes, edge_list, borders)
+
+    def _graph_division_primitive(
+        self,
+        sizes: list,
+        edges: list[tuple[int, int]],
+        borders: list,
+    ) -> Any:
+        from cspuz.expr import BoolExpr, Op
+
+        operands: list[Any] = [len(sizes), len(edges)]
+        operands.extend(sizes)
+        for u, v in edges:
+            operands.extend((u, v))
+        operands.extend(borders)
+        return BoolExpr(Op.GRAPH_DIVISION, operands)
+
+    def _graph_division_expanded(
+        self,
+        sizes: list,
+        edges: list[tuple[int, int]],
+        borders: list,
+    ) -> Any:
+        """Port of cspuz ``_division_connected_variable_groups`` plus borders."""
+
+        n = len(sizes)
+        m = len(edges)
+        incident: list[list[tuple[int, int]]] = [[] for _ in range(n)]
+        for eid, (u, v) in enumerate(edges):
+            incident[u].append((v, eid))
+            incident[v].append((u, eid))
+        group_id = [self.Int(f"div#id#{i}", 0, n - 1) for i in range(n)]
+        rank = [self.Int(f"div#rank#{i}", 0, n - 1) for i in range(n)]
+        active = [self.solver.bool_var() for _ in range(m)]
+        downstream = [self.Int(f"div#down#{i}", 1, n) for i in range(n)]
+        total = [self.Int(f"div#tot#{i}", 1, n) for i in range(n)]
+        parts: list[Any] = []
+        for i in range(n):
+            is_root = rank[i] == 0
+            parts.append(self.Implies(is_root, group_id[i] == i))
+            incoming = []
+            for neighbour, eid in incident[i]:
+                parts.append(self.Implies(active[eid], rank[neighbour] != rank[i]))
+                incoming.append(self.And(active[eid], rank[neighbour] < rank[i]))
+            parts.append(self._count_true(incoming) == self.If(is_root, 0, 1))
+            child_sizes = [
+                self.If(self.And(active[eid], rank[neighbour] > rank[i]), downstream[neighbour], 0)
+                for neighbour, eid in incident[i]
+            ]
+            parts.append(self.Sum(child_sizes) + 1 == downstream[i])
+            parts.append(downstream[i] <= total[i])
+            parts.append(self.Implies(is_root, downstream[i] == total[i]))
+            parts.append(total[i] == sizes[i])
+        for eid, (u, v) in enumerate(edges):
+            parts.append(self.Implies(active[eid], group_id[u] == group_id[v]))
+            parts.append(self.Implies(active[eid], total[u] == total[v]))
+            parts.append(borders[eid] == (group_id[u] != group_id[v]))
+        return self.And(*parts) if parts else self.BoolVal(True)
+
+    def _count_true(self, flags: list) -> Any:
+        if not flags:
+            return 0
+        return self.Sum([self.If(flag, 1, 0) for flag in flags])
 
     def _vertices_not_adjacent(self, flags: list, pairs: list[tuple[int, int]]) -> Any:
         if not pairs:

@@ -19,6 +19,24 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  min-height: 0;
+}
+
+/* -- workspace: penpa-like left tools / board / right DSL ------------------- */
+
+.workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr) minmax(280px, 38%);
+  min-height: 0;
+  background: var(--bg);
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(240px, 1fr) minmax(200px, 40vh);
+  }
 }
 
 /* -- top toolbar ----------------------------------------------------------- */
@@ -91,22 +109,38 @@ body {
 .status-unsat { color: #c0392b; }
 .status-error, .status-unknown { color: #b26a00; }
 
-/* -- palette ----------------------------------------------------------------- */
+/* -- palette (left tool rail) ---------------------------------------------- */
 
 .palette {
   background: #fbfcfd;
-  border-bottom: 1px solid var(--border);
-  padding: 6px 14px;
+  border-right: 1px solid var(--border);
+  padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.rail-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a929a;
+  padding: 6px 4px 2px;
 }
 
 .palette-row {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.palette-row.chips {
+  flex-direction: column;
+  flex-wrap: nowrap;
 }
 
 .chip {
@@ -116,6 +150,7 @@ body {
   border-radius: 7px;
   overflow: hidden;
   background: #fff;
+  width: 100%;
 }
 
 .chip.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
@@ -140,6 +175,8 @@ body {
   cursor: pointer;
   font: inherit;
   font-size: 13px;
+  flex: 1;
+  text-align: left;
 }
 
 .chip-out {
@@ -193,13 +230,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
+  min-width: 0;
+  min-height: 0;
 }
 
 .board-svg {
-  max-width: min(92vw, 82vh);
-  max-height: 82vh;
-  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
   background: #fff;
   border-radius: 10px;
@@ -209,6 +248,114 @@ body {
 }
 
 .empty { color: #8a929a; font-size: 15px; }
+
+/* -- DSL editor -------------------------------------------------------------- */
+
+.dsl-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: #fff;
+  border-left: 1px solid var(--border);
+}
+
+.dsl-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.dsl-toolbar strong {
+  font-size: 13px;
+}
+
+.dsl-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: #8a929a;
+}
+
+.dsl-dirty {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b26a00;
+  background: #fff6e5;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.dsl-toolbar button {
+  font: inherit;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+}
+
+.dsl-toolbar button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dsl-editor {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  background: #fbfcfd;
+}
+
+.dsl-gutter {
+  margin: 0;
+  padding: 8px 0;
+  width: 36px;
+  text-align: right;
+  font: 12px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #9aa3ab;
+  background: #f4f6f8;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  user-select: none;
+}
+
+.dsl-gutter span {
+  display: block;
+  padding: 0 8px 0 4px;
+}
+
+.dsl-gutter span.err {
+  background: #fdecea;
+  color: #c0392b;
+  font-weight: 700;
+}
+
+.dsl-textarea {
+  flex: 1;
+  border: none;
+  resize: none;
+  outline: none;
+  padding: 8px 10px;
+  font: 12px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  tab-size: 2;
+  background: transparent;
+  color: var(--ink);
+  white-space: pre;
+  overflow: auto;
+}
+
+.dsl-error {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #c0392b;
+  background: #fdecea;
+  border-top: 1px solid #f5c6c2;
+  max-height: 72px;
+  overflow: auto;
+}
 
 /* -- rule footer ------------------------------------------------------------- */
 

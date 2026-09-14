@@ -126,3 +126,17 @@ class ConstraintModel(Protocol):
     ) -> Any:
         """Bool: active vertices are not adjacent and do not split the rest."""
         ...
+
+    def graph_division(
+        self,
+        group_size: Sequence[Any],
+        edges: Sequence[tuple[int, int]],
+        is_border: Sequence[Any],
+    ) -> Any:
+        """Bool: vertices are partitioned by ``is_border`` into connected groups.
+
+        ``group_size[i]`` is the number of vertices in the group that contains
+        vertex ``i``. ``is_border[e]`` is true iff edge ``e`` joins two
+        different groups. Must be posted as a top-level CSP statement.
+        """
+        ...
