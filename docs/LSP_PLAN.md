@@ -156,7 +156,7 @@ tests/lsp/                        ← 新增
 - **验收**：VSCode 打开 `.dsl` 时状态栏显示服务器 running，输出面板无异常；`shutdown` 能干净退出。
 
 ### M1 — 语法高亮（约 1 天）
-- TextMate 语法：关键字 `if elif else for in let and or not true false def return import`；运算符 `== != <= >= && || =>` 与 `+-*/%<>=()[],:^!.`；`#` 行注释；`"..."` 字符串；十进制整数；`def` 后名字识别为 `entity.name.function`。
+- TextMate 语法：关键字 `if elif else for in let and or not true false def return import use`；运算符 `== != <= >= && || =>` 与 `+-*/%<>=()[],:^!.`；`#` 行注释；`"..."` 字符串；十进制整数；`def` 后名字识别为 `entity.name.function`。
 - `textDocument/semanticTokens/full`：由 `tokenize` 驱动，映射见下表。
 - **验收**：`puzzle/lib/shading.dsl`、`impls/nurikabe.dsl` 高亮正确；故意写错语法时高亮不崩（词法器抛错则回落到 TextMate 层）。
 

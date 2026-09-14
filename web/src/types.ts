@@ -104,6 +104,7 @@ export interface SolverBackend {
   reason: string;
   supportsTimeout: boolean;
   supportsGraphPrimitives: boolean;
+  features?: string[];
 }
 
 export interface SolverHealth {

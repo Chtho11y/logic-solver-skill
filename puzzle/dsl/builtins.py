@@ -676,6 +676,42 @@ def _expect_cell_var(value, name: str, pos) -> VarValue:
     return value
 
 
+def _grid_edges(cells, deltas) -> list[tuple[int, int]]:
+    index = {point: i for i, point in enumerate(cells)}
+    edges: list[tuple[int, int]] = []
+    for i, (row, col) in enumerate(cells):
+        for dr, dc in deltas:
+            neighbour = index.get((row + dr, col + dc))
+            if neighbour is not None and i < neighbour:
+                edges.append((i, neighbour))
+    return edges
+
+
+def _make_connected(deltas, label: str):
+    def fn(ctx, args, pos):
+        if len(args) != 2:
+            raise CompileError(f"{label}(var, value) takes two arguments", pos.line, pos.col)
+        var = _expect_cell_var(args[0], label, pos)
+        value = to_numeric(args[1])
+        if isinstance(value, list):
+            raise CompileError(f"{label}() value must be a scalar", pos.line, pos.col)
+        cells = sort_points(var.order)
+        key = (
+            "connected",
+            var.name,
+            value if isinstance(value, (int, bool)) else id(value),
+            len(deltas),
+        )
+
+        def build():
+            flags = [var.quantities[point] == value for point in cells]
+            return ctx.ops.vertices_connected(flags, _grid_edges(cells, deltas))
+
+        return ctx.memo(key, build)
+
+    return fn
+
+
 def _build_value_cc(ctx, var: VarValue, deltas) -> dict:
     """Encode maximal same-valued connected components of a cell variable.
 
@@ -1272,6 +1308,18 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
         "exactly", _fn_exactly, signature="exactly(list, k)", doc="Exactly k booleans hold."
     ),
     # -- connectivity of equal-valued cells -----------------------------
+    "connected": BuiltinFunction(
+        "connected", _make_connected(_CC4, "connected"), signature="connected(var, value)",
+        doc="Cells holding value form at most one 4-connected group. Uses a "
+            "native graph operator when the selected backend supports "
+            "graph_vertex_connected; otherwise a compact spanning-tree encoding "
+            "that does not build cc_id/cc_size.",
+    ),
+    "connected8": BuiltinFunction(
+        "connected8", _make_connected(_CC8, "connected8"), signature="connected8(var, value)",
+        doc="Cells holding value form at most one 8-connected group (includes "
+            "diagonals). Same backend-aware encoding as connected().",
+    ),
     "cc_id": BuiltinFunction(
         "cc_id", _make_cc_id(_CC4, "cc_id"), signature="cc_id(var)",
         doc="Per-cell id of the 4-connected component of equal-valued cells.",
@@ -1434,6 +1482,20 @@ def function_table() -> list[DocEntry]:
     ]
     for name, sig, doc in operators:
         entries.append(DocEntry(name, sig, doc, "Operator"))
+
+    keywords = [
+        (
+            "use",
+            "use cspuz_core",
+            "Select the solver backend for this program (`auto`, `cspuz_core`, "
+            "`z3`, `csugar`, `sugar`, `sugar_extended`). Default is the best "
+            "available backend. Optional encodings (graph connectivity, "
+            "division, single-path, timeout) are enabled only when that "
+            "backend advertises them.",
+        ),
+    ]
+    for name, sig, doc in keywords:
+        entries.append(DocEntry(name, sig, doc, "Keyword"))
 
     cc_members = [
         ("cc", "c[cell(0,0)]",

@@ -14,6 +14,7 @@ from .base import (
     BackendUnknownError,
     ConstraintModel,
 )
+from .features import BackendFeatures, features_for
 from .registry import backend_info, resolve_backend
 
 _CONFIG_LOCK = threading.RLock()
@@ -40,7 +41,9 @@ def backend_configuration(
         info = backend_info(resolved)
         config.default_backend = resolved
         config.use_graph_primitive = info.supports_graph_primitives
-        config.use_graph_division_primitive = resolved == "cspuz_core"
+        config.use_graph_division_primitive = (
+            resolved == "cspuz_core" and "graph_division" in info.features
+        )
         config.solver_timeout = None if timeout_ms is None else timeout_ms / 1000.0
         configured_path = os.environ.get("CSPUZ_BACKEND_PATH")
         if configured_path:
@@ -101,10 +104,17 @@ def _timed_z3_backend(timeout_ms: int | None) -> type:
 class CspuzModel(ConstraintModel):
     """Constraint expression factory plus the owning cspuz ``Solver``."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        backend: str = "z3",
+        features: BackendFeatures | None = None,
+    ) -> None:
         import cspuz
 
+        self.backend = backend
+        self.features = features if features is not None else features_for(backend)
         self.solver = cspuz.Solver()
+        self._const_one = None
 
     def Int(
         self, name: str, lo: int | None = None, hi: int | None = None
@@ -248,6 +258,70 @@ class CspuzModel(ConstraintModel):
             return variable
         return getattr(variable, "sol", None)
 
+    def _bool_like(self, value: Any) -> Any:
+        """Lift a Python bool so it can sit next to cspuz BoolExpr operands."""
 
-def create_model() -> CspuzModel:
-    return CspuzModel()
+        if not isinstance(value, bool):
+            return value
+        if self._const_one is None:
+            self._const_one = self.Int("_const_one", 1, 1)
+        return (self._const_one == 1) if value else (self._const_one == 0)
+
+    def vertices_connected(
+        self,
+        is_active: Any,
+        edges: Any,
+    ) -> Any:
+        """At most one connected component of active vertices; empty is allowed."""
+
+        flags = [self._bool_like(flag) for flag in is_active]
+        edge_list = [(int(u), int(v)) for u, v in edges]
+        n = len(flags)
+        if n == 0:
+            return self.BoolVal(True)
+        if self.features.graph_vertex_connected:
+            return self._vertices_connected_primitive(flags, edge_list)
+        return self._vertices_connected_expanded(flags, edge_list)
+
+    def _vertices_connected_primitive(
+        self, flags: list, edges: list[tuple[int, int]]
+    ) -> Any:
+        from cspuz.expr import BoolExpr, Op
+
+        operands: list[Any] = [len(flags), len(edges)]
+        operands.extend(flags)
+        for u, v in edges:
+            operands.extend((u, v))
+        return BoolExpr(Op.GRAPH_ACTIVE_VERTICES_CONNECTED, operands)
+
+    def _vertices_connected_expanded(
+        self, flags: list, edges: list[tuple[int, int]]
+    ) -> Any:
+        n = len(flags)
+        adj: list[list[int]] = [[] for _ in range(n)]
+        for u, v in edges:
+            adj[u].append(v)
+            adj[v].append(u)
+        rank = [self.Int(f"avc#rank#{i}", 0, max(0, n - 1)) for i in range(n)]
+        is_root = [self.Int(f"avc#root#{i}", 0, 1) for i in range(n)]
+        parts = []
+        for i in range(n):
+            active = flags[i]
+            root = is_root[i] == 1
+            parts.append(self.Implies(root, active))
+            choices = [root]
+            for j in adj[i]:
+                choices.append(self.And(flags[j], rank[j] < rank[i]))
+            parts.append(self.Implies(active, self.Or(*choices)))
+        parts.append(self.Sum([self.If(is_root[i] == 1, 1, 0) for i in range(n)]) <= 1)
+        return self.And(*parts)
+
+
+def create_model(backend: str = "auto") -> CspuzModel:
+    resolved = backend
+    if backend == "auto":
+        try:
+            resolved = resolve_backend("auto")
+        except BackendError:
+            resolved = "z3"
+    return CspuzModel(backend=resolved, features=features_for(resolved))

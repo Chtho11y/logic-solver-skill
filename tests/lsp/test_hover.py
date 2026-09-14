@@ -62,6 +62,22 @@ class HoverTests(unittest.TestCase):
         self.assertIn("normal", text)
         self.assertIn("[0, 1]", text)
 
+    def test_use_keyword_hover(self) -> None:
+        source = "use z3\n"
+        uri = open_file(self.server, ROOT / "impls" / "_use_hover.dsl", source)
+        line, col = token_pos(source, "use")
+        result = self.server.hover(
+            {"textDocument": {"uri": uri}, "position": {"line": line, "character": col}}
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("backend", result["contents"]["value"])
+        line, col = token_pos(source, "z3")
+        result = self.server.hover(
+            {"textDocument": {"uri": uri}, "position": {"line": line, "character": col}}
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("features", result["contents"]["value"])
+
     def test_unknown_returns_null(self) -> None:
         bogus = "zzzz_not_a_name = 1\n"
         # a NAME that does not exist

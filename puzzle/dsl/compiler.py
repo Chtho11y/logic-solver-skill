@@ -19,7 +19,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from ..backends import ConstraintModel, create_model
+from ..backends import (
+    BackendError,
+    BackendFeatures,
+    ConstraintModel,
+    backends_with_feature,
+    create_model,
+    merge_backend_request,
+    normalize_backend,
+    resolve_backend,
+)
+from ..backends.features import DEFAULT_FEATURES
 from ..grid import Grid
 from ..models import Point, PointKind, Variable, VarType
 from . import ast_nodes as ast
@@ -77,12 +87,52 @@ class CompiledProgram:
     # Extra named quantities produced by helper builtins (echoed to the UI).
     derived: dict[str, dict[Point, Any]] = field(default_factory=dict)
     derived_kinds: dict[str, PointKind] = field(default_factory=dict)
+    backend: str = ""
+    features: tuple[str, ...] = field(default_factory=tuple)
 
 
-def _point_label(point: Point) -> str:
-    if len(point) == 2:
-        return f"r{point[0]}c{point[1]}"
-    return f"{point[0]}{point[1]}_{point[2]}"
+def declared_backend(program: ast.Program) -> str | None:
+    """Return the backend named by top-level ``use``, or ``None``.
+
+    Nested ``use`` (inside ``def`` / ``if`` / ``for``) is a compile error.
+    Several ``use`` statements must name the same backend.
+    """
+
+    uses: list[ast.UseStmt] = []
+
+    def walk(statements, nested: bool) -> None:
+        for stmt in statements:
+            if isinstance(stmt, ast.UseStmt):
+                if nested:
+                    raise CompileError(
+                        "`use` must be a top-level statement", stmt.line, stmt.col
+                    )
+                uses.append(stmt)
+            elif isinstance(stmt, ast.IfStmt):
+                walk(stmt.body, True)
+                walk(stmt.orelse, True)
+            elif isinstance(stmt, ast.ForStmt):
+                walk(stmt.body, True)
+            elif isinstance(stmt, ast.DefStmt):
+                walk(stmt.body, True)
+
+    walk(program.statements, False)
+    if not uses:
+        return None
+    names: list[str] = []
+    for stmt in uses:
+        try:
+            names.append(normalize_backend(stmt.backend))
+        except BackendError as exc:
+            raise CompileError(str(exc), stmt.line, stmt.col) from exc
+    unique = set(names)
+    if len(unique) > 1:
+        raise CompileError(
+            "conflicting `use` statements: " + ", ".join(sorted(unique)),
+            uses[-1].line,
+            uses[-1].col,
+        )
+    return names[0]
 
 
 def compile_source(
@@ -94,18 +144,58 @@ def compile_source(
     loader: Callable[[str], str] | None = None,
     module: str = "<main>",
     model: ConstraintModel | None = None,
+    backend: str | None = None,
+    program: ast.Program | None = None,
 ) -> CompiledProgram:
     """Parse ``source`` and compile it against the given editor state.
 
     ``params`` exposes puzzle instance data to ``param("name")`` and ``loader``
-    resolves ``import "module"`` statements to source text.
+    resolves ``import "module"`` statements to source text. ``backend`` is the
+    API-side selector and is merged with a DSL ``use`` statement.
     """
 
-    program = parse(source)
-    program.module = module
+    if program is None:
+        program = parse(source)
+    program.module = module or program.module
+    return compile_program(
+        program,
+        grid,
+        variables,
+        regions,
+        params=params,
+        loader=loader,
+        model=model,
+        backend=backend,
+    )
+
+
+def compile_program(
+    program: ast.Program,
+    grid: Grid,
+    variables,
+    regions,
+    params: dict | None = None,
+    loader: Callable[[str], str] | None = None,
+    model: ConstraintModel | None = None,
+    backend: str | None = None,
+) -> CompiledProgram:
+    """Compile an already-parsed program."""
+
+    declared = declared_backend(program)
     if model is None:
-        model = create_model()
+        try:
+            requested = merge_backend_request(api=backend, dsl=declared)
+            resolved = resolve_backend(requested)
+        except BackendError as exc:
+            raise CompileError(str(exc)) from exc
+        model = create_model(resolved)
     return Compiler(grid, variables, regions, model, params, loader).compile(program)
+
+
+def _point_label(point: Point) -> str:
+    if len(point) == 2:
+        return f"r{point[0]}c{point[1]}"
+    return f"{point[0]}{point[1]}_{point[2]}"
 
 
 class Compiler:
@@ -121,10 +211,16 @@ class Compiler:
         self.grid = grid
         self.ops = model
         self.model = model
+        self.backend = str(getattr(model, "backend", "") or "")
+        features = getattr(model, "features", None)
+        self.features: BackendFeatures = (
+            features if isinstance(features, BackendFeatures) else DEFAULT_FEATURES
+        )
         self.variables = list(variables)
         self.params = dict(params or {})
         self._loader = loader
         self._imported: set[str] = set()
+        self._in_import = False
         self._functions: dict[str, UserFunction] = {}
         self._call_depth = 0
         self._aux_counter = 0
@@ -205,6 +301,8 @@ class Compiler:
             self._debug,
             self.derived,
             self.derived_kinds,
+            self.backend,
+            self.features.names(),
         )
 
     # -- aux variables (used by helper builtins) ------------------------
@@ -228,6 +326,24 @@ class Compiler:
         if key not in self._memo:
             self._memo[key] = build()
         return self._memo[key]
+
+    def require_feature(self, feature: str, what: str, pos) -> None:
+        """Error if the selected backend cannot execute ``feature``."""
+
+        if self.features.has(feature):
+            return
+        supporting = backends_with_feature(feature)
+        hint = ""
+        if supporting:
+            shown = ", ".join(f"`use {name}`" for name in supporting)
+            hint = f" Add {shown}."
+        current = self.backend or "auto"
+        raise CompileError(
+            f"{what} needs backend feature {feature}; "
+            f"current backend {current!r} does not provide it.{hint}",
+            pos.line,
+            pos.col,
+        )
 
     def publish(self, name: str, kind: PointKind, quantities: dict) -> None:
         """Expose derived quantities so the UI can render them."""
@@ -295,6 +411,11 @@ class Compiler:
             raise _ReturnSignal(value)
         elif isinstance(stmt, ast.ImportStmt):
             self._exec_import(stmt)
+        elif isinstance(stmt, ast.UseStmt):
+            if self._in_import:
+                raise CompileError(
+                    "`use` is only allowed in the main program", stmt.line, stmt.col
+                )
         elif isinstance(stmt, ast.ForStmt):
             items = self._iter_items(self._eval(stmt.iterable), stmt)
             for item in items:
@@ -326,10 +447,12 @@ class Compiler:
             raise CompileError(f"in module {name!r}: {exc}", stmt.line, stmt.col) from exc
         # Imported modules execute at global scope so their defs are shared.
         saved_scopes, self._scopes = self._scopes, []
+        saved_import, self._in_import = self._in_import, True
         try:
             self._exec_block(program.statements)
         finally:
             self._scopes = saved_scopes
+            self._in_import = saved_import
 
     def _call_user_function(self, fn: UserFunction, args: list, node) -> Any:
         if len(args) != len(fn.params):

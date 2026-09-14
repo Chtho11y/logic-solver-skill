@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Protocol, runtime_checkable
+from dataclasses import dataclass, field
+from typing import Any, Protocol, Sequence, runtime_checkable
 
 
 class BackendError(RuntimeError):
@@ -32,6 +32,7 @@ class BackendInfo:
     reason: str = ""
     supports_timeout: bool = False
     supports_graph_primitives: bool = False
+    features: tuple[str, ...] = field(default_factory=tuple)
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -41,6 +42,7 @@ class BackendInfo:
             "reason": self.reason,
             "supportsTimeout": self.supports_timeout,
             "supportsGraphPrimitives": self.supports_graph_primitives,
+            "features": list(self.features),
         }
 
 
@@ -85,3 +87,11 @@ class ConstraintModel(Protocol):
     def find_answer(self, backend: str, timeout_ms: int | None = None) -> bool: ...
 
     def value(self, variable: Any) -> int | bool | None: ...
+
+    def vertices_connected(
+        self,
+        is_active: Sequence[Any],
+        edges: Sequence[tuple[int, int]],
+    ) -> Any:
+        """Bool: the active vertices form at most one connected component."""
+        ...

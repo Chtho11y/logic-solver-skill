@@ -39,7 +39,8 @@ pip install ./cspuz_core
   固定版本 cspuz 使用 `/dev/stdin`，因此原生 Windows 会将它们标为不可用。
 
 HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`、`reason`、
-`supportsTimeout` 和 `supportsGraphPrimitives`。求解请求可指定：
+`supportsTimeout`、`supportsGraphPrimitives` 和 `features`（当前后端真正
+打开的可选编码名）。求解请求可指定：
 
 ```json
 {
@@ -52,6 +53,18 @@ HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`�
 显式指定但不可用的后端返回 `status: "error"` 和具体原因。旧请求中的
 `logic: "AUTO"` 仍等价于 `backend: "auto"`；其他 Z3 logic 名称不再接受。
 
+DSL 也可用顶层语句选择后端（省略则与 `auto` 相同，即当前最好的可用后端）：
+
+```text
+use cspuz_core
+import "shading"
+island_rule(x)
+```
+
+`use` 只允许出现在主文件顶层。它与 API `backend` 同时给出且不一致时报错。
+`use cspuz_core` 配上 API `auto` 和正数 timeout 时会保留 core 并丢掉 timeout，
+而不会仅仅因为 UI 默认带了超时就退回 Z3。
+
 ## 当前已接入
 
 - 有限域整数标量，以及用整数 `0/1` 表示的现有布尔变量。
@@ -59,6 +72,9 @@ HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`�
 - 列表广播、条件表达式、计数、all-different、比较和布尔组合。
 - 有界线性常数乘法，以及对正整数常数的符号除法/取模。
 - 4/8 邻接连通分量、分区 id/size/border、边连通和单回路的兼容编码。
+- `connected` / `connected8`：在支持 `graph_vertex_connected` 的后端
+  （`cspuz_core`、`csugar`）上使用原生 `GRAPH_ACTIVE_VERTICES_CONNECTED`；
+  其余后端使用只针对目标取值的生成树，不再绕 `cc_count` 构建全盘 id/size。
 - `find_answer()` 完整模型读取，保持现有前端 `values/kinds` 协议。
 
 这些能力覆盖当前 `impls/` 下的全部 DSL，无需修改题型文件。
@@ -96,9 +112,8 @@ HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`�
 - 题目序列化组合器：`Grid`、`OneOf`、`Spaces`、`HexInt` 等，可扩展
   puzz.link / pzpr 风格 URL 的导入导出。
 
-建议下一步优先增加原生布尔变量和二维数组，再将 `loop`、`cloop` 与简单连通
-builtin 切换到图原语；这样能减少辅助整数和手写生成树约束，同时保持 DSL
-表面语法不变。
+`connected` / `connected8` 已按后端能力切换。下一步若继续切图原语，优先
+`loop` / `cloop` 与 `island_rule` 的拆分编码，而不是先把 Bool 数组暴露给 DSL。
 
 ## 兼容边界
 

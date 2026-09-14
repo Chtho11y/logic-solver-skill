@@ -8,7 +8,7 @@ Grammar (informal EBNF)::
     if_stmt     := 'if' expr ':' suite ['else' ':' suite]
     for_stmt    := 'for' NAME {',' NAME} 'in' expr ':' suite
     suite       := simple NEWLINE | NEWLINE INDENT statement+ DEDENT
-    simple      := 'let' NAME {',' NAME} '=' expr | expr
+    simple      := 'let' NAME {',' NAME} '=' expr | 'import' STR | 'use' (NAME | STR) | expr
     expr        := implies_expr
     implies_expr:= or_expr ['=>' implies_expr]
     or_expr     := xor_expr {('or'|'||') xor_expr}
@@ -205,6 +205,22 @@ class _Parser:
             kw = self._advance()
             path = self._expect(T_STR).value
             return ast.ImportStmt(line=kw.line, col=kw.col, path=path)
+        if self._check(T_KEYWORD, "use"):
+            kw = self._advance()
+            if self._check(T_STR):
+                backend = self._advance().value.strip()
+            elif self._check(T_NAME):
+                backend = self._advance().value
+            else:
+                got = self._cur.value or self._cur.type
+                raise ParseError(
+                    f"expected a backend name after 'use' but found {got!r}",
+                    self._cur.line,
+                    self._cur.col,
+                )
+            if not backend:
+                raise ParseError("expected a backend name after 'use'", kw.line, kw.col)
+            return ast.UseStmt(line=kw.line, col=kw.col, backend=backend)
         expr = self._expression()
         return ast.ExprStmt(line=expr.line, col=expr.col, expr=expr)
 
