@@ -1,0 +1,8 @@
+{
+  "name": "pzpr-dump",
+  "private": true,
+  "description": "Optional pzprjs helper used to decode puzz.link URLs.",
+  "dependencies": {
+    "pzpr": "^0.11.1"
+  }
+}

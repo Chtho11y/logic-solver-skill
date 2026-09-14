@@ -385,7 +385,8 @@ def _fn_dir(ctx, args, pos):
     while _cell_in(ctx.grid, r, c):
         points.append((r, c))
         r, c = r + dr, c + dc
-    return RegionValue.of(PointKind.CELL, points)
+    # Keep ray order (outward from the cell). Sorting would reverse LEFT/UP.
+    return RegionValue.of(PointKind.CELL, points, sort=False)
 
 
 def _block(r0: int, c0: int, w: int, h: int) -> RegionValue:

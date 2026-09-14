@@ -44,8 +44,17 @@ class RegionValue:
     points: tuple[Point, ...]
 
     @classmethod
-    def of(cls, kind: PointKind, points) -> "RegionValue":
-        return cls(kind=kind, points=sort_points(points))
+    def of(cls, kind: PointKind, points, *, sort: bool = True) -> "RegionValue":
+        if sort:
+            return cls(kind=kind, points=sort_points(points))
+        seen: set[Point] = set()
+        ordered: list[Point] = []
+        for point in points:
+            if point in seen:
+                continue
+            seen.add(point)
+            ordered.append(point)
+        return cls(kind=kind, points=tuple(ordered))
 
 
 @dataclass

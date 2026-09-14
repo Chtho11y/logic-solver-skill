@@ -1,13 +1,19 @@
 /** Instance construction and layer/value plumbing shared by editor and viewer. */
 
 import type {
+  ElementId,
+  GenericLayer,
   Instance,
   LayerSpec,
+  LayerTarget,
   PointKey,
   PuzzleSpec,
   SolveResult,
 } from "./types";
 import { REGION_VAR } from "./types";
+
+/** Transient spec used when a Penpa+ URL is decoded but not bound to a rule. */
+export const LAYERS_PREVIEW_KEY = "_layers";
 
 export function emptyInstance(spec: PuzzleSpec, rows?: number, cols?: number): Instance {
   const r = rows ?? spec.defaultRows;
@@ -116,4 +122,79 @@ export function clearLayer(instance: Instance, layer: LayerSpec): Instance {
   if (layer.var === REGION_VAR) return { ...instance, regions: {} };
   if (!layer.var) return instance;
   return { ...instance, clues: { ...instance.clues, [layer.var]: {} } };
+}
+
+const SIDES = ["top", "bottom", "left", "right"] as const;
+
+function asPointValues(values: GenericLayer["values"]): Record<PointKey, number> {
+  const out: Record<PointKey, number> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === "number") out[key] = value;
+  }
+  return out;
+}
+
+/** Build a drawable spec+instance from generic Penpa / puzz.link layers. */
+export function previewFromLayers(data: {
+  rows: number;
+  cols: number;
+  title?: string;
+  layers: GenericLayer[];
+}): { spec: PuzzleSpec; instance: Instance } {
+  const layers: LayerSpec[] = data.layers.map((layer) => {
+    const isRegions = layer.id === "regions" || layer.element === "region";
+    const isOutside = layer.id === "outside" || layer.element === "outside";
+    return {
+      id: layer.id,
+      label: layer.id,
+      element: layer.element as ElementId,
+      target: (layer.target as LayerTarget) || (isOutside ? "outside" : "cell"),
+      role: "input",
+      var: isRegions ? REGION_VAR : isOutside ? "" : layer.id,
+      param: isOutside ? "outside" : "",
+      palette: layer.element === "shade" ? { "1": "#232733" } : ({} as Record<string, string>),
+      options: isOutside ? { sides: [...SIDES], mode: "int" } : {},
+    };
+  });
+  const spec: PuzzleSpec = {
+    key: LAYERS_PREVIEW_KEY,
+    en: "Imported layers",
+    zh: "导入图层",
+    category: "导入",
+    subcategory: "",
+    rule: "Penpa+ / puzz.link 解码预览，尚未绑定到可求解的题型。",
+    aliases: [],
+    defaultRows: data.rows,
+    defaultCols: data.cols,
+    usesRegions: layers.some((layer) => layer.var === REGION_VAR),
+    variables: [],
+    layers,
+    params: {},
+    notes: "选择题型后再次导入，即可把这些图层绑定到求解器。",
+    source: "",
+  };
+  const instance: Instance = {
+    puzzle: LAYERS_PREVIEW_KEY,
+    rows: data.rows,
+    cols: data.cols,
+    clues: {},
+    regions: {},
+    params: {},
+    title: data.title ?? "",
+  };
+  for (const layer of data.layers) {
+    if (layer.id === "regions" || layer.element === "region") {
+      instance.regions = asPointValues(layer.values);
+      continue;
+    }
+    if (layer.id === "outside" || layer.element === "outside") {
+      for (const side of SIDES) {
+        const raw = layer.values[side];
+        if (Array.isArray(raw)) instance.params[side] = raw;
+      }
+      continue;
+    }
+    instance.clues[layer.id] = asPointValues(layer.values);
+  }
+  return { spec, instance };
 }

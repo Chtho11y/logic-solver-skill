@@ -95,6 +95,29 @@ export interface Instance {
   title: string;
 }
 
+export interface GenericLayer {
+  id: string;
+  element: string;
+  target: string;
+  values: Record<string, number> | Record<string, unknown>;
+}
+
+export interface ImportResult {
+  kind: "penpa" | "puzzlink";
+  puzzle: string | null;
+  instance: Instance | null;
+  layers: GenericLayer[];
+  warnings: string[];
+  title: string;
+  author?: string;
+  sourceUrl: string;
+  pid: string;
+  rows: number;
+  cols: number;
+  tags: string[];
+  error?: string;
+}
+
 export type SolveStatus = "sat" | "unsat" | "unknown" | "error" | "compiled";
 
 export interface SolverBackend {

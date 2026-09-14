@@ -84,6 +84,33 @@ body {
   text-align: center;
 }
 
+.url-import {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 280px;
+  min-width: 220px;
+  max-width: 520px;
+}
+
+.url-import input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.import-note {
+  font-size: 12px;
+  color: #6a737d;
+  max-width: 520px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .topbar button {
   font: inherit;
   padding: 5px 14px;

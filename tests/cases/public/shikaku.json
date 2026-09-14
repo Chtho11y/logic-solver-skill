@@ -1,0 +1,40 @@
+{
+  "puzzle": "shikaku",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "pzprjs example 6x6",
+      "source_url": "https://puzz.link/p?shikaku/6/6/j3g56h6t6h23g5j",
+      "unique": true,
+      "rows": 6,
+      "cols": 6,
+      "clues": {
+        "n": {
+          "0,4": 3,
+          "1,0": 5,
+          "1,1": 6,
+          "1,4": 6,
+          "4,1": 6,
+          "4,4": 2,
+          "4,5": 3,
+          "5,1": 5
+        }
+      },
+      "regions": {},
+      "params": {
+        "rows": 6,
+        "cols": 6
+      },
+      "answer": {
+        "c": [
+          "0 1 1 3 3 3",
+          "0 1 1 9 9 9",
+          "0 1 1 9 9 9",
+          "0 19 19 19 22 23",
+          "0 19 19 19 22 23",
+          "30 30 30 30 30 23"
+        ]
+      }
+    }
+  ]
+}
