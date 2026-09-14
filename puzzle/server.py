@@ -12,6 +12,7 @@ Endpoints (all JSON):
 ``/api/puzzles``        GET     implemented puzzle specs (with layers)
 ``/api/puzzles/<key>``  GET     one spec, its DSL source and sample instance
 ``/api/solve``          POST    ``{"instance": {...}}`` -> solved values
+``/api/import``         POST    ``{"url": "...", "puzzle": "..."}`` -> layers
 ======================  ======  ===========================================
 
 Static files from ``web/dist`` (the built front-end) are served at ``/`` when
@@ -36,6 +37,7 @@ from puzzle.backends import BackendError, backend_info, resolve_backend  # noqa:
 from puzzle.dsl import backend_status, function_table, is_available  # noqa: E402
 from puzzle.elements import elements_json  # noqa: E402
 from puzzle.registry import catalogue, get_rule, search_by_description, search_rules  # noqa: E402
+from puzzle.importing import PuzzleImportError, import_url  # noqa: E402
 from puzzle.runner import DEFAULT_TIMEOUT_MS, solve_payload  # noqa: E402
 from puzzle.spec import implemented_keys, load_sample, load_spec  # noqa: E402
 
@@ -156,6 +158,21 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         url = urlparse(self.path)
+        if url.path == "/api/import":
+            try:
+                payload = self._read_json()
+            except Exception as exc:
+                return self._send_json({"error": str(exc)}, 400)
+            try:
+                result = import_url(str(payload.get("url") or ""), payload.get("puzzle"))
+            except PuzzleImportError as exc:
+                return self._send_json({"error": str(exc)}, 400)
+            except FileNotFoundError as exc:
+                return self._send_json({"error": str(exc)}, 404)
+            except Exception as exc:
+                traceback.print_exc()
+                return self._send_json({"error": str(exc)}, 500)
+            return self._send_json(result)
         if url.path != "/api/solve":
             return self._send_json({"error": f"unknown endpoint {url.path}"}, 404)
         try:

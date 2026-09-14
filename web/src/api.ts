@@ -2,6 +2,7 @@
 
 import type {
   ElementType,
+  ImportResult,
   Instance,
   PuzzleSpec,
   RuleEntry,
@@ -50,10 +51,8 @@ export const api = {
       `/puzzles/${encodeURIComponent(key)}`,
     ),
 
-  /**
-   * Solve an instance. `source` overrides the bundled DSL program, which is
-   * what the in-app rule editor uses to try out a custom rule.
-   */
+  importUrl: (url: string, puzzle?: string) =>
+    post<ImportResult>("/import", { url, puzzle }),
   solve: (
     instance: Instance,
     options: {

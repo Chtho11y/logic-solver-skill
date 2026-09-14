@@ -12,9 +12,11 @@ import {
   clearLayer,
   defaultVisibility,
   emptyInstance,
+  LAYERS_PREVIEW_KEY,
   layerValues,
   outsideText,
   paramEntry,
+  previewFromLayers,
   setClue,
   setParamEntry,
 } from "./instance";
@@ -22,6 +24,7 @@ import { DslEditor } from "./DslEditor";
 import { Palette } from "./Palette";
 import type {
   Brush,
+  ImportResult,
   Instance,
   LayerSpec,
   PuzzleSpec,
@@ -49,6 +52,9 @@ export function App() {
   const [backend, setBackend] = useState("auto");
   const [dslSource, setDslSource] = useState("");
   const [originalSource, setOriginalSource] = useState("");
+  const [importUrl, setImportUrl] = useState("");
+  const [importBusy, setImportBusy] = useState(false);
+  const [importNote, setImportNote] = useState("");
 
   useEffect(() => {
     api.puzzles().then(setPuzzles).catch(console.error);
@@ -64,6 +70,8 @@ export function App() {
   const brush: Brush = activeLayer ? brushes[activeLayer.id] ?? "cycle" : "cycle";
 
   async function choose(key: string) {
+    const pendingUrl = importUrl.trim();
+    const rebindPreview = spec?.key === LAYERS_PREVIEW_KEY && Boolean(pendingUrl);
     const data = await api.puzzle(key);
     const inst = data.sample ?? emptyInstance(data.puzzle);
     setSpec(data.puzzle);
@@ -79,6 +87,12 @@ export function App() {
     setOriginalSource(source);
     const firstInput = data.puzzle.layers.find((layer) => layer.role === "input");
     setActiveId(firstInput?.id ?? data.puzzle.layers[0]?.id ?? "");
+    if (rebindPreview) {
+      const imported = await api.importUrl(pendingUrl, key);
+      if (!imported.error) {
+        await applyImport(imported);
+      }
+    }
   }
 
   const edit = useCallback(
@@ -165,7 +179,72 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [selection, draft, commit]);
 
-  // -- actions -----------------------------------------------------------------
+  async function applyImport(data: ImportResult) {
+    const layerIds = data.layers.map((layer) => layer.id).join(", ");
+    const key = data.puzzle || (spec && spec.key !== LAYERS_PREVIEW_KEY ? spec.key : "");
+    if (data.instance && key) {
+      if (!spec || spec.key !== key) {
+        const loaded = await api.puzzle(key);
+        setSpec(loaded.puzzle);
+        setRule(loaded.rule);
+        setSample(loaded.sample);
+        const source = loaded.puzzle.source ?? "";
+        setDslSource(source);
+        setOriginalSource(source);
+        const firstInput = loaded.puzzle.layers.find((layer) => layer.role === "input");
+        setActiveId(firstInput?.id ?? loaded.puzzle.layers[0]?.id ?? "");
+        setVisible(defaultVisibility(loaded.puzzle));
+      }
+      setInstance(data.instance);
+      setResult(null);
+      setSelection(null);
+      const bits = [
+        data.kind === "penpa" ? "Penpa+" : "puzz.link",
+        `${data.rows}×${data.cols}`,
+        data.title,
+      ].filter(Boolean);
+      const warn = data.warnings.length ? ` · ${data.warnings[0]}` : "";
+      setImportNote(`${bits.join(" · ")} 已分层导入${layerIds ? `（${layerIds}）` : ""}${warn}`);
+      return;
+    }
+    if (data.rows > 0 && data.cols > 0) {
+      const preview = previewFromLayers(data);
+      setSpec(preview.spec);
+      setRule(null);
+      setSample(null);
+      setInstance(preview.instance);
+      setVisible(defaultVisibility(preview.spec));
+      setActiveId(preview.spec.layers[0]?.id ?? "");
+      setDslSource("");
+      setOriginalSource("");
+      setResult(null);
+      setSelection(null);
+      setImportNote(
+        `${data.kind === "penpa" ? "Penpa+" : "puzz.link"} · ${data.rows}×${data.cols} 已按图层解码（${layerIds}）。选择题型后再次导入即可绑定求解。`,
+      );
+      return;
+    }
+    setImportNote(data.warnings.join(" ") || "无法绑定到当前题型");
+  }
+
+  async function importFromUrl() {
+    const url = importUrl.trim();
+    if (!url) return;
+    setImportBusy(true);
+    setImportNote("");
+    try {
+      const data = await api.importUrl(url, spec?.key);
+      if (data.error) {
+        setImportNote(data.error);
+        return;
+      }
+      await applyImport(data);
+    } catch (error) {
+      setImportNote(String(error));
+    } finally {
+      setImportBusy(false);
+    }
+  }
 
   async function solve() {
     if (!instance) return;
@@ -220,13 +299,14 @@ export function App() {
   }, [puzzles]);
 
   const selectedBackend = backends.find((item) => item.name === backend);
-  const canSolve = solverAvailable && (selectedBackend?.available ?? false);
+  const catalogued = spec ? puzzles.some((item) => item.key === spec.key) : false;
+  const canSolve = solverAvailable && (selectedBackend?.available ?? false) && catalogued;
 
   return (
     <div className="app">
       <header className="topbar">
         <h1>Logic Puzzle Studio</h1>
-        <select value={spec?.key ?? ""} onChange={(e) => choose(e.target.value)}>
+        <select value={catalogued ? spec!.key : ""} onChange={(e) => choose(e.target.value)}>
           <option value="" disabled>选择谜题…</option>
           {groups.map(([category, items]) => (
             <optgroup key={category} label={category}>
@@ -268,6 +348,27 @@ export function App() {
             样例
           </button>
         )}
+        <form
+          className="url-import"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void importFromUrl();
+          }}
+        >
+          <input
+            type="text"
+            inputMode="url"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="粘贴 Penpa+ 或 puzz.link 链接…"
+            value={importUrl}
+            onChange={(e) => setImportUrl(e.target.value)}
+            title="Penpa+ 按图层解码；puzz.link 按题型解码"
+          />
+          <button type="submit" className="ghost" disabled={importBusy || !importUrl.trim()}>
+            {importBusy ? "导入中…" : "导入"}
+          </button>
+        </form>
         {spec && (
           <button className="ghost" onClick={() => instance && resize(instance.rows, instance.cols)}>
             清空盘面
@@ -276,6 +377,7 @@ export function App() {
         <button className="solve" onClick={solve} disabled={!instance || busy || !canSolve}>
           {busy ? "求解中…" : "求解"}
         </button>
+        {importNote && <span className="import-note">{importNote}</span>}
         {dslSource !== originalSource && spec && (
           <span className="dsl-dirty">使用编辑器中的 DSL</span>
         )}

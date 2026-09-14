@@ -1,0 +1,36 @@
+{
+  "puzzle": "kurodoko",
+  "timeoutMs": 120000,
+  "cases": [
+    {
+      "name": "pzprjs example 5x5",
+      "source_url": "https://puzz.link/p?kurodoko/5/5/i7g5l2l2g4i",
+      "unique": true,
+      "rows": 5,
+      "cols": 5,
+      "clues": {
+        "n": {
+          "0,3": 7,
+          "1,0": 5,
+          "2,2": 2,
+          "3,4": 2,
+          "4,1": 4
+        }
+      },
+      "regions": {},
+      "params": {
+        "rows": 5,
+        "cols": 5
+      },
+      "answer": {
+        "x": [
+          ".#...",
+          "..#..",
+          ".#..#",
+          "..#..",
+          "#...#"
+        ]
+      }
+    }
+  ]
+}
