@@ -152,7 +152,7 @@ export function previewFromLayers(data: {
       role: "input",
       var: isRegions ? REGION_VAR : isOutside ? "" : layer.id,
       param: isOutside ? "outside" : "",
-      palette: layer.element === "shade" ? { "1": "#232733" } : {},
+      palette: layer.element === "shade" ? { "1": "#232733" } : ({} as Record<string, string>),
       options: isOutside ? { sides: [...SIDES], mode: "int" } : {},
     };
   });
