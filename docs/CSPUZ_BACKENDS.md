@@ -75,6 +75,12 @@ island_rule(x)
 - `connected` / `connected8`：在支持 `graph_vertex_connected` 的后端
   （`cspuz_core`、`csugar`）上使用原生 `GRAPH_ACTIVE_VERTICES_CONNECTED`；
   其余后端使用只针对目标取值的生成树，不再绕 `cc_count` 构建全盘 id/size。
+- `loop` / `cloop` / `connect_edges` / `connect_links`：同样在图原语后端上对
+  选中边的线图做顶点连通；度数 0-or-2 加上 `nonempty=True`，因此空边集仍
+  与原来的 `roots == 1` 一样是 UNSAT。Z3 继续用 `_link_connect` 生成树。
+- `island_rule`：图原语后端 = 白格 `connected` + 黑格正交不相邻；Z3 = cspuz
+  的对角 rank「不邻接且不分割」编码。不要在 `cspuz_core` 上改用那套展开。
+- `wall_rule`：黑格 `connected`（P0）+ 无全黑 2x2。
 - `find_answer()` 完整模型读取，保持现有前端 `values/kinds` 协议。
 
 这些能力覆盖当前 `impls/` 下的全部 DSL，无需修改题型文件。
@@ -112,8 +118,25 @@ island_rule(x)
 - 题目序列化组合器：`Grid`、`OneOf`、`Spaces`、`HexInt` 等，可扩展
   puzz.link / pzpr 风格 URL 的导入导出。
 
-`connected` / `connected8` 已按后端能力切换。下一步若继续切图原语，优先
-`loop` / `cloop` 与 `island_rule` 的拆分编码，而不是先把 Bool 数组暴露给 DSL。
+`connected` / `connected8` / `loop` / `cloop` / `island_rule` / `wall_rule`
+已按后端能力切换。`cc_id` / `cc_size` / `type: cc` 仍用最小线性下标，没有改成
+图原语。下一步若继续切图原语，优先 `graph_division`（fillomino/shikaku 一类），
+而不是先把 Bool 数组暴露给 DSL。
+
+## 性能（Z3 vs 原生）
+
+用 `python -m tools.bench_backends --samples` 对比 `find_answer()`，不要拿
+`Solver.solve()` 的 irrefutable 答案键来比。
+
+此前在 79 个 `impls/samples` 上（P0 `connected` 落地之后、P1/P2 之前）：
+
+- 状态一致：77 sat + 2 unsat
+- 合计时间：Z3 ~48.96s vs `cspuz_core` ~10.22s（约 **4.8×**）
+- 12×12 `connected` 微基准：展开 ~0.13s vs 原语 ~0.001s
+- 最慢样本当时是 `connected8`（tetrochain），不是回路
+
+P1/P2 之后的实测表由本次 `tools/bench_backends` 跑出，写在 PR 说明里。
+`cspuz_core` 未安装时脚本会只报 Z3 一侧。
 
 ## 兼容边界
 

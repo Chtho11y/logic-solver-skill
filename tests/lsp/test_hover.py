@@ -30,11 +30,18 @@ class HoverTests(unittest.TestCase):
             return None
         return result["contents"]["value"]
 
-    def test_island_rule_chinese_doc_and_origin(self) -> None:
-        text = self._hover(self.shading_uri, self.shading_text, "island_rule", after_def=True)
-        self.assertIsNotNone(text)
-        self.assertIn("涂黑格互不相邻", text)
-        self.assertIn("shading.dsl", text)
+    def test_island_and_wall_rules_are_builtins(self) -> None:
+        hitori = ROOT / "impls" / "hitori.dsl"
+        hitori_text = hitori.read_text(encoding="utf-8")
+        hitori_uri = open_file(self.server, hitori, hitori_text)
+        island = self._hover(hitori_uri, hitori_text, "island_rule")
+        self.assertIsNotNone(island)
+        self.assertIn("(builtin)", island)
+        self.assertIn("涂黑格互不相邻", island)
+        wall = self._hover(self.nurikabe_uri, self.nurikabe_text, "wall_rule")
+        self.assertIsNotNone(wall)
+        self.assertIn("(builtin)", wall)
+        self.assertIn("涂黑格连通", wall)
 
     def test_no2x2_library_signature(self) -> None:
         text = self._hover(self.shading_uri, self.shading_text, "no2x2")
@@ -53,7 +60,7 @@ class HoverTests(unittest.TestCase):
         text = self._hover(self.nurikabe_uri, self.nurikabe_text, "shading")
         self.assertIsNotNone(text)
         self.assertIn("shading.dsl", text)
-        self.assertIn("wall_rule", text)
+        self.assertIn("black_connected", text)
 
     def test_puzzle_variable_x(self) -> None:
         text = self._hover(self.nurikabe_uri, self.nurikabe_text, "x")

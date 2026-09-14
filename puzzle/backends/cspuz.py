@@ -60,6 +60,71 @@ def backend_configuration(
             ) = old
 
 
+def _convert_z3_expr(expr: Any, variables_dict: dict) -> Any:
+    """cspuz Z3 conversion plus BOOL_CONSTANT / INT_CONSTANT.
+
+    Upstream ``cspuz.backend.z3._convert_expr`` falls through on those ops and
+    returns ``None``, which Z3 then rejects. ``fold_and`` / ``fold_or`` emit
+    them for tautologies such as a 1×1 ``cloop`` with no inner edges.
+    """
+
+    import z3
+    from cspuz.expr import BoolVar, Expr, IntVar, Op
+
+    if isinstance(expr, (bool, int)):
+        return expr
+    if not isinstance(expr, Expr):
+        raise TypeError(f"cannot convert {type(expr).__name__} to Z3")
+    if isinstance(expr, (BoolVar, IntVar)):
+        return variables_dict[expr.id]
+    if expr.op == Op.BOOL_CONSTANT:
+        return bool(expr.operands[0])
+    if expr.op == Op.INT_CONSTANT:
+        return int(expr.operands[0])
+    operands = [_convert_z3_expr(item, variables_dict) for item in expr.operands]
+    if expr.op == Op.NEG:
+        return -operands[0]
+    if expr.op == Op.ADD:
+        total = operands[0]
+        for item in operands[1:]:
+            total = total + item
+        return total
+    if expr.op == Op.SUB:
+        total = operands[0]
+        for item in operands[1:]:
+            total = total - item
+        return total
+    if expr.op == Op.EQ:
+        return operands[0] == operands[1]
+    if expr.op == Op.NE:
+        return operands[0] != operands[1]
+    if expr.op == Op.LE:
+        return operands[0] <= operands[1]
+    if expr.op == Op.LT:
+        return operands[0] < operands[1]
+    if expr.op == Op.GE:
+        return operands[0] >= operands[1]
+    if expr.op == Op.GT:
+        return operands[0] > operands[1]
+    if expr.op == Op.NOT:
+        return z3.Not(operands[0])
+    if expr.op == Op.AND:
+        return z3.And(operands)
+    if expr.op == Op.OR:
+        return z3.Or(operands)
+    if expr.op == Op.XOR:
+        return z3.Xor(operands[0], operands[1])
+    if expr.op == Op.IFF:
+        return operands[0] == operands[1]
+    if expr.op == Op.IMP:
+        return z3.Or(z3.Not(operands[0]), operands[1])
+    if expr.op == Op.IF:
+        return z3.If(operands[0], operands[1], operands[2])
+    if expr.op == Op.ALLDIFF:
+        return z3.Distinct(operands)
+    raise BackendError(f"unsupported cspuz operator for Z3: {expr.op}")
+
+
 def _timed_z3_backend(timeout_ms: int | None) -> type:
     """Build a cspuz backend class that preserves Z3 timeout/unknown states."""
 
@@ -67,6 +132,19 @@ def _timed_z3_backend(timeout_ms: int | None) -> type:
     from cspuz.expr import BoolVar, IntVar
 
     class TimedZ3Backend(Z3Backend):
+        def add_constraint(self, constraint):  # noqa: ANN001
+            import z3
+
+            items = constraint if isinstance(constraint, list) else [constraint]
+            for item in items:
+                converted = _convert_z3_expr(item, self.variables_dict)
+                if converted is True:
+                    continue
+                if converted is False:
+                    self.converted_constraints.append(z3.BoolVal(False))
+                    continue
+                self.converted_constraints.append(converted)
+
         def solve(self) -> bool:
             import z3
 
@@ -315,6 +393,145 @@ class CspuzModel(ConstraintModel):
             parts.append(self.Implies(active, self.Or(*choices)))
         parts.append(self.Sum([self.If(is_root[i] == 1, 1, 0) for i in range(n)]) <= 1)
         return self.And(*parts)
+
+    def edges_single_cycle(
+        self,
+        is_active: Any,
+        pairs: Any,
+        n_vertices: int,
+        *,
+        nonempty: bool = True,
+    ) -> Any:
+        """Selected edges form exactly one simple cycle (or none, if allowed)."""
+
+        flags = [self._bool_like(flag) for flag in is_active]
+        edge_pairs = [(int(u), int(v)) for u, v in pairs]
+        n = int(n_vertices)
+        if n == 0:
+            return self.BoolVal(not nonempty)
+        incident: list[list[int]] = [[] for _ in range(n)]
+        for eid, (u, v) in enumerate(edge_pairs):
+            incident[u].append(eid)
+            incident[v].append(eid)
+        degree_ok = []
+        passed = []
+        for vertex in range(n):
+            if incident[vertex]:
+                deg = self.Sum([self.If(flags[eid], 1, 0) for eid in incident[vertex]])
+            else:
+                deg = 0
+            degree_ok.append(self.Or(deg == 0, deg == 2))
+            passed.append(deg == 2)
+        connected = self.vertices_connected(flags, _line_graph_pairs(incident))
+        parts = list(degree_ok)
+        parts.append(connected)
+        if nonempty:
+            parts.append(self.Sum([self.If(flag, 1, 0) for flag in passed]) >= 1)
+        return self.And(*parts)
+
+    def edges_connected(
+        self,
+        is_active: Any,
+        pairs: Any,
+        n_vertices: int,
+        *,
+        nonempty: bool = True,
+    ) -> Any:
+        """Selected edges form a single connected component (ignoring isolates)."""
+
+        flags = [self._bool_like(flag) for flag in is_active]
+        edge_pairs = [(int(u), int(v)) for u, v in pairs]
+        n = int(n_vertices)
+        if edge_pairs:
+            n = max(n, 1 + max(max(u, v) for u, v in edge_pairs))
+        incident: list[list[int]] = [[] for _ in range(n)]
+        for eid, (u, v) in enumerate(edge_pairs):
+            incident[u].append(eid)
+            incident[v].append(eid)
+        connected = self.vertices_connected(flags, _line_graph_pairs(incident))
+        if not nonempty:
+            return connected
+        if not flags:
+            return self.BoolVal(False)
+        return self.And(connected, self.Sum([self.If(flag, 1, 0) for flag in flags]) >= 1)
+
+    def vertices_isolated_and_complement_connected(
+        self,
+        is_active: Any,
+        pairs: Any,
+        shape: tuple[int, int] | None = None,
+    ) -> Any:
+        """Active vertices are pairwise non-adjacent; the complement is connected.
+
+        Backends with graph primitives use native vertex-connectivity on the
+        complement plus a direct adjacency ban. Z3 uses cspuz's diagonal-rank
+        encoding, which the upstream docs report is stronger than the two
+        constraints separately when graph operators are unavailable.
+        """
+
+        flags = [self._bool_like(flag) for flag in is_active]
+        edge_pairs = [(int(u), int(v)) for u, v in pairs]
+        isolated = self._vertices_not_adjacent(flags, edge_pairs)
+        if self.features.graph_vertex_connected or shape is None:
+            complement = [self.Not(flag) for flag in flags]
+            return self.And(isolated, self.vertices_connected(complement, edge_pairs))
+        return self.And(isolated, self._blacks_do_not_segment(flags, shape))
+
+    def _vertices_not_adjacent(self, flags: list, pairs: list[tuple[int, int]]) -> Any:
+        if not pairs:
+            return self.BoolVal(True)
+        return self.And(
+            *[self.Not(self.And(flags[u], flags[v])) for u, v in pairs]
+        )
+
+    def _blacks_do_not_segment(self, flags: list, shape: tuple[int, int]) -> Any:
+        """Port of cspuz ``active_vertices_not_adjacent_and_not_segmenting``."""
+
+        height, width = int(shape[0]), int(shape[1])
+        if height * width != len(flags):
+            raise BackendError(
+                "island encoding needs one flag per cell in row-major order"
+            )
+        n = height * width
+        rank = [self.Int(f"island#rank#{i}", 0, max(0, (n - 1) // 2)) for i in range(n)]
+        parts = []
+        for y in range(height):
+            for x in range(width):
+                i = y * width + x
+                less = []
+                touches_outside = False
+                for dy in (-1, 1):
+                    for dx in (-1, 1):
+                        y2, x2 = y + dy, x + dx
+                        if 0 <= y2 < height and 0 <= x2 < width:
+                            j = y2 * width + x2
+                            less.append(self.And(rank[j] < rank[i], flags[j]))
+                            if (y2, x2) < (y, x):
+                                parts.append(rank[j] != rank[i])
+                        else:
+                            touches_outside = True
+                limit = 0 if touches_outside else 1
+                if less:
+                    count = self.Sum([self.If(term, 1, 0) for term in less])
+                else:
+                    count = 0
+                parts.append(self.Implies(flags[i], count <= limit))
+        return self.And(*parts) if parts else self.BoolVal(True)
+
+
+def _line_graph_pairs(incident: list[list[int]]) -> list[tuple[int, int]]:
+    """Edges of the line graph: original edges adjacent iff they share a vertex."""
+
+    seen: set[tuple[int, int]] = set()
+    out: list[tuple[int, int]] = []
+    for eids in incident:
+        for i, left in enumerate(eids):
+            for right in eids[:i]:
+                a, b = (left, right) if left < right else (right, left)
+                if (a, b) not in seen:
+                    seen.add((a, b))
+                    out.append((a, b))
+    return out
 
 
 def create_model(backend: str = "auto") -> CspuzModel:

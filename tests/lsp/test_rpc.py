@@ -190,13 +190,13 @@ class E2EProcessTests(unittest.TestCase):
             )
             from tests.lsp import token_pos
 
-            line, col = token_pos(text, "island_rule", after_def=True)
+            line, col = token_pos(text, "black_connected", after_def=True)
             hover = request(
                 "textDocument/hover",
                 {"textDocument": {"uri": uri}, "position": {"line": line, "character": col}},
             )
             self.assertIsNotNone(hover.get("result"))
-            self.assertIn("涂黑格互不相邻", hover["result"]["contents"]["value"])
+            self.assertIn("涂黑的格子连通", hover["result"]["contents"]["value"])
             nurikabe = ROOT / "impls" / "nurikabe.dsl"
             ntext = nurikabe.read_text(encoding="utf-8")
             nuri = path_to_uri(nurikabe)
@@ -212,6 +212,15 @@ class E2EProcessTests(unittest.TestCase):
                 },
             )
             wline, wcol = token_pos(ntext, "wall_rule")
+            hover = request(
+                "textDocument/hover",
+                {
+                    "textDocument": {"uri": nuri},
+                    "position": {"line": wline, "character": wcol},
+                },
+            )
+            self.assertIsNotNone(hover.get("result"))
+            self.assertIn("(builtin)", hover["result"]["contents"]["value"])
             definition = request(
                 "textDocument/definition",
                 {
@@ -219,9 +228,7 @@ class E2EProcessTests(unittest.TestCase):
                     "position": {"line": wline, "character": wcol},
                 },
             )
-            loc = definition["result"]
-            self.assertIsNotNone(loc)
-            self.assertTrue(str(loc["uri"]).endswith("shading.dsl") or "shading.dsl" in loc["uri"])
+            self.assertIsNone(definition["result"])
             request("shutdown", None)
             notify("exit", None)
         finally:

@@ -95,3 +95,34 @@ class ConstraintModel(Protocol):
     ) -> Any:
         """Bool: the active vertices form at most one connected component."""
         ...
+
+    def edges_single_cycle(
+        self,
+        is_active: Sequence[Any],
+        pairs: Sequence[tuple[int, int]],
+        n_vertices: int,
+        *,
+        nonempty: bool = True,
+    ) -> Any:
+        """Bool: selected edges form one cycle (empty allowed iff not nonempty)."""
+        ...
+
+    def edges_connected(
+        self,
+        is_active: Sequence[Any],
+        pairs: Sequence[tuple[int, int]],
+        n_vertices: int,
+        *,
+        nonempty: bool = True,
+    ) -> Any:
+        """Bool: selected edges form one connected component."""
+        ...
+
+    def vertices_isolated_and_complement_connected(
+        self,
+        is_active: Sequence[Any],
+        pairs: Sequence[tuple[int, int]],
+        shape: tuple[int, int] | None = None,
+    ) -> Any:
+        """Bool: active vertices are not adjacent and do not split the rest."""
+        ...

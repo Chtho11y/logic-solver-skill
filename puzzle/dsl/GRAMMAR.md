@@ -254,6 +254,8 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 |------|------|
 | `connected(var, value)` | 取值为 value 的格子至多形成一个 4-连通组（空盘合法）。所选后端支持 `graph_vertex_connected` 时用原生图算子，否则用只针对该取值的生成树，**不会**构建 `cc_id`/`cc_size` |
 | `connected8(var, value)` | 同上，8-连通（含对角） |
+| `island_rule(var)` | 涂黑格互不相邻 + 留白连通。`cspuz_core`/`csugar` 上是 `connected(white)` + 正交禁邻；Z3 上用 cspuz 的对角 rank「不分割」编码，不要在原生后端上套那套展开 |
+| `wall_rule(var)` | 涂黑格连通 + 无全黑 2x2；连通部分与 `connected(var, 1)` 相同 |
 | `cc_id(var)` | 每格所在 4-连通同值分量的 id（分量内最小线性下标） |
 | `cc_size(var)` | 每格所在分量的格数（O(N²)，谨慎使用） |
 | `cc_count(var, value)` | 取值为 value 的分量个数；需要精确组数时用这个，不要用它来写 `connected` |
@@ -270,12 +272,12 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 | 签名 | 说明 |
 |------|------|
-| `loop(var)` | corner lattice 上恰好形成一个闭合回路 |
-| `cloop(var)` | 经过格中心恰好形成一个闭合回路（盘面外沿的 edge 强制为 0） |
+| `loop(var)` | corner lattice 上恰好形成一个**非空**闭合回路（每点度数 0 或 2）。支持 `graph_vertex_connected` 时对选中边的线图做原生连通；否则用生成树 |
+| `cloop(var)` | 经过格中心恰好形成一个非空闭合回路（盘面外沿的 edge 强制为 0）。编码同 `loop` |
 | `deg(var, corner)` | corner 处被选中的格线条数 |
 | `cdeg(var, cell)` | cell 处引出的连线条数 |
-| `connect_edges(var)` | corner lattice 上被选中的边连通成一个整体（不限度数） |
-| `connect_links(var)` | 格中心连线连通成一个整体（不限度数） |
+| `connect_edges(var)` | corner lattice 上被选中的边连通成一个**非空**整体（不限度数） |
+| `connect_links(var)` | 格中心连线连通成一个非空整体（不限度数；外沿 edge 强制为 0） |
 
 ### 6.8 调试函数（Debug）
 
@@ -468,8 +470,8 @@ print(row(0))
 
 | 模块 | 内容 |
 |------|------|
-| `core` | `eq` / `is_black` / `is_white`、`n_adj4` / `n_adj8` / `n_diag4` / `n_around`、`no2x2` / `no_run` / `no_adjacent`、`group_count`、`is_rect_group`、`clue_cells` / `before` / `step`。`connected` / `connected8` 是编译器 builtin，不在本库里定义 |
-| `shading` | 涂黑家族骨架：`island_rule`（黑格不相邻 + 白格连通）、`wall_rule`（黑格连通 + 无全黑 2x2）、`no_mono_2x2`、`adj_black_clue` / `around_black_clue` / `adj8_black_clue`、`region_black_count`、`see_count` / `see4`、`group_touches_border`、`clues_in_distinct_groups` |
+| `core` | `eq` / `is_black` / `is_white`、`n_adj4` / `n_adj8` / `n_diag4` / `n_around`、`no2x2` / `no_run` / `no_adjacent`、`group_count`、`is_rect_group`、`clue_cells` / `before` / `step`。`connected` / `connected8` / `island_rule` / `wall_rule` 是编译器 builtin，不在本库里定义 |
+| `shading` | 涂黑家族骨架：`black_connected` / `white_connected` / `blacks_isolated` / `no_black_2x2`、`no_mono_2x2`、`adj_black_clue` / `around_black_clue` / `adj8_black_clue`、`region_black_count`、`see_count` / `see4`、`group_touches_border`、`clues_in_distinct_groups`。`island_rule` / `wall_rule` 已提升为编译器 builtin |
 | `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` |
 | `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
 | `fill` | `latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、箭头辅助 |
@@ -481,4 +483,4 @@ print(row(0))
 2. 守卫不阻止 `let` 执行。想要“条件性累加”时，条件必须是编译期常量
    （`region_id` / `row_of` / `has_value` / 常量变量的值 / `.size` 都是）。
 3. `cc_size` 是 O(N²) 编码，大盘面谨慎。只要求「某种颜色连通」时用 `connected` / `connected8`，不要写 `cc_count(...) <= 1`。
-4. `loop` / `cloop` 会为每个节点生成 id/距离辅助量，同一变量多次调用会复用缓存。
+4. `loop` / `cloop` 在 Z3 上会为每个节点生成 id/距离辅助量；同一变量多次调用会复用缓存。支持图原语的后端改为对选中边的线图做 `GRAPH_ACTIVE_VERTICES_CONNECTED`，并额外禁止空回路。
