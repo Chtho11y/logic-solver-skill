@@ -12,7 +12,7 @@ import type { Instance, LayerSpec, PointKey } from "./types";
 export interface RenderContext {
   viewport: Viewport;
   layer: LayerSpec;
-  instance: Instance;
+  instance?: Instance;
   values: Record<PointKey, number>;
 }
 

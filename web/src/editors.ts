@@ -59,11 +59,15 @@ const DEFAULT_CYCLE: Record<string, number[]> = {
 export function cycleValues(layer: LayerSpec): number[] {
   const custom = layer.options?.cycle;
   if (Array.isArray(custom)) return custom.map(Number);
-  if (layer.element === "shade") {
-    const keys = Object.keys(layer.palette ?? {}).map(Number).filter((n) => n > 0);
+  return cycleValuesFor(layer.element, layer.palette);
+}
+
+export function cycleValuesFor(element: string, palette?: Record<string, string>): number[] {
+  if (element === "shade") {
+    const keys = Object.keys(palette ?? {}).map(Number).filter((n) => n > 0);
     return keys.length ? keys.sort((a, b) => a - b) : [1];
   }
-  return DEFAULT_CYCLE[layer.element] ?? [1];
+  return DEFAULT_CYCLE[element] ?? [1];
 }
 
 /** Tint colour for a region id (stable, readable pastels). */

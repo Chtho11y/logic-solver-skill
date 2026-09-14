@@ -29,7 +29,12 @@ export type ElementId =
   | "link"
   | "diagonal"
   | "region"
-  | "outside";
+  | "outside"
+  | "tree"
+  | "tent"
+  | "ship"
+  | "wave"
+  | "bulb";
 
 export interface ElementType {
   id: ElementId;
@@ -166,8 +171,8 @@ export const REGION_VAR = "__regions";
 
 /** What the user is currently keyboard-editing. */
 export type Selection =
-  | { kind: "point"; layerId: string; key: PointKey }
-  | { kind: "outside"; layerId: string; side: string; index: number };
+  | { kind: "point"; tool: string; key: PointKey }
+  | { kind: "outside"; side: string; index: number };
 
 /** The active stamp: a value, click-to-cycle, or the eraser. */
 export type Brush = number | "cycle" | "erase";
