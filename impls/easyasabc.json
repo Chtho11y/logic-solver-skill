@@ -1,0 +1,75 @@
+{
+  "key": "easyasabc",
+  "en": "Easy as ABC",
+  "zh": "简单字符",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填一个属于给出的列表中的字符，使得每个字符在每行和每列都恰好出现一次。盘面外的字符表示此行或此列中从这个方向看去遇到的第一个字符。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        9
+      ],
+      "doc": "0 = 空, 1 = A, 2 = B, …"
+    }
+  ],
+  "layers": [
+    {
+      "id": "outside",
+      "label": "第一字母",
+      "element": "outside",
+      "target": "outside",
+      "role": "input",
+      "param": "outside",
+      "options": {
+        "sides": [
+          "top",
+          "left",
+          "right",
+          "bottom"
+        ],
+        "mode": "int"
+      }
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1,
+        "max": 9
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "k": 3,
+      "top": [],
+      "left": [],
+      "right": [],
+      "bottom": []
+    }
+  },
+  "notes": "1=A, 2=B, …。params.k 为字母种数。"
+}

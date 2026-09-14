@@ -470,12 +470,12 @@ print(row(0))
 
 | 模块 | 内容 |
 |------|------|
-| `core` | `eq` / `is_black` / `is_white`、`n_adj4` / `n_adj8` / `n_diag4` / `n_around`、`no2x2` / `no_run` / `no_adjacent`、`group_count`、`is_rect_group`、`clue_cells` / `before` / `step`。`connected` / `connected8` / `island_rule` / `wall_rule` 是编译器 builtin，不在本库里定义 |
+| `core` | `eq` / `is_black` / `is_white`、`n_adj4` / `n_adj8` / `n_diag4` / `n_around`、`no2x2` / `no_run` / `no_adjacent` / `no_touch`、`distinct_rows` / `distinct_cols`、`group_count`、`is_rect_group`、`clue_cells` / `before` / `step`。`connected` / `connected8` / `island_rule` / `wall_rule` 是编译器 builtin，不在本库里定义 |
 | `shading` | 涂黑家族骨架：`black_connected` / `white_connected` / `blacks_isolated` / `no_black_2x2`、`no_mono_2x2`、`adj_black_clue` / `around_black_clue` / `adj8_black_clue`、`region_black_count`、`see_count` / `see4`、`group_touches_border`、`clues_in_distinct_groups`。`island_rule` / `wall_rule` 已提升为编译器 builtin |
-| `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` |
-| `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
-| `fill` | `latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、箭头辅助 |
-| `outside` | `row_count` / `col_count`、`row_runs` / `col_runs`、`row_index_sum` / `col_index_sum` |
+| `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` / `regions_are_squares` / `region_width` / `region_height` / `no_four_regions_at_vertex` / `region_180_symmetric` |
+| `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len` / `used_arm_len` / `straight_len_through` / `two_arm_sum` / `two_arms_equal`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
+| `fill` | `latin` / `latin_1_to_n` / `subset_latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、`kropki_white` / `kropki_black`、箭头辅助 |
+| `outside` | `row_count` / `col_count`、`row_runs` / `col_runs`、`row_index_sum` / `col_index_sum`、`outside_visible` / `outside_first_letter` / `outside_gap_between` / `outside_between_sum` |
 
 ### 常见陷阱
 

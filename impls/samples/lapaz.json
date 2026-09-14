@@ -1,0 +1,11 @@
+{
+  "puzzle": "lapaz",
+  "rows": 2,
+  "cols": 2,
+  "title": "拉巴斯",
+  "clues": {
+    "n": {
+      "0,0": 0
+    }
+  }
+}

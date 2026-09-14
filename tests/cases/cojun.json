@@ -1,0 +1,22 @@
+{
+  "puzzle": "cojun",
+  "timeoutMs": 30000,
+  "cases": [
+    {
+      "name": "2x2 one region",
+      "unique": false,
+      "rows": 2,
+      "cols": 2,
+      "regions": ["00", "00"],
+      "clues": {
+        "x": {"0,0": 4}
+      },
+      "answer": {
+        "x": [
+          "4 2",
+          "3 1"
+        ]
+      }
+    }
+  ]
+}

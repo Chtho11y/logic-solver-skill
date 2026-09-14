@@ -1,0 +1,11 @@
+{
+  "puzzle": "koburin",
+  "rows": 3,
+  "cols": 3,
+  "title": "仙人指邻",
+  "clues": {
+    "n": {
+      "1,1": 0
+    }
+  }
+}

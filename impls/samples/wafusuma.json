@@ -1,0 +1,11 @@
+{
+  "puzzle": "wafusuma",
+  "rows": 2,
+  "cols": 2,
+  "title": "和障",
+  "clues": {
+    "k": {
+      "V,0,1": 4
+    }
+  }
+}

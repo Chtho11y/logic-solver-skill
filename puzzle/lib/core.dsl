@@ -65,6 +65,30 @@ def no_diag_adjacent(x, v):
     for p in cells():
         eq(x, p, v) => n_diag4(x, p, v) == 0
 
+def no_touch(x, v):
+    # Cells holding `v` never share an edge or a corner.
+    for p in cells():
+        eq(x, p, v) => n_adj8(x, p, v) == 0
+
+def distinct_rows(x):
+    # No two rows are identical as tuples of values.
+    for r1 in rows:
+        for r2 in rows:
+            if row_of(r1[0]) < row_of(r2[0]):
+                let diff = 0
+                for p in r1:
+                    let diff = diff + b2i(at(x, p) != at(x, cell(row_of(r2[0]), col_of(p))))
+                diff >= 1
+
+def distinct_cols(x):
+    for c1 in cols:
+        for c2 in cols:
+            if col_of(c1[0]) < col_of(c2[0]):
+                let diff = 0
+                for p in c1:
+                    let diff = diff + b2i(at(x, p) != at(x, cell(row_of(p), col_of(c2[0]))))
+                diff >= 1
+
 
 # -- connectivity -------------------------------------------------------------
 # `connected` / `connected8` are compiler builtins. They pick a native graph

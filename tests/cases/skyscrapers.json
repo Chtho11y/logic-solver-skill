@@ -1,0 +1,24 @@
+{
+  "puzzle": "skyscrapers",
+  "timeoutMs": 30000,
+  "cases": [
+    {
+      "name": "3x3 left+top",
+      "unique": false,
+      "rows": 3,
+      "cols": 3,
+      "params": {
+        "k": 3,
+        "left": [2, 1, 2],
+        "top": [2, 3, 1]
+      },
+      "answer": {
+        "x": [
+          "2 1 3",
+          "3 2 1",
+          "1 3 2"
+        ]
+      }
+    }
+  ]
+}

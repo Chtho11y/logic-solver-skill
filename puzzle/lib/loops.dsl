@@ -131,6 +131,21 @@ def arm_len(e, p, d):
         let alive = alive and on_loop(e, q) and goes_straight(e, q)
     return total
 
+def used_arm_len(e, p, d):
+    # Like arm_len, but 0 when the loop does not actually leave `p` toward `d`.
+    return ite(link_dir(e, p, d) == 1, arm_len(e, p, d), 0)
+
+def straight_len_through(e, p):
+    # Length of the maximal straight loop segment containing `p` (including p).
+    return ite(goes_horizontal(e, p), used_arm_len(e, p, LEFT) + used_arm_len(e, p, RIGHT) + 1, used_arm_len(e, p, UP) + used_arm_len(e, p, DOWN) + 1)
+
+def two_arm_sum(e, p):
+    return used_arm_len(e, p, UP) + used_arm_len(e, p, DOWN) + used_arm_len(e, p, LEFT) + used_arm_len(e, p, RIGHT)
+
+def two_arms_equal(e, p):
+    let s = two_arm_sum(e, p)
+    return (link_up(e, p) == 0 or used_arm_len(e, p, UP) + used_arm_len(e, p, UP) == s) and (link_down(e, p) == 0 or used_arm_len(e, p, DOWN) + used_arm_len(e, p, DOWN) == s) and (link_left(e, p) == 0 or used_arm_len(e, p, LEFT) + used_arm_len(e, p, LEFT) == s) and (link_right(e, p) == 0 or used_arm_len(e, p, RIGHT) + used_arm_len(e, p, RIGHT) == s)
+
 
 # -- Slitherlink-style loops on the corner lattice ---------------------------
 

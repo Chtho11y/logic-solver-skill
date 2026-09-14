@@ -1,0 +1,50 @@
+{
+  "key": "bosanowa",
+  "en": "Bosanowa",
+  "zh": "邻差和",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个圆圈中填入一个正整数，使得每个数等于自身与横竖相邻的数之差的总和。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        1,
+        40
+      ],
+      "doc": "正整数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1,
+        "max": 40
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

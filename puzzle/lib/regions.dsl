@@ -136,3 +136,46 @@ def regions_are_rectangles(c):
     for w in slide(2, 2):
         for p in w:
             num_eq(c[w], at(c, p)) != 3
+
+def region_width(c, p):
+    # How many cells of p's region sit in p's row (the rectangle's width).
+    let total = 0
+    for q in row(row_of(p)):
+        let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def region_height(c, p):
+    let total = 0
+    for q in col(col_of(p)):
+        let total = total + b2i(at(c, q) == at(c, p))
+    return total
+
+def regions_are_squares(c):
+    regions_are_rectangles(c)
+    for p in cells():
+        region_width(c, p) == region_height(c, p)
+
+def no_four_regions_at_vertex(c):
+    # 任意顶点不能同时是四个不同区域的一角
+    for p in cells():
+        let q = shift(p, 0, 1)
+        let s = shift(p, 1, 0)
+        let t = shift(p, 1, 1)
+        if q.size == 1:
+            if s.size == 1:
+                if t.size == 1:
+                    at(c, p) == at(c, q) or at(c, p) == at(c, s) or at(c, p) == at(c, t) or at(c, q) == at(c, s) or at(c, q) == at(c, t) or at(c, s) == at(c, t)
+
+def region_180_symmetric(c):
+    # 每个区域绕自身质心 180° 对称：p 在区域内 ⇒ 2*centroid - p 也在区域内。
+    for p in cells():
+        let sr = 0
+        let sc = 0
+        for t in cells():
+            let sr = sr + b2i(at(c, t) == at(c, p)) * row_of(t)
+            let sc = sc + b2i(at(c, t) == at(c, p)) * col_of(t)
+        let n = at(c.size, p)
+        let ok = 0
+        for t in cells():
+            let ok = ok + b2i(at(c, t) == at(c, p) and n * row_of(t) + n * row_of(p) == sr + sr and n * col_of(t) + n * col_of(p) == sc + sc)
+        ok == 1

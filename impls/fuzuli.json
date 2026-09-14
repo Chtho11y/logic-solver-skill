@@ -1,0 +1,68 @@
+{
+  "key": "fuzuli",
+  "en": "Fuzuli",
+  "zh": "冗余",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在一些空格里填一个属于给出的列表中的数，使得每个数字在每行和每列都恰好出现一次。不能有全部填数的2×2结构。×表示此格不能填数。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        9
+      ],
+      "doc": "0 = 空"
+    },
+    {
+      "name": "m",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "1 = 此格不能填数"
+    }
+  ],
+  "layers": [
+    {
+      "id": "cross",
+      "label": "叉号",
+      "element": "cross",
+      "target": "cell",
+      "role": "input",
+      "var": "m"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1,
+        "max": 9
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {
+    "defaults": {
+      "k": 4
+    }
+  },
+  "notes": "params.k 为字母/数字种类数，默认边长-2。"
+}
