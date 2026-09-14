@@ -27,7 +27,7 @@ body {
 .workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 176px minmax(0, 1fr) minmax(280px, 38%);
+  grid-template-columns: 196px minmax(0, 1fr) minmax(280px, 38%);
   min-height: 0;
   background: var(--bg);
 }
@@ -213,6 +213,45 @@ body {
   border-radius: 999px;
   padding: 1px 6px;
   font-weight: 700;
+}
+
+.chip-badge {
+  margin-left: auto;
+  font-size: 10px;
+  background: #e8eef8;
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-weight: 700;
+}
+
+.chip.indexed {
+  border-color: #c5d6ee;
+}
+
+.chip-main:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.rail-note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #6a737d;
+  padding: 4px 4px 6px;
+}
+
+.more-tools {
+  margin: 4px 0;
+}
+
+.more-tools > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.more-tools > summary::-webkit-details-marker {
+  display: none;
 }
 
 .swatch {

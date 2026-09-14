@@ -2,26 +2,34 @@
 
 对照 [penpa-edit](https://github.com/swaroopg92/penpa-edit)：左侧工具画题面，中间棋盘，右侧编辑规则。
 
-## 已对齐的部分
+## 绘制模型
+
+左侧是 **Penpa 风格的通用画布**，不随题型增减工具。盘面文档是 Surface / Number / Symbol / Line / LineE / Region / Outside 等标记；题型只做两件事：
+
+1. **索引**输入元素（工具上的「本题」标记，并默认激活第一个），以及解答层的显示开关。
+2. **绑定**右侧 DSL：求解时把画布上对应工具的标记写成 `Instance.clues` / `regions` / `outside`，其余涂鸦留在画布上、不送进求解器。
+
+未选择题型也可以画；导入 Penpa+ / puzz.link 始终写入这套图层。换题型不会清空画布。点「样例」才用该题的 sample 覆盖画布。
 
 ```
-顶栏（题型 / 尺寸 / 后端 / 样例 / 求解）
+顶栏（题型 / 尺寸 / 后端 / 样例 / 导入 / 求解）
 ┌──────────┬─────────────────┬──────────────────┐
-│ 图层轨道 │     棋盘 SVG    │  规则 DSL 文本   │
-│ 画笔     │                 │  重置 / 行号     │
+│ Surface  │     棋盘 SVG    │  规则 DSL 文本   │
+│ Number   │                 │  重置 / 行号     │
+│ Symbol … │                 │                  │
 └──────────┴─────────────────┴──────────────────┘
 规则说明
 ```
 
-- 左侧竖向图层列表 + 当前图层画笔，对应 penpa 的 Surface / Number / Line 工具条。
-- 中间只放棋盘，不再用 `max-width: 92vw` 占满整页。
+- 工具分组对齐 Penpa 的 Surface / Number / Symbol / Line / Edge / Arrow / Combi。Surface 色号沿用 Penpa `1` 灰、`8` 绿、`3` 红、`4` 黑。
+- 中间只放棋盘。求解输出叠在画布之上，可用「解答」开关隐藏。
 - 右侧载入 `GET /api/puzzles/<key>` 返回的 `source`。求解会把当前文本作为 `source` 交给 `/api/solve`。
 - 编译错误会用 `errorLine` 跳到对应行。焦点在 textarea 时，盘面快捷键不会抢数字输入。
-- 顶栏可粘贴 **Penpa+** 或 **puzz.link** 链接（`POST /api/import`）。Penpa+ 先按 Surface / Number / Symbol / Line / LineE 分层解码，**不依赖题型**；能从 genre 标签、puzz.link pid 或当前选题猜到规则时再绑定到 `impls/`。无题型时前端仍用解码图层预览盘面。puzz.link 经 pzprjs 解成同一套图层。
+- 顶栏可粘贴 **Penpa+** 或 **puzz.link** 链接（`POST /api/import`）。解码结果写入通用画布；能猜到题型时同时选中该规则。无题型时先画着，稍后再选题即可绑定，不必重新导入。
 
 ## 仍然存在的问题（相对 penpa，有意未做）
 
-1. **不是 penpa 的绘制模型。** 图层来自各题 JSON（shade / number / arrow / edgeline…），没有 Surface 子模式、符号表、边框墙、cage、复合描画。Penpa 导入是「解码再绑定」，不是在编辑器里复刻 Penpa 工具。
+1. **没有把 penpa-edit 整页嵌进来。** 复用的是工具分类、surface 色号和分层文档，不是它的 canvas 实现（单页应用，难以当组件用）。
 2. **没有撤销 / 平移缩放 / 网格样式。** 棋盘是固定 viewBox 的 SVG。
 3. **没有 URL 导出。** 可以导入 Penpa+ / puzz.link，还不能把当前盘面再编码回去。
 4. **题型选择仍是一个 130 项的 `<select>`。** penpa 用新盘 + 题型面板。
