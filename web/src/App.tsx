@@ -227,9 +227,13 @@ export function App() {
     setImportNote(data.warnings.join(" ") || "无法绑定到当前题型");
   }
 
-  async function importFromUrl() {
-    const url = importUrl.trim();
-    if (!url) return;
+  async function importFromUrl(raw?: string) {
+    const url = (raw ?? importUrl).trim();
+    if (!url) {
+      setImportNote("请粘贴 Penpa+ 或 puzz.link 链接");
+      return;
+    }
+    setImportUrl(url);
     setImportBusy(true);
     setImportNote("");
     try {
@@ -352,7 +356,9 @@ export function App() {
           className="url-import"
           onSubmit={(e) => {
             e.preventDefault();
-            void importFromUrl();
+            const field = e.currentTarget.querySelector("input");
+            const typed = field instanceof HTMLInputElement ? field.value : importUrl;
+            void importFromUrl(typed);
           }}
         >
           <input
