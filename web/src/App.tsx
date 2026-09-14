@@ -331,6 +331,8 @@ export function App() {
             onClick={() => {
               setDrawing(instanceToDrawing(sample, spec));
               setResult(null);
+              setSelection(null);
+              setDraft("");
             }}
           >
             样例
