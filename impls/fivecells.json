@@ -1,0 +1,49 @@
+{
+  "key": "fivecells",
+  "en": "FiveCells",
+  "zh": "五格分区",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "沿虚格线把盘面分成若干个五格骨牌。数字表示此格中是区域边界的边数。",
+  "defaultRows": 10,
+  "defaultCols": 10,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "边界边数 0-4"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "边界边数",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0,
+        "max": 4
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "盘面格数须是 5 的倍数。"
+}

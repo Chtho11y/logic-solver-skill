@@ -1,0 +1,48 @@
+{
+  "key": "domino-search",
+  "en": "Domino Search",
+  "zh": "多米诺搜寻",
+  "category": "分区",
+  "subcategory": "",
+  "rule": "把盘面分成若干个两格区域，使得所有由给出的列表里的数字组成的（无序）数对都在恰好一个区域内同时出现。",
+  "defaultRows": 6,
+  "defaultCols": 6,
+  "usesRegions": false,
+  "variables": [
+    {
+      "name": "c",
+      "kind": "cell",
+      "type": "cc",
+      "doc": "区域划分"
+    },
+    {
+      "name": "n",
+      "kind": "cell",
+      "type": "constant",
+      "doc": "盘面数字"
+    }
+  ],
+  "layers": [
+    {
+      "id": "clue_n",
+      "label": "盘面数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "n",
+      "options": {
+        "min": 0
+      }
+    },
+    {
+      "id": "partition",
+      "label": "分区结果",
+      "element": "region",
+      "target": "cell",
+      "role": "output",
+      "var": "c"
+    }
+  ],
+  "params": {},
+  "notes": "数字应填满盘面。相同无序数对不能出现在两个骨牌上。"
+}

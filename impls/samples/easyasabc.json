@@ -1,0 +1,20 @@
+{
+  "puzzle": "easyasabc",
+  "rows": 3,
+  "cols": 3,
+  "title": "简单字符",
+  "clues": {},
+  "params": {
+    "k": 2,
+    "left": [
+      1,
+      2,
+      1
+    ],
+    "top": [
+      1,
+      2,
+      1
+    ]
+  }
+}

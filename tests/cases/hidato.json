@@ -1,0 +1,25 @@
+{
+  "puzzle": "hidato",
+  "timeoutMs": 30000,
+  "cases": [
+    {
+      "name": "3x3 1 and 9 given",
+      "unique": false,
+      "rows": 3,
+      "cols": 3,
+      "clues": {
+        "x": {
+          "0,0": 1,
+          "2,2": 9
+        }
+      },
+      "answer": {
+        "x": [
+          "1 7 6",
+          "2 5 8",
+          "3 4 9"
+        ]
+      }
+    }
+  ]
+}

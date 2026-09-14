@@ -1,0 +1,11 @@
+{
+  "puzzle": "fivecells",
+  "rows": 5,
+  "cols": 5,
+  "title": "五格分区",
+  "clues": {
+    "n": {
+      "0,0": 2
+    }
+  }
+}

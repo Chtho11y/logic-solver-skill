@@ -1,0 +1,11 @@
+{
+  "puzzle": "meadows",
+  "rows": 2,
+  "cols": 2,
+  "title": "裁方块",
+  "clues": {
+    "o": {
+      "0,0": 2
+    }
+  }
+}
