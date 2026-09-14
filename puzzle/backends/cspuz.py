@@ -315,7 +315,13 @@ class CspuzModel(ConstraintModel):
         return None
 
     def add_constraints(self, constraints: Any) -> None:
-        self.solver.ensure(constraints)
+        # Native graph operators must be top-level CSP statements. Nesting them
+        # inside ``And`` (loop/island encodings) makes cspuz_core's parser treat
+        # ``graph-active-vertices-connected`` as a bool-expr and panic.
+        for item in _flatten_bool_constraints(constraints):
+            if item is True:
+                continue
+            self.solver.ensure(item)
 
     def find_answer(self, backend: str, timeout_ms: int | None = None) -> bool:
         with backend_configuration(backend, timeout_ms) as resolved:
@@ -517,6 +523,30 @@ class CspuzModel(ConstraintModel):
                     count = 0
                 parts.append(self.Implies(flags[i], count <= limit))
         return self.And(*parts) if parts else self.BoolVal(True)
+
+
+def _flatten_bool_constraints(constraints: Any) -> list:
+    """Split n-ary ``And`` so graph primitives can be posted as statements."""
+
+    from cspuz.expr import BoolExpr, Op
+
+    out: list = []
+
+    def walk(value: Any) -> None:
+        if value is True:
+            return
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item)
+            return
+        if isinstance(value, BoolExpr) and value.op == Op.AND:
+            for item in value.operands:
+                walk(item)
+            return
+        out.append(value)
+
+    walk(constraints)
+    return out
 
 
 def _line_graph_pairs(incident: list[list[int]]) -> list[tuple[int, int]]:

@@ -125,18 +125,32 @@ island_rule(x)
 
 ## 性能（Z3 vs 原生）
 
-用 `python -m tools.bench_backends --samples` 对比 `find_answer()`，不要拿
-`Solver.solve()` 的 irrefutable 答案键来比。
+用 `python -m tools.bench_backends --samples`（或 `--all-samples`）对比
+`find_answer()`，不要拿 `Solver.solve()` 的 irrefutable 答案键来比。
 
-此前在 79 个 `impls/samples` 上（P0 `connected` 落地之后、P1/P2 之前）：
+本环境实测（cspuz `1d07443` + cspuz_core `0a51e897`，P0–P2 落地后）：
 
-- 状态一致：77 sat + 2 unsat
-- 合计时间：Z3 ~48.96s vs `cspuz_core` ~10.22s（约 **4.8×**）
-- 12×12 `connected` 微基准：展开 ~0.13s vs 原语 ~0.001s
-- 最慢样本当时是 `connected8`（tetrochain），不是回路
+12×12 微基准（无额外线索，只跑对应 builtin）：
 
-P1/P2 之后的实测表由本次 `tools/bench_backends` 跑出，写在 PR 说明里。
-`cspuz_core` 未安装时脚本会只报 Z3 一侧。
+| encoding | Z3 | cspuz_core | Z3/core |
+|---|---|---|---|
+| `connected` | 148ms | 2.9ms | 51× |
+| `connected8` | 207ms | 2.7ms | 76× |
+| `island_rule` | 154ms | 4.9ms | 31× |
+| `wall_rule` | 157ms | 4.1ms | 38× |
+| `loop` | 488ms | 38ms | 13× |
+| `cloop` | 409ms | 24ms | 17× |
+
+79 个 `impls/samples`（状态一致：77 sat + 2 unsat）：Z3 **21.42s** vs
+`cspuz_core` **3.48s**（约 **6.2×**）。回路样本更明显，例如 slither 10×、masyu 9×。
+最慢仍是 `connected8` 的 tetrochain / tetrochaink。
+
+P0 单独落地时另一次全样本对比约为 4.8×（Z3 ~49s / core ~10s）；机器和搜索运气会让
+绝对秒数波动，相对倍数和微基准更稳。
+
+图原语必须作为 CSP **顶层语句**交给 cspuz_core。`loop` / `island_rule` 会把
+度数、禁邻接和连通合进一个 `And`，适配层在 `add_constraints` 时把 `And` 拆开，
+避免 parser 把 `graph-active-vertices-connected` 当成普通布尔子表达式而 panic。
 
 ## 兼容边界
 
