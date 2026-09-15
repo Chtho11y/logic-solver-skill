@@ -1,41 +1,19 @@
-# 前端布局与已知问题
+# 前端布局
 
-对照 [penpa-edit](https://github.com/swaroopg92/penpa-edit)：左侧工具画题面，中间棋盘，右侧编辑规则。
-
-## 绘制模型
-
-左侧是 **Penpa 风格的通用画布**，不随题型增减工具。盘面文档是 Surface / Number / Symbol / Line / LineE / Region / Outside 等标记；题型只做两件事：
-
-1. **索引**输入元素（工具上的「本题」标记，并默认激活第一个），以及解答层的显示开关。
-2. **绑定**右侧 DSL：求解时把画布上对应工具的标记写成 `Instance.clues` / `regions` / `outside`，其余涂鸦留在画布上、不送进求解器。
-
-未选择题型也可以画；导入 Penpa+ / puzz.link 始终写入这套图层。换题型不会清空画布。点「样例」才用该题的 sample 覆盖画布。
+对照 [Penpa+](https://github.com/swaroopg92/penpa-edit)（MIT：Opt-Pan / Swaroop Guggilam，见仓库根目录 `NOTICE`）。
 
 ```
 顶栏（题型 / 尺寸 / 后端 / 样例 / 导入 / 求解）
-┌──────────┬─────────────────┬──────────────────┐
-│ Surface  │     棋盘 SVG    │  规则 DSL 文本   │
-│ Number   │                 │  重置 / 行号     │
-│ Symbol … │                 │                  │
-└──────────┴─────────────────┴──────────────────┘
-规则说明
+┌──────────┬──────────────────────────┬──────────────┐
+│ 图层     │  Mode / Sub / Style      │ 规则 DSL     │
+│ 仅列出   │  棋盘（Penpa 网格）      │              │
+│ 盘上有值 │                          │              │
+│ 的变量   │                          │              │
+└──────────┴──────────────────────────┴──────────────┘
 ```
 
-- 工具分组对齐 Penpa 的 Surface / Number / Symbol / Line / Edge / Arrow / Combi。Surface 色号沿用 Penpa `1` 灰、`8` 绿、`3` 红、`4` 黑。
-- 中间只放棋盘。求解输出叠在画布之上，可用「解答」开关隐藏。
-- 右侧载入 `GET /api/puzzles/<key>` 返回的 `source`。求解会把当前文本作为 `source` 交给 `/api/solve`。
-- 编译错误会用 `errorLine` 跳到对应行。焦点在 textarea 时，盘面快捷键不会抢数字输入。
-- 顶栏可粘贴 **Penpa+** 或 **puzz.link** 链接（`POST /api/import`）。解码结果写入通用画布；能猜到题型时同时选中该规则。无题型时先画着，稍后再选题即可绑定，不必重新导入。
+- **左侧**：VS Code 资源管理器那样的一行一层。层 = 一个求解变量（或尚未绑定的绘制工具）。只显示盘面上已经有元素的层；眼睛切换显隐，点击切到对应画笔。
+- **中间**：Penpa+ Classic 的 Mode / Sub / Style 工具条 + 黑框网格。Surface 色号仍是 Penpa `1/8/3/4`。没有把 penpa-edit 的整页 jQuery 画布嵌进来（那样无法绑 DSL）；工具排列和标签对齐 Penpa+。
+- **右侧**：`GET /api/puzzles/<key>` 的 `source`。求解把当前文本作为 `source` 交给 `/api/solve`。
 
-## 仍然存在的问题（相对 penpa，有意未做）
-
-1. **没有把 penpa-edit 整页嵌进来。** 复用的是工具分类、surface 色号和分层文档，不是它的 canvas 实现（单页应用，难以当组件用）。
-2. **没有撤销 / 平移缩放 / 网格样式。** 棋盘是固定 viewBox 的 SVG。
-3. **没有 URL 导出。** 可以导入 Penpa+ / puzz.link，还不能把当前盘面再编码回去。
-4. **题型选择仍是一个 130 项的 `<select>`。** penpa 用新盘 + 题型面板。
-5. **DSL 编辑器是 textarea，不是 Monaco。** 没有语法高亮、补全；仓库已有 LSP，但 Web 未接上。
-6. **求解结果不会写回 DSL。** 输出图层画在棋盘上；规则文本只在你改它时参与求解。
-7. **改 DSL 不会改图层。** 编辑器改约束，不能增删变量或画笔。新题仍要写 `impls/*.json`。
-8. **窄屏只是简单折行。** 没有 penpa 那种移动端工具抽屉。
-
-这些缺口不影响「左画题、右写规则」这条主路径。下一步若继续贴近 penpa，优先撤销栈，而不是先上 Monaco。
+未选择题型也可以画；导入 Penpa+ / puzz.link 写入通用画布。换题型不清空盘面。点「样例」才用该题 sample 覆盖。

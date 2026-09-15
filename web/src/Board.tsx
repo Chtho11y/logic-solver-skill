@@ -281,8 +281,8 @@ export function Board(props: BoardProps) {
     const at = anchorFor(v, selLayer, selection.key);
     selectionNode = (
       <g>
-        <rect x={at.x - v.size / 2 + 1.5} y={at.y - v.size / 2 + 1.5} width={v.size - 3} height={v.size - 3}
-          fill="none" stroke="#e2a93b" strokeWidth={3} rx={3} />
+        <rect x={at.x - v.size / 2 + 1} y={at.y - v.size / 2 + 1} width={v.size - 2} height={v.size - 2}
+          fill="none" stroke="#c00" strokeWidth={2} />
         {draft !== "" && (
           <text x={at.x} y={at.y} textAnchor="middle" dominantBaseline="central"
             fontSize={v.size * 0.5} fontWeight={700} fill="#1565c0">
@@ -320,7 +320,7 @@ export function Board(props: BoardProps) {
       onContextMenu={(e) => e.preventDefault()}
     >
       <rect x={v.pad} y={v.pad} width={width - 2 * v.pad} height={height - 2 * v.pad} fill="#ffffff" />
-      <g stroke="#ccd3da" strokeWidth={1}>{gridLines}</g>
+      <g stroke="#000000" strokeWidth={0.8}>{gridLines}</g>
       {dots}
       {DRAW_Z_ORDER.map((tool) => {
         if (visible[tool] === false) return null;
@@ -343,7 +343,7 @@ export function Board(props: BoardProps) {
         );
       })}
       <rect x={v.pad} y={v.pad} width={width - 2 * v.pad} height={height - 2 * v.pad}
-        fill="none" stroke="#3a4750" strokeWidth={2.5} />
+        fill="none" stroke="#000" strokeWidth={2} />
       {outsideSlots()}
       {selectionNode}
     </svg>

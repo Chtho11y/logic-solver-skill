@@ -1,12 +1,10 @@
 /**
- * Application shell: Penpa-like drawing tools, board, and puzzle-indexed DSL.
- * The canvas is a generic drawing; a puzzle only badges tools and binds clues.
+ * Application shell: VS Code-style occupancy layers, Penpa+ board, DSL pane.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import { bindDrawing, instanceToDrawing } from "./bind";
-import { Board } from "./Board";
 import { EDITOR_OF } from "./editors";
 import { makeViewport } from "./geometry";
 import {
@@ -27,7 +25,8 @@ import {
   type Drawing,
 } from "./drawing";
 import { DslEditor } from "./DslEditor";
-import { Palette } from "./Palette";
+import { Layers } from "./Layers";
+import { PenpaPane } from "./PenpaPane";
 import type {
   Brush,
   ImportResult,
@@ -388,16 +387,37 @@ export function App() {
       </header>
 
       <div className="workspace">
-        <Palette
+        <Layers
           spec={spec}
+          drawing={drawing}
+          result={result}
           visible={visible}
           setVisible={setVisible}
+          activeTool={activeTool}
+          onSelect={(layer) => {
+            const next = { ...visible };
+            for (const key of layer.hideKeys) next[key] = true;
+            setVisible(next);
+            setActiveTool(layer.tool);
+            select(null);
+          }}
+        />
+        <PenpaPane
+          spec={spec}
+          drawing={drawing}
+          result={result}
+          viewport={viewport}
+          visible={visible}
           activeTool={activeTool}
           setActiveTool={(tool) => { setActiveTool(tool); select(null); }}
           brush={brush}
           setBrush={(b) => setBrushes({ ...brushes, [activeTool]: b })}
           surfaceColor={drawing.surfaceColor}
           setSurfaceColor={(value) => setDrawing((prev) => ({ ...prev, surfaceColor: value }))}
+          selection={selection}
+          draft={draft}
+          onEdit={edit}
+          onSelect={select}
           onClearTool={(tool) => {
             setDrawing((prev) => clearTool(prev, tool));
             setResult(null);
@@ -407,21 +427,6 @@ export function App() {
             setResult(null);
           }}
         />
-        <main className="board-area">
-          <Board
-            spec={spec}
-            drawing={drawing}
-            result={result}
-            viewport={viewport}
-            visible={visible}
-            activeTool={activeTool}
-            brush={brush}
-            selection={selection}
-            draft={draft}
-            onEdit={edit}
-            onSelect={select}
-          />
-        </main>
         <DslEditor
           source={dslSource}
           original={originalSource}
@@ -441,7 +446,7 @@ export function App() {
             {rule ? `${rule.zh} / ${rule.en} · ${rule.category}` : "通用绘制"}
             <span className="layer-hint"> — {TOOL_BY_ID[activeTool].label}（{EDITOR_OF[activeTool] ?? "draw"}）</span>
           </summary>
-          {rule ? <p>{rule.rule}</p> : <p>左侧工具始终可用。选择题型后，本题用到的元素会标「本题」，右侧载入对应 DSL；求解时只绑定输入层。</p>}
+          {rule ? <p>{rule.rule}</p> : <p>中间是 Penpa+ 画板。左侧只列出盘面上已有元素的变量图层。选择题型后右侧载入 DSL，求解时绑定输入层。</p>}
           {spec?.notes && <p className="notes">{spec.notes}</p>}
           {result?.message && result.status !== "sat" && <p className="notes">{result.message}</p>}
         </details>

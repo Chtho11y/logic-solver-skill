@@ -79,7 +79,7 @@ export function bindDrawing(drawing: Drawing, spec: PuzzleSpec): Instance {
   };
 }
 
-function valuesForLayer(
+export function valuesForLayer(
   layer: LayerSpec,
   drawing: Drawing,
   usedNumbersFor: string | null,
