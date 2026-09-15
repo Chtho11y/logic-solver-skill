@@ -2,11 +2,11 @@
 import "core"
 
 for p in cells():
-    let v = at(x, p)
+    let v = x[p]
     let cnt = 0
     for q in row(row_of(p)):
-        let cnt = cnt + b2i(at(x, q) == v)
+        let cnt = cnt + b2i(x[q] == v)
     for q in col(col_of(p)):
         if row_of(q) != row_of(p):
-            let cnt = cnt + b2i(at(x, q) == v)
+            let cnt = cnt + b2i(x[q] == v)
     v == cnt

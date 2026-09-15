@@ -4,8 +4,8 @@ import "core"
 
 cloop(e)
 for p in cells():
-    on_loop(e, p) == (at(x, p) == 0)
+    on_loop(e, p) == (x[p] == 0)
 for p in clue_cells(n):
-    at(x, p) == 1
-    at(cc_size(x), p) == at(n, p)
+    x[p] == 1
+    cc_size(x)[p] == n[p]
 cc_count(x, 1) == clue_cells(n).size

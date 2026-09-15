@@ -7,5 +7,5 @@ import "shading"
 island_rule(x)
 
 for p in clue_cells(n):
-    is_white(x, p) => n_adj4(x, p, 1) == at(n, p)
-    is_black(x, p) => n_diag4(x, p, 1) == at(n, p)
+    is_white(x, p) => n_adj4(x, p, 1) == n[p]
+    is_black(x, p) => n_diag4(x, p, 1) == n[p]

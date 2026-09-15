@@ -10,4 +10,4 @@ no_white_2x2(x)
 let s8 = cc8_size(x)
 for p in clue_cells(n):
     is_black(x, p)
-    at(s8, p) == at(n, p)
+    s8[p] == n[p]

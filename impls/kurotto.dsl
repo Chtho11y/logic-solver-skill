@@ -8,8 +8,8 @@ let sz = cc_size(x)
 
 for p in clue_cells(n):
     is_white(x, p)
-    if at(n, p) >= 0:
-        adjacent_group_area(x, ids, sz, p) == at(n, p)
+    if n[p] >= 0:
+        adjacent_group_area(x, ids, sz, p) == n[p]
 
 def adjacent_group_area(x, ids, sz, p):
     let total = 0
@@ -17,7 +17,7 @@ def adjacent_group_area(x, ids, sz, p):
     for q in adj4(p):
         let fresh = is_black(x, q)
         for r in seen:
-            let fresh = fresh and at(ids, q) != at(ids, r)
-        let total = total + ite(fresh, at(sz, q), 0)
+            let fresh = fresh and ids[q] != ids[r]
+        let total = total + ite(fresh, sz[q], 0)
         let seen = seen.append(q)
     return total

@@ -7,4 +7,4 @@ import "regions"
 full_loop(e)
 
 for p in clue_cells(n):
-    region_turns(e, region_of(p)) == at(n, p)
+    region_turns(e, region_of(p)) == n[p]

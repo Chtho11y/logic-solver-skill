@@ -19,4 +19,4 @@ for p in clue_cells(n):
     for q in adj8(p):
         if row_of(q) != row_of(p) - 1 or col_of(q) != col_of(p):
             let total = total + b2i(is_black(x, q))
-    total == at(n, p)
+    total == n[p]

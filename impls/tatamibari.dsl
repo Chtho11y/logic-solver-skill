@@ -6,9 +6,9 @@ regions_are_rectangles(c)
 one_clue_per_region(c, s)
 no_four_regions_at_vertex(c)
 for p in clue_cells(s):
-    if at(s, p) == 1:
+    if s[p] == 1:
         region_width(c, p) == region_height(c, p)
-    elif at(s, p) == 2:
+    elif s[p] == 2:
         region_width(c, p) > region_height(c, p)
     else:
         region_height(c, p) > region_width(c, p)

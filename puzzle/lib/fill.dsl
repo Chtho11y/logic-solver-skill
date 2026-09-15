@@ -21,8 +21,8 @@ def latin_1_to_n(x):
 def subset_latin(x, k):
     # 每行每列中 1..k 各出现一次，其余格子为 0
     for p in cells():
-        at(x, p) >= 0
-        at(x, p) <= k
+        x[p] >= 0
+        x[p] <= k
     for line in rows:
         subset_latin_line(x, line, k)
     for line in cols:
@@ -31,12 +31,12 @@ def subset_latin(x, k):
 def subset_latin_line(x, line, k):
     let filled = 0
     for p in line:
-        let filled = filled + b2i(at(x, p) != 0)
+        let filled = filled + b2i(x[p] != 0)
     filled == k
     for p in line:
         for q in line:
             if before(p, q):
-                (at(x, p) != 0 and at(x, q) != 0) => at(x, p) != at(x, q)
+                (x[p] != 0 and x[q] != 0) => x[p] != x[q]
 
 def boxes(x, w, h):
     # 每个 w×h 宫内的数字互不相同
@@ -48,19 +48,19 @@ def region_1_to_n(x):
     for reg in regions:
         distinct(x[reg])
         for p in reg:
-            at(x, p) >= 1
-            at(x, p) <= reg.size
+            x[p] >= 1
+            x[p] <= reg.size
 
 def touching_differ(x):
     # 接触（含对角）的格子里不能有相同的数字
     for p in cells():
         for q in adj8(p):
-            at(x, p) != at(x, q)
+            x[p] != x[q]
 
 def adjacent_differ(x):
     for p in cells():
         for q in adj4(p):
-            at(x, p) != at(x, q)
+            x[p] != x[q]
 
 def kropki_white(a, b):
     return abs(a - b) == 1
@@ -95,4 +95,4 @@ def arrows_never_leave_board(a):
     for p in cells():
         for d in [UP, DOWN, LEFT, RIGHT]:
             if arrow_target(a, p, d).size == 0:
-                at(a, p) != d
+                a[p] != d

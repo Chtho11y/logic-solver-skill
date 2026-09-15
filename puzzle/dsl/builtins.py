@@ -930,7 +930,7 @@ def _fn_col_of(ctx, args, pos):
 
 
 def _fn_at(ctx, args, pos):
-    """The single quantity of ``var`` at a single point (unwraps the list)."""
+    """The quantity of ``var`` at a single point; same as ``var[point]``."""
 
     if len(args) != 2 or not isinstance(args[0], VarValue):
         raise CompileError("at(var, point) takes a variable and a single point", pos.line, pos.col)
@@ -1361,7 +1361,7 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
     ),
     "at": BuiltinFunction(
         "at", _fn_at, signature="at(var, point)",
-        doc="The single quantity of a variable at one point (unwrapped scalar).",
+        doc="Same as var[point] for a single cell/edge/corner.",
     ),
     "runs": BuiltinFunction(
         "runs", _fn_runs, signature="runs(list, lengths)",

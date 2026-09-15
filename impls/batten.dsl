@@ -14,6 +14,6 @@ for p in cells():
     let diag = shift(p, 1, 1)
     if right.size + down.size + diag.size == 3:
         let w = cell_of(p) and right and down and diag
-        let checker = (num_eq(x[w], 1) == 2) and (at(x, p) == at(x, diag))
+        let checker = (num_eq(x[w], 1) == 2) and (x[p] == x[diag])
         has_value(m, p) => checker
         checker => has_value(m, p)

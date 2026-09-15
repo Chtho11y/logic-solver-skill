@@ -6,9 +6,9 @@ The compiler walks the AST and lowers it through a small constraint-model API:
 * ``if cond: body`` lowers each constraint in ``body`` to ``Implies(cond, c)``
   (guards accumulate, so nested ``if``/``for`` compose correctly);
 * ``for v in iterable: body`` unrolls the loop, binding ``v`` each iteration;
-* ``x[region]`` extracts the quantities of variable ``x`` over ``region``'s
-  points; broadcasting and predefined functions follow :mod:`values` /
-  :mod:`builtins`.
+* ``x[region]`` extracts the quantities of ``x`` over ``region``: a single
+  point is a scalar, several points a list. Broadcasting and predefined
+  functions follow :mod:`values` / :mod:`builtins`.
 
 The default model is implemented by cspuz, while concrete solving backends are
 selected later. UI-independent (no PyQt import).
@@ -676,7 +676,14 @@ class Compiler:
                             node.col,
                         )
                     raise CompileError("region point outside the grid", node.line, node.col)
-                return [base.quantities[p] for p in index.points]
+                values = [base.quantities[p] for p in index.points]
+                # A single cell/edge/corner indexes like a dict: x[p] is the
+                # scalar at that point. Multi-point regions still return a list
+                # so x[row(0)] broadcasts. `and` merges lists, so the scalar
+                # form is what makes `x[p] != 0 and x[q] != 0` mean AND.
+                if len(values) == 1:
+                    return values[0]
+                return values
             if isinstance(index, bool) or not isinstance(index, int):
                 raise CompileError("variable index must be a region or integer", node.line, node.col)
             if not 0 <= index < len(base.order):

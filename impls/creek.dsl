@@ -6,4 +6,4 @@ import "shading"
 white_connected(x)
 
 for v in clue_cells(n):
-    num_eq(x[cell_of(v)], 1) == at(n, v)
+    num_eq(x[cell_of(v)], 1) == n[v]

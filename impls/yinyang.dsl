@@ -4,7 +4,7 @@
 import "shading"
 
 for p in clue_cells(g):
-    at(x, p) == at(g, p)
+    x[p] == g[p]
 
 black_connected(x)
 white_connected(x)

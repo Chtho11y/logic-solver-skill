@@ -10,11 +10,11 @@ for r in rows:
         for q in r:
             let d = col_of(q) - col_of(p)
             if d > 0:
-                at(x, p) == at(x, q) => at(x, p) <= d - 1
+                x[p] == x[q] => x[p] <= d - 1
 
 for c in cols:
     for p in c:
         for q in c:
             let d = row_of(q) - row_of(p)
             if d > 0:
-                at(x, p) == at(x, q) => at(x, p) <= d - 1
+                x[p] == x[q] => x[p] <= d - 1

@@ -49,17 +49,17 @@ def no_mono_2x2(x):
 def adj_black_clue(x, c):
     # 数字表示与之相邻的（至多）四格中涂黑格的个数
     for p in clue_cells(c):
-        n_adj4(x, p, 1) == at(c, p)
+        n_adj4(x, p, 1) == c[p]
 
 def around_black_clue(x, c):
     # 数字表示此格及与其相邻的（至多）四格中涂黑格的个数
     for p in clue_cells(c):
-        n_around(x, p, 1) == at(c, p)
+        n_around(x, p, 1) == c[p]
 
 def adj8_black_clue(x, c):
     # 数字表示与此格接触的（至多）八格中涂黑格的个数
     for p in clue_cells(c):
-        n_adj8(x, p, 1) == at(c, p)
+        n_adj8(x, p, 1) == c[p]
 
 def clue_cells_white(x, c):
     # 数字格不能涂黑
@@ -73,7 +73,7 @@ def clue_cells_black(x, c):
 def region_black_count(x, c):
     # 数字表示此区域内涂黑格的个数（提示写在区域内任意一格）
     for p in clue_cells(c):
-        num_eq(x[region_of(p)], 1) == at(c, p)
+        num_eq(x[region_of(p)], 1) == c[p]
 
 def region_black_exact(x, reg, n):
     num_eq(x[reg], 1) == n
@@ -88,7 +88,7 @@ def see_count(x, p, d, v):
     let total = 0
     let blocked = false
     for q in ray:
-        let hit = at(x, q) == v
+        let hit = x[q] == v
         let total = total + b2i(hit and not blocked)
         let blocked = blocked or not hit
     return total
@@ -108,7 +108,7 @@ def group_touches_border(x, v):
     for p in cells():
         let ok = false
         for b in boundary():
-            let ok = ok or (at(x, b) == v and at(ids, b) == at(ids, p))
+            let ok = ok or (x[b] == v and ids[b] == ids[p])
         eq(x, p, v) => ok
 
 def clues_in_distinct_groups(x, c):
@@ -117,7 +117,7 @@ def clues_in_distinct_groups(x, c):
     for p in clue_cells(c):
         for q in clue_cells(c):
             if before(p, q):
-                at(ids, p) != at(ids, q)
+                ids[p] != ids[q]
 
 
 # -- acyclicity ---------------------------------------------------------------
@@ -189,26 +189,26 @@ def groups_of_size(x, v, k):
     # 每一组连通的 `v` 格恰好 k 格。
     let sz = cc_size(x)
     for p in cells():
-        eq(x, p, v) => at(sz, p) == k
+        eq(x, p, v) => sz[p] == k
 
 def group_size_clue(x, c):
     # 数字 = 其所在同色连通组的格数。
     let sz = cc_size(x)
     for p in clue_cells(c):
-        at(sz, p) == at(c, p)
+        sz[p] == c[p]
 
 def group8_size_clue(x, c):
     let sz = cc8_size(x)
     for p in clue_cells(c):
-        at(sz, p) == at(c, p)
+        sz[p] == c[p]
 
 def majority_dot_clue(x, c):
     # 盘面内的点提示其所接触的（至多）四格中涂黑格和留白格哪种更多：
     # 1 = 留白更多, 2 = 涂黑更多, 3 = 一样多。
     for p in clue_cells(c):
-        if at(c, p) == 1:
+        if c[p] == 1:
             n_adj4(x, p, 0) > n_adj4(x, p, 1)
-        elif at(c, p) == 2:
+        elif c[p] == 2:
             n_adj4(x, p, 1) > n_adj4(x, p, 0)
         else:
             n_adj4(x, p, 1) == n_adj4(x, p, 0)

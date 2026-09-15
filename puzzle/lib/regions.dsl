@@ -39,7 +39,7 @@ def in_region_count(x, p, v):
     let total = 0
     for q in adj4(p):
         if same_region(p, q):
-            let total = total + b2i(at(x, q) == v)
+            let total = total + b2i(x[q] == v)
     return total
 
 def ordered_pairs_in(x, reg, v):
@@ -49,7 +49,7 @@ def ordered_pairs_in(x, reg, v):
     for p in reg:
         for q in adj4(p):
             if same_region(p, q):
-                let total = total + b2i(at(x, p) == v and at(x, q) == v)
+                let total = total + b2i(x[p] == v and x[q] == v)
     return total
 
 def region_cells_in(w, rid):
@@ -93,24 +93,24 @@ def count_in_region(f, reg):
 def all_regions_size(c, n):
     # Every region of the partition has exactly `n` cells.
     for p in cells():
-        at(c.size, p) == n
+        c.size[p] == n
 
 def region_size_clue(c, k):
     # 数字表示其所在区域的面积
     for p in clue_cells(k):
-        at(c.size, p) == at(k, p)
+        c.size[p] == k[p]
 
 def neighbour_sizes_differ(c):
     # 任意两个相邻的区域面积都不同 (Fillomino / Snake Pit / Wafusuma …)
     for p in cells():
         for q in adj4(p):
-            at(c, p) != at(c, q) => at(c.size, p) != at(c.size, q)
+            c[p] != c[q] => c.size[p] != c.size[q]
 
 def region_borders_drawn(c, b):
     # Copy the partition's border flags onto a 0/1 EDGE variable so the
     # front-end can draw them as thick lines.
     for e in edges():
-        at(b, e) == at(c.border, e)
+        b[e] == c.border[e]
 
 def one_clue_per_region(c, k):
     # 每个区域恰好包含一个提示格
@@ -120,7 +120,7 @@ def one_clue_per_region(c, k):
 def num_eq_cells_with_clue(c, k, p):
     let total = 0
     for q in clue_cells(k):
-        let total = total + b2i(at(c, q) == at(c, p))
+        let total = total + b2i(c[q] == c[p])
     return total
 
 def at_most_one_clue_per_region(c, k):
@@ -135,19 +135,19 @@ def regions_are_rectangles(c):
     # may contain exactly three cells of one region.
     for w in slide(2, 2):
         for p in w:
-            num_eq(c[w], at(c, p)) != 3
+            num_eq(c[w], c[p]) != 3
 
 def region_width(c, p):
     # How many cells of p's region sit in p's row (the rectangle's width).
     let total = 0
     for q in row(row_of(p)):
-        let total = total + b2i(at(c, q) == at(c, p))
+        let total = total + b2i(c[q] == c[p])
     return total
 
 def region_height(c, p):
     let total = 0
     for q in col(col_of(p)):
-        let total = total + b2i(at(c, q) == at(c, p))
+        let total = total + b2i(c[q] == c[p])
     return total
 
 def regions_are_squares(c):
@@ -164,7 +164,7 @@ def no_four_regions_at_vertex(c):
         if q.size == 1:
             if s.size == 1:
                 if t.size == 1:
-                    at(c, p) == at(c, q) or at(c, p) == at(c, s) or at(c, p) == at(c, t) or at(c, q) == at(c, s) or at(c, q) == at(c, t) or at(c, s) == at(c, t)
+                    c[p] == c[q] or c[p] == c[s] or c[p] == c[t] or c[q] == c[s] or c[q] == c[t] or c[s] == c[t]
 
 def region_180_symmetric(c):
     # 每个区域绕自身质心 180° 对称：p 在区域内 ⇒ 2*centroid - p 也在区域内。
@@ -172,10 +172,10 @@ def region_180_symmetric(c):
         let sr = 0
         let sc = 0
         for t in cells():
-            let sr = sr + b2i(at(c, t) == at(c, p)) * row_of(t)
-            let sc = sc + b2i(at(c, t) == at(c, p)) * col_of(t)
-        let n = at(c.size, p)
+            let sr = sr + b2i(c[t] == c[p]) * row_of(t)
+            let sc = sc + b2i(c[t] == c[p]) * col_of(t)
+        let n = c.size[p]
         let ok = 0
         for t in cells():
-            let ok = ok + b2i(at(c, t) == at(c, p) and n * row_of(t) + n * row_of(p) == sr + sr and n * col_of(t) + n * col_of(p) == sc + sc)
+            let ok = ok + b2i(c[t] == c[p] and n * row_of(t) + n * row_of(p) == sr + sr and n * col_of(t) + n * col_of(p) == sc + sc)
         ok == 1

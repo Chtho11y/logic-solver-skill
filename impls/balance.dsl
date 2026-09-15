@@ -4,10 +4,10 @@ import "loops"
 cloop(e)
 for p in clue_cells(o):
     on_loop(e, p)
-    if at(o, p) == 1:
+    if o[p] == 1:
         two_arms_equal(e, p)
     else:
         not two_arms_equal(e, p)
 for p in clue_cells(n):
     on_loop(e, p)
-    two_arm_sum(e, p) == at(n, p)
+    two_arm_sum(e, p) == n[p]

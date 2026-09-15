@@ -110,7 +110,7 @@ island_rule(x)
 no_white_crossing_3_regions(x)
 
 for p in clue_cells(o):
-    if at(o, p) == 1:
+    if o[p] == 1:
         n_adj8(x, p, 1) == 1
     else:
         n_adj8(x, p, 1) == 2
@@ -137,7 +137,7 @@ def wrong_clues_in(x, n, reg):
     let total = 0
     for p in reg:
         if has_value(n, p):
-            let total = total + b2i(n_adj4(x, p, 1) != at(n, p))
+            let total = total + b2i(n_adj4(x, p, 1) != n[p])
     return total
 ''',
     [S, const("n", "相邻涂黑格数（每区域恰有一个是错的）")],
@@ -159,7 +159,7 @@ island_rule(x)
 
 for p in clue_cells(n):
     if has_value(d, p):
-        is_white(x, p) => num_eq(x[dir(p, at(d, p))], 1) == at(n, p)
+        is_white(x, p) => num_eq(x[dir(p, d[p])], 1) == n[p]
 ''',
     [S, const("d", "箭头方向 0=上 1=下 2=左 3=右"), const("n", "该方向涂黑格数")],
     [arrow_layer("d"), num_layer("n", "该方向涂黑格数"), SHADE_LAYER],
@@ -182,7 +182,7 @@ for reg in regions:
 
 # 数字是「一组」的面积，故区域总涂黑数为其两倍。
 for p in clue_cells(n):
-    num_eq(x[region_of(p)], 1) == 2 * at(n, p)
+    num_eq(x[region_of(p)], 1) == 2 * n[p]
 ''',
     [S, const("n", "区域内一个涂黑连通组的面积")],
     [num_layer("n", "一组涂黑格的面积"), SHADE_LAYER, REGION_LAYER], uses_regions=True,
@@ -237,7 +237,7 @@ def region_half_turn_symmetric(x, reg):
         if col_of(p) > maxc:
             let maxc = col_of(p)
     for p in reg:
-        at(x, p) == at(x, cell(minr + maxr - row_of(p), minc + maxc - col_of(p)))
+        x[p] == x[cell(minr + maxr - row_of(p), minc + maxc - col_of(p))]
 ''',
     [S, const("n", "区域内涂黑格数")],
     [num_layer("n", "区域内涂黑格数"), SHADE_LAYER, REGION_LAYER], uses_regions=True,

@@ -15,5 +15,5 @@ for p in cells():
         is_black(x, p) or n_adj4(x, p, 0) != 1
 
 for p in clue_cells(n):
-    if at(n, p) > 0:
-        see4(x, p, 0) + 1 == at(n, p)
+    if n[p] > 0:
+        see4(x, p, 0) + 1 == n[p]

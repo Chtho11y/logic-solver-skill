@@ -9,7 +9,7 @@ for reg in regions:
 
 for p in cells():
     for q in adj4(p):
-        not (at(x, p) != 0 and at(x, p) == at(x, q))
+        not (x[p] != 0 and x[p] == x[q])
 
 row_count(x, 1, "left")
 row_count(x, 2, "right")

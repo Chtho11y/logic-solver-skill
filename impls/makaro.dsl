@@ -9,27 +9,27 @@ for reg in regions:
             let nwhite = nwhite + 1
     for p in reg:
         if has_value(d, p):
-            at(x, p) == 0
+            x[p] == 0
         else:
-            at(x, p) >= 1
-            at(x, p) <= nwhite
+            x[p] >= 1
+            x[p] <= nwhite
     for p in reg:
         for q in reg:
             if before(p, q):
                 if not has_value(d, p):
                     if not has_value(d, q):
-                        at(x, p) != at(x, q)
+                        x[p] != x[q]
 
 for p in cells():
     for q in adj4(p):
-        (at(x, p) != 0 and at(x, q) != 0) => at(x, p) != at(x, q)
+        (x[p] != 0 and x[q] != 0) => x[p] != x[q]
 
 for p in clue_cells(d):
-    let tgt = step(p, at(d, p))
+    let tgt = step(p, d[p])
     if tgt.size == 0:
         false
     else:
-        at(x, tgt) != 0
+        x[tgt] != 0
         for q in adj4(p):
             if row_of(q) != row_of(tgt) or col_of(q) != col_of(tgt):
-                at(x, q) != 0 => at(x, q) < at(x, tgt)
+                x[q] != 0 => x[q] < x[tgt]

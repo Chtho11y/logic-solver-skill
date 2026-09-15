@@ -11,6 +11,6 @@ is_rect_group(x, 0)
 let sz = cc_size(x)
 for p in clue_cells(n):
     is_white(x, p)
-    at(sz, p) == at(n, p)
+    sz[p] == n[p]
 
 clues_in_distinct_groups(x, n)

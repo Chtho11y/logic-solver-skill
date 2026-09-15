@@ -8,4 +8,4 @@ clue_cells_white(x, n)
 
 for p in clue_cells(n):
     if has_value(d, p):
-        num_eq(x[dir(p, at(d, p))], 1) == at(n, p)
+        num_eq(x[dir(p, d[p])], 1) == n[p]

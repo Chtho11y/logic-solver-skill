@@ -16,4 +16,4 @@ for p in cells():
             on_loop(e, p) or on_loop(e, q)
 
 for p in clue_cells(n):
-    region_visited_cells(e, region_of(p)) == at(n, p)
+    region_visited_cells(e, region_of(p)) == n[p]

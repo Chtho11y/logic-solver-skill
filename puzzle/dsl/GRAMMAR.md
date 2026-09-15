@@ -155,7 +155,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 ### 索引 `base[index]`
 - `index` 为列表时，对每个元素分别索引并返回列表。
-- **VarValue[RegionValue]**：取变量在该区域各点上的量列表；区域种类须与变量种类一致，且点须在网格内。
+- **VarValue[RegionValue]**：取变量在该区域各点上的量。单点区域返回**标量**（`x[p]`、`x[cell(0,0)]`）；多点区域返回列表（`x[row(0)]`），以便广播。区域种类须与变量种类一致，且点须在网格内。
 - **VarValue[int]**：按 `order` 取第 i 个量。
 - **RegionValue[int]**：取第 i 个点（返回单点区域）。
 - **list[int]**：取第 i 个元素。
@@ -231,7 +231,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 | 签名 | 说明 |
 |------|------|
-| `at(var, point)` | 变量在**单个点**上的量（标量）。`x[p]` 返回长度 1 的列表，需要标量时一律用 `at` |
+| `at(var, point)` | 与单点 `var[point]` 相同，保留作别名 |
 | `defined(var)` | 常量变量实际有值的点组成的区域 |
 | `has_value(var, point)` | 该点是否有值（编译期布尔） |
 | `param("name")` | 实例参数（整数或嵌套列表），如盘外提示 `param("top")[c]` |
@@ -490,7 +490,7 @@ print(row(0))
 
 ### 常见陷阱
 
-1. `x[p]` 是**列表**，而 `and` 在两个列表上是**合并**而非逻辑与。需要标量时用 `at(x, p)`。
+1. `and` 在两个列表/区域上是**合并**而非逻辑与（`row(0) and row(1)`）。单点 `x[p]` 是标量，所以 `x[p] != 0 and x[q] != 0` 才是合取。`at(x, p)` 与 `x[p]` 等价。
 2. 守卫不阻止 `let` 执行。想要“条件性累加”时，条件必须是编译期常量
    （`region_id` / `row_of` / `has_value` / 常量变量的值 / `.size` 都是）。
 3. 同理，`return` 不能受符号条件控制（编译期报错），需要符号结果时用 `ite`。

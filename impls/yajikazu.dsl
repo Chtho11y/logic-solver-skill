@@ -7,4 +7,4 @@ island_rule(x)
 
 for p in clue_cells(n):
     if has_value(d, p):
-        is_white(x, p) => num_eq(x[dir(p, at(d, p))], 1) == at(n, p)
+        is_white(x, p) => num_eq(x[dir(p, d[p])], 1) == n[p]

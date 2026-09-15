@@ -11,7 +11,7 @@ distinct_rows(x)
 distinct_cols(x)
 
 for p in clue_cells(o):
-    if at(o, p) == 1:
-        at(x, p) == 0
+    if o[p] == 1:
+        x[p] == 0
     else:
-        at(x, p) == 1
+        x[p] == 1

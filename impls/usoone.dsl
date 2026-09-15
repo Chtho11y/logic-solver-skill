@@ -12,5 +12,5 @@ def wrong_clues_in(x, n, reg):
     let total = 0
     for p in reg:
         if has_value(n, p):
-            let total = total + b2i(n_adj4(x, p, 1) != at(n, p))
+            let total = total + b2i(n_adj4(x, p, 1) != n[p])
     return total

@@ -12,7 +12,7 @@ clue_cells_white(x, n)
 let sz = cc_size(x)
 for p in clue_cells(n):
     if has_value(d, p):
-        let nxt = step(p, at(d, p))
+        let nxt = step(p, d[p])
         if nxt.size == 1:
             eq(x, nxt, 1)
-            at(sz, nxt) == at(n, p)
+            sz[nxt] == n[p]

@@ -77,8 +77,7 @@ Auxiliary variables are fine (LITS uses `t` for the tetromino type, Nanro uses a
 
 ### DSL rules of thumb
 
-* `x[p]` yields a **list**; use `at(x, p)` whenever you need a scalar, because
-  `and` between two lists *merges* them instead of conjoining.
+* `x[p]` is the scalar at a single point; `x[row(0)]` is still a list and broadcasts. `and` concatenates two lists, so write `x[p] != 0 and x[q] != 0` (not two length-1 lists). `at(x, p)` is the same as `x[p]` for one point.
 * Compile-time values (`region_id`, `row_of`, `has_value`, constants, `.size`)
   are plain Python — `if` over them constant-folds and costs nothing.
 * Accumulate with `let total = total + …` inside `for`; `let` rebinds the

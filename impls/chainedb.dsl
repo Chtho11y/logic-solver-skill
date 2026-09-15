@@ -10,10 +10,10 @@ cc_count(x, 1) == clue_cells(n).size
 
 let sz = cc_size(x)
 for p in clue_cells(n):
-    if at(n, p) >= 0:
-        at(sz, p) == at(n, p)
+    if n[p] >= 0:
+        sz[p] == n[p]
 
 let s4 = cc_size(x)
 let s8 = cc8_size(x)
 for p in cells():
-    is_black(x, p) => at(s8, p) > at(s4, p)
+    is_black(x, p) => s8[p] > s4[p]

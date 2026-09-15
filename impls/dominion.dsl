@@ -10,7 +10,7 @@ let ids = cc_id(x)
 for p in clue_cells(a):
     for q in clue_cells(a):
         if before(p, q):
-            if at(a, p) == at(a, q):
-                at(ids, p) == at(ids, q)
+            if a[p] == a[q]:
+                ids[p] == ids[q]
             else:
-                at(ids, p) != at(ids, q)
+                ids[p] != ids[q]

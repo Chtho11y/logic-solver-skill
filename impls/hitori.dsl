@@ -10,12 +10,12 @@ for r in rows:
     for p in r:
         for q in r:
             if col_of(p) < col_of(q):
-                if at(n, p) == at(n, q):
+                if n[p] == n[q]:
                     is_black(x, p) or is_black(x, q)
 
 for c in cols:
     for p in c:
         for q in c:
             if row_of(p) < row_of(q):
-                if at(n, p) == at(n, q):
+                if n[p] == n[q]:
                     is_black(x, p) or is_black(x, q)
