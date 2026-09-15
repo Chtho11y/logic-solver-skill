@@ -3,13 +3,16 @@
 import "shading"
 import "outside"
 
-snake_shape(x, 1)
-row_count(x, 1, "left")
-col_count(x, 1, "top")
+def snake(x, o):
+    snake_shape(x, 1)
+    row_count(x, 1, "left")
+    col_count(x, 1, "top")
 
-for p in clue_cells(o):
-    is_black(x, p)
-    if o[p] == 2:
-        n_adj4(x, p, 1) == 1
-    else:
-        n_adj4(x, p, 1) == 2
+    for p in clue_cells(o):
+        is_black(x, p)
+        if o[p] == 2:
+            n_adj4(x, p, 1) == 1
+        else:
+            n_adj4(x, p, 1) == 2
+
+snake(x, o)

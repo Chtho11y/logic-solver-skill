@@ -3,14 +3,6 @@
 import "shading"
 import "regions"
 
-island_rule(x)
-region_black_count(x, n)
-
-for ra in regions:
-    for rb in regions:
-        if region_id(ra[0]) < region_id(rb[0]):
-            doors_between(x, ra, rb) <= 1
-
 def doors_between(x, ra, rb):
     let rid = region_id(rb[0])
     let total = 0
@@ -19,3 +11,14 @@ def doors_between(x, ra, rb):
             if region_id(q) == rid:
                 let total = total + b2i(is_white(x, p) and is_white(x, q))
     return total
+
+def oneroom(x, n):
+    island_rule(x)
+    region_black_count(x, n)
+
+    for ra in regions:
+        for rb in regions:
+            if region_id(ra[0]) < region_id(rb[0]):
+                doors_between(x, ra, rb) <= 1
+
+oneroom(x, n)

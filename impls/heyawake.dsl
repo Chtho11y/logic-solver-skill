@@ -5,6 +5,9 @@
 import "shading"
 import "regions"
 
-island_rule(x)
-region_black_count(x, n)
-no_white_crossing_3_regions(x)
+def heyawake(x, n):
+    island_rule(x)
+    region_black_count(x, n)
+    no_white_crossing_3_regions(x)
+
+heyawake(x, n)

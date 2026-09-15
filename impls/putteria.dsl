@@ -4,22 +4,25 @@
 
 import "core"
 
-for reg in regions:
-    num_eq(x[reg], reg.size) == 1
-    for p in reg:
-        x[p] == 0 or x[p] == reg.size
-
-for p in cells():
-    for q in adj4(p):
-        not (x[p] > 0 and x[q] > 0)
-
-for r in rows:
-    line_unique(x, r)
-for c in cols:
-    line_unique(x, c)
-
 def line_unique(x, line):
     for p in line:
         for q in line:
             if before(p, q):
                 not (x[p] > 0 and x[p] == x[q])
+
+def putteria(x):
+    for reg in regions:
+        num_eq(x[reg], reg.size) == 1
+        for p in reg:
+            x[p] == 0 or x[p] == reg.size
+
+    for p in cells():
+        for q in adj4(p):
+            not (x[p] > 0 and x[q] > 0)
+
+    for r in rows:
+        line_unique(x, r)
+    for c in cols:
+        line_unique(x, c)
+
+putteria(x)

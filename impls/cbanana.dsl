@@ -4,20 +4,23 @@
 
 import "shading"
 
-is_rect_group(x, 1)
+def cbanana(x, n):
+    is_rect_group(x, 1)
 
-let ids = cc_id(x)
-let sz = cc_size(x)
+    let ids = cc_id(x)
+    let sz = cc_size(x)
 
-for p in clue_cells(n):
-    sz[p] == n[p]
+    for p in clue_cells(n):
+        sz[p] == n[p]
 
-# 每个白连通组必须“不是长方形”：存在一个 2x2 窗口恰好含它的 3 个格子。
-for p in cells():
-    let ok = false
-    for w in slide(2, 2):
-        let cond = num_eq(x[w], 0) == 3
-        for q in w:
-            let cond = cond and (is_black(x, q) or ids[q] == ids[p])
-        let ok = ok or cond
-    is_white(x, p) => ok
+    # 每个白连通组必须“不是长方形”：存在一个 2x2 窗口恰好含它的 3 个格子。
+    for p in cells():
+        let ok = false
+        for w in slide(2, 2):
+            let cond = num_eq(x[w], 0) == 3
+            for q in w:
+                let cond = cond and (is_black(x, q) or ids[q] == ids[p])
+            let ok = ok or cond
+        is_white(x, p) => ok
+
+cbanana(x, n)

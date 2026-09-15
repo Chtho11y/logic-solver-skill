@@ -5,13 +5,16 @@
 import "loops"
 import "core"
 
-cloop(e)
-no_adjacent(x, 1)
+def yajilin(e, x, d, n):
+    cloop(e)
+    no_adjacent(x, 1)
 
-for p in cells():
-    if has_value(n, p):
-        x[p] == 0
-        off_loop(e, p)
-        num_eq(x[dir(p, d[p])], 1) == n[p]
-    else:
-        on_loop(e, p) == (x[p] == 0)
+    for p in cells():
+        if has_value(n, p):
+            x[p] == 0
+            off_loop(e, p)
+            num_eq(x[dir(p, d[p])], 1) == n[p]
+        else:
+            on_loop(e, p) == (x[p] == 0)
+
+yajilin(e, x, d, n)

@@ -4,18 +4,6 @@
 
 import "core"
 
-for p in clue_cells(w):
-    x[p] == 0
-
-for p in clue_cells(n):
-    num_eq(x[adj4(p)], 1) == n[p]
-
-for p in cells():
-    if not has_value(w, p):
-        let seen = lit_count(x, w, p)
-        x[p] == 1 or seen >= 1
-        x[p] == 1 => seen == 0
-
 def lit_count(x, w, p):
     let total = 0
     for d in [UP, DOWN, LEFT, RIGHT]:
@@ -27,3 +15,18 @@ def lit_count(x, w, p):
                 else:
                     let total = total + b2i(x[q] == 1)
     return total
+
+def akari(x, w, n):
+    for p in clue_cells(w):
+        x[p] == 0
+
+    for p in clue_cells(n):
+        num_eq(x[adj4(p)], 1) == n[p]
+
+    for p in cells():
+        if not has_value(w, p):
+            let seen = lit_count(x, w, p)
+            x[p] == 1 or seen >= 1
+            x[p] == 1 => seen == 0
+
+akari(x, w, n)

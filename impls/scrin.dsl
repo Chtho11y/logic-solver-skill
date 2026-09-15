@@ -2,8 +2,11 @@
 # 所有长方形对角连通成一个环；圈内数字 = 其所在长方形的面积。
 import "shading"
 
-is_rect_group(x, 1)
-connected8(x, 1)
-clue_cells_black(x, n)
-group_size_clue(x, n)
-clues_in_distinct_groups(x, n)
+def scrin(x, n):
+    is_rect_group(x, 1)
+    connected8(x, 1)
+    clue_cells_black(x, n)
+    group_size_clue(x, n)
+    clues_in_distinct_groups(x, n)
+
+scrin(x, n)

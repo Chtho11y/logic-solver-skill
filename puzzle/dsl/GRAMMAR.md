@@ -79,7 +79,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
     `'return' may only be controlled by compile-time if conditions; use ite(condition, a, b) for a symbolic result`。
   - 需要「按待求解的条件取不同值」时改用条件表达式：`return ite(c, 1, 0)`。
   - 该限制只针对**函数自身新增**的符号分支；在符号 `if` 中调用一个内部无条件 `return` 的函数依然合法（其约束仍按调用点守卫断言）。编译期条件（常量、`region_id`、`row_of`、`has_value`、`.size` 等）下的 `return` 也不受影响。
-- **`import "module"`**：把另一个 DSL 模块的定义引入当前程序（同名模块只加载一次）。解析顺序为 `puzzle/lib/` 然后 `impls/`，扩展名 `.dsl` 可省略。
+- **`import "module"`**：把另一个 DSL 模块的 **`def`** 引入当前程序（同名模块只加载一次）。解析顺序为 `puzzle/lib/` 然后 `impls/`，扩展名 `.dsl` 可省略。导入时只执行嵌套的 `import` 并登记函数，**不会**把被导入文件顶层的约束断言进来。因此 `import "sudoku"` 之后需要再写 `sudoku(x)` 才会套用数独规则。主文件自身的顶层语句仍会执行（每个 `impls/<key>.dsl` 末尾会调用自己的规则函数，所以单独打开该文件行为不变）。
 - **`use backend`**：选择本程序的求解后端。可写标识符（`use cspuz_core`）或字符串（`use "z3"`）。只能出现在**主文件顶层**，导入的库里不能写。省略时等价于 `use auto`：选用当前可用的最好后端（无 timeout 时 `cspuz_core` 优先，否则 Z3）。与 API 的 `backend=` 同时给出且不一致时编译/求解报错。后端能力（图连通原语、timeout 等）按所选后端选择性启用。
 
 ### 结构化绑定（解包）
@@ -478,6 +478,14 @@ print(row(0))
 ## 13. 公共模板库（`puzzle/lib/*.dsl`）
 
 用 `import "模块名"` 引入。运行 `python -m tools.puzzle_rules lib` 可列出全部辅助函数。
+
+每个 `impls/<key>.dsl` 把该题规则封装为与 key 同名的函数（连字符改下划线），参数为 spec 里的全部变量。可以组合：
+
+```
+import "sudoku"
+sudoku(x)
+# 额外约束写在调用之后
+```
 
 | 模块 | 内容 |
 |------|------|

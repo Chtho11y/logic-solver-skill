@@ -2,7 +2,10 @@
 # 圆圈在 L 形的转弯处，箭头在一端指向转弯处；圆圈数字 = 留白区域面积。
 import "shading"
 
-wall_rule(x)
-# 宽度为一：留白格最多两个留白邻居；同时排除全白 2x2。
-width_one(x, 0)
-no_white_2x2(x)
+def sashikabe(x, n, d):
+    wall_rule(x)
+    # 宽度为一：留白格最多两个留白邻居；同时排除全白 2x2。
+    width_one(x, 0)
+    no_white_2x2(x)
+
+sashikabe(x, n, d)

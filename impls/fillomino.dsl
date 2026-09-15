@@ -3,5 +3,8 @@
 
 import "regions"
 
-neighbour_sizes_differ(c)
-region_size_clue(c, n)
+def fillomino(c, n):
+    neighbour_sizes_differ(c)
+    region_size_clue(c, n)
+
+fillomino(c, n)

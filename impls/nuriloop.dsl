@@ -2,10 +2,13 @@
 import "loops"
 import "core"
 
-cloop(e)
-for p in cells():
-    on_loop(e, p) == (x[p] == 0)
-for p in clue_cells(n):
-    x[p] == 1
-    cc_size(x)[p] == n[p]
-cc_count(x, 1) == clue_cells(n).size
+def nuriloop(e, x, n):
+    cloop(e)
+    for p in cells():
+        on_loop(e, p) == (x[p] == 0)
+    for p in clue_cells(n):
+        x[p] == 1
+        cc_size(x)[p] == n[p]
+    cc_count(x, 1) == clue_cells(n).size
+
+nuriloop(e, x, n)

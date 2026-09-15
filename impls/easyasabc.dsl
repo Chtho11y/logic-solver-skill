@@ -2,6 +2,9 @@
 import "fill"
 import "outside"
 
-let k = param("k")
-subset_latin(x, k)
-outside_first_letter(x)
+def easyasabc(x):
+    let k = param("k")
+    subset_latin(x, k)
+    outside_first_letter(x)
+
+easyasabc(x)

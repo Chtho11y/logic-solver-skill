@@ -4,19 +4,22 @@
 
 import "shading"
 
-for w in slide(1, 3):
-    num_eq(x[w], 1) < 3
+def tawa(x, n):
+    for w in slide(1, 3):
+        num_eq(x[w], 1) < 3
 
-for p in cells():
-    let below = shift(p, 1, 0)
-    if below.size == 1:
-        is_black(x, p) => eq(x, below, 1)
+    for p in cells():
+        let below = shift(p, 1, 0)
+        if below.size == 1:
+            is_black(x, p) => eq(x, below, 1)
 
-clue_cells_white(x, n)
+    clue_cells_white(x, n)
 
-for p in clue_cells(n):
-    let total = 0
-    for q in adj8(p):
-        if row_of(q) != row_of(p) - 1 or col_of(q) != col_of(p):
-            let total = total + b2i(is_black(x, q))
-    total == n[p]
+    for p in clue_cells(n):
+        let total = 0
+        for q in adj8(p):
+            if row_of(q) != row_of(p) - 1 or col_of(q) != col_of(p):
+                let total = total + b2i(is_black(x, q))
+        total == n[p]
+
+tawa(x, n)

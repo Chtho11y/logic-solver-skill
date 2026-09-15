@@ -3,5 +3,8 @@
 
 import "fill"
 
-latin(x)
-boxes(x, 3, 3)
+def sudoku(x):
+    latin(x)
+    boxes(x, 3, 3)
+
+sudoku(x)

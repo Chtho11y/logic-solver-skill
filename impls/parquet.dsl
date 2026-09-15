@@ -2,4 +2,8 @@
 import "shading"
 
 # 连通且无环 ⟺ 树，这同时排除了 2x2 全黑。
-color_is_tree(x, 1)
+
+def parquet(x):
+    color_is_tree(x, 1)
+
+parquet(x)

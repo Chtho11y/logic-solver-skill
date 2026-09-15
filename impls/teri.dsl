@@ -2,5 +2,8 @@
 # 白圈数字 = 包含此格的最大留白长方形面积。
 import "shading"
 
-island_rule(x)
-clue_cells_white(x, n)
+def teri(x, n):
+    island_rule(x)
+    clue_cells_white(x, n)
+
+teri(x, n)

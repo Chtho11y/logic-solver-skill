@@ -2,5 +2,8 @@
 # 且所有长方形对角连通成一个整体（形成一个环）。
 import "shading"
 
-all_dominoes(x, 1)
-connected8(x, 1)
+def antmill(x):
+    all_dominoes(x, 1)
+    connected8(x, 1)
+
+antmill(x)

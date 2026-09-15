@@ -6,13 +6,16 @@
 import "shading"
 import "regions"
 
-two_black_groups_per_region(x)
-clue_cells_white(x, n)
+def kuroclone(x, n, d):
+    two_black_groups_per_region(x)
+    clue_cells_white(x, n)
 
-let sz = cc_size(x)
-for p in clue_cells(n):
-    if has_value(d, p):
-        let nxt = step(p, d[p])
-        if nxt.size == 1:
-            eq(x, nxt, 1)
-            sz[nxt] == n[p]
+    let sz = cc_size(x)
+    for p in clue_cells(n):
+        if has_value(d, p):
+            let nxt = step(p, d[p])
+            if nxt.size == 1:
+                eq(x, nxt, 1)
+                sz[nxt] == n[p]
+
+kuroclone(x, n, d)

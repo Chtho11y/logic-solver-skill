@@ -6,21 +6,24 @@
 
 import "shading"
 
-clue_cells_black(x, a)
-cc_count(x, 1) == clue_cells(a).size
+def evolmino(x, a, d):
+    clue_cells_black(x, a)
+    cc_count(x, 1) == clue_cells(a).size
 
-let sz = cc_size(x)
-for p in clue_cells(a):
-    let n = 0
-    for q in clue_cells(a):
-        let n = n + b2i(a[p] == a[q])
-    n >= 2
+    let sz = cc_size(x)
+    for p in clue_cells(a):
+        let n = 0
+        for q in clue_cells(a):
+            let n = n + b2i(a[p] == a[q])
+        n >= 2
 
-for p in clue_cells(a):
-    if has_value(d, p):
-        let found = false
-        for s in dir(p, d[p]):
-            if has_value(a, s):
-                if a[s] == a[p] and not found:
-                    sz[s] == sz[p] + 1
-                    let found = true
+    for p in clue_cells(a):
+        if has_value(d, p):
+            let found = false
+            for s in dir(p, d[p]):
+                if has_value(a, s):
+                    if a[s] == a[p] and not found:
+                        sz[s] == sz[p] + 1
+                        let found = true
+
+evolmino(x, a, d)

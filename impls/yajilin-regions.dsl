@@ -2,6 +2,9 @@
 import "loops"
 import "shading"
 
-loop_visits_all_but(e, x)
-no_adjacent(x, 1)
-region_black_count(x, n)
+def yajilin_regions(e, x, n):
+    loop_visits_all_but(e, x)
+    no_adjacent(x, 1)
+    region_black_count(x, n)
+
+yajilin_regions(e, x, n)

@@ -3,13 +3,16 @@
 
 import "shading"
 
-black_connected(x)
+def aqre(x, n):
+    black_connected(x)
 
-for w in slide(4, 1):
-    num_eq(x[w], 1) != 4
-    num_eq(x[w], 0) != 4
-for w in slide(1, 4):
-    num_eq(x[w], 1) != 4
-    num_eq(x[w], 0) != 4
+    for w in slide(4, 1):
+        num_eq(x[w], 1) != 4
+        num_eq(x[w], 0) != 4
+    for w in slide(1, 4):
+        num_eq(x[w], 1) != 4
+        num_eq(x[w], 0) != 4
 
-region_black_count(x, n)
+    region_black_count(x, n)
+
+aqre(x, n)

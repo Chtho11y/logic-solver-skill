@@ -3,8 +3,11 @@
 # 任意一组连通的涂黑格都不能是长方形。
 import "shading"
 
-no2x2(x, 1)
-connected8(x, 0)
-is_rect_group(x, 0)
-group_size_clue(x, n)
-clues_in_distinct_groups(x, n)
+def mochinyoro(x, n):
+    no2x2(x, 1)
+    connected8(x, 0)
+    is_rect_group(x, 0)
+    group_size_clue(x, n)
+    clues_in_distinct_groups(x, n)
+
+mochinyoro(x, n)

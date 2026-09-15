@@ -4,15 +4,18 @@
 
 import "shading"
 
-let sz = cc_size(x)
+def lightshadow(x, bn, wn):
+    let sz = cc_size(x)
 
-for p in clue_cells(bn):
-    is_black(x, p)
-    sz[p] == bn[p]
+    for p in clue_cells(bn):
+        is_black(x, p)
+        sz[p] == bn[p]
 
-for p in clue_cells(wn):
-    is_white(x, p)
-    sz[p] == wn[p]
+    for p in clue_cells(wn):
+        is_white(x, p)
+        sz[p] == wn[p]
 
-cc_count(x, 1) == clue_cells(bn).size
-cc_count(x, 0) == clue_cells(wn).size
+    cc_count(x, 1) == clue_cells(bn).size
+    cc_count(x, 0) == clue_cells(wn).size
+
+lightshadow(x, bn, wn)

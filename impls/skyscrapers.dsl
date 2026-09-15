@@ -3,6 +3,9 @@
 import "fill"
 import "outside"
 
-let k = param("k")
-subset_latin(x, k)
-outside_visible(x)
+def skyscrapers(x):
+    let k = param("k")
+    subset_latin(x, k)
+    outside_visible(x)
+
+skyscrapers(x)

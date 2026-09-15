@@ -3,5 +3,8 @@
 
 import "shading"
 
-is_rect_group(x, 1)
-region_black_count(x, n)
+def chocona(x, n):
+    is_rect_group(x, 1)
+    region_black_count(x, n)
+
+chocona(x, n)

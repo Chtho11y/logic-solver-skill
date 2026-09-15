@@ -5,6 +5,9 @@
 import "shading"
 import "regions"
 
-one_black_group_per_region(x)
-region_black_count(x, n)
-drop_covers(x, rows.size / 2)
+def stostone(x, n):
+    one_black_group_per_region(x)
+    region_black_count(x, n)
+    drop_covers(x, rows.size / 2)
+
+stostone(x, n)

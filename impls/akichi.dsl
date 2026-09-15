@@ -3,5 +3,8 @@
 import "shading"
 import "regions"
 
-island_rule(x)
-no_white_crossing_3_regions(x)
+def akichi(x, n):
+    island_rule(x)
+    no_white_crossing_3_regions(x)
+
+akichi(x, n)

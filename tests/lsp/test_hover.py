@@ -51,7 +51,9 @@ class HoverTests(unittest.TestCase):
         self.assertIn("2x2", text)
 
     def test_builtin_at(self) -> None:
-        text = self._hover(self.shading_uri, self.shading_text, "at")
+        source = "at(x, cell(0, 0)) == 0\n"
+        uri = open_file(self.server, ROOT / "impls" / "_at_hover.dsl", source)
+        text = self._hover(uri, source, "at")
         self.assertIsNotNone(text)
         self.assertIn("(builtin)", text)
         self.assertIn("Category:", text)

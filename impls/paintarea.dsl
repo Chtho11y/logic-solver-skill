@@ -5,7 +5,10 @@
 import "shading"
 import "regions"
 
-black_connected(x)
-no_mono_2x2(x)
-region_uniform(x)
-adj_black_clue(x, n)
+def paintarea(x, n):
+    black_connected(x)
+    no_mono_2x2(x)
+    region_uniform(x)
+    adj_black_clue(x, n)
+
+paintarea(x, n)

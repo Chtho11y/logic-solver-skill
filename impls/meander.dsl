@@ -5,16 +5,19 @@
 import "fill"
 import "regions"
 
-region_1_to_n(x)
-touching_differ(x)
-
-for reg in regions:
-    for p in reg:
-        x[p] < reg.size => has_successor(x, p)
-
 def has_successor(x, p):
     let ok = false
     for q in adj4(p):
         if same_region(p, q):
             let ok = ok or (x[q] == x[p] + 1)
     return ok
+
+def meander(x):
+    region_1_to_n(x)
+    touching_differ(x)
+
+    for reg in regions:
+        for p in reg:
+            x[p] < reg.size => has_successor(x, p)
+
+meander(x)

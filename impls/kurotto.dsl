@@ -3,14 +3,6 @@
 
 import "shading"
 
-let ids = cc_id(x)
-let sz = cc_size(x)
-
-for p in clue_cells(n):
-    is_white(x, p)
-    if n[p] >= 0:
-        adjacent_group_area(x, ids, sz, p) == n[p]
-
 def adjacent_group_area(x, ids, sz, p):
     let total = 0
     let seen = []
@@ -21,3 +13,14 @@ def adjacent_group_area(x, ids, sz, p):
         let total = total + ite(fresh, sz[q], 0)
         let seen = seen.append(q)
     return total
+
+def kurotto(x, n):
+    let ids = cc_id(x)
+    let sz = cc_size(x)
+
+    for p in clue_cells(n):
+        is_white(x, p)
+        if n[p] >= 0:
+            adjacent_group_area(x, ids, sz, p) == n[p]
+
+kurotto(x, n)

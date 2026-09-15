@@ -54,7 +54,8 @@ python -m tools.puzzle_rules show <key>        # 1. read the exact rule text
 python -m tools.puzzle_rules lib               # 2. see which templates already exist
 python -m tools.puzzle_rules builtins          #    ... and the DSL builtins
 python -m tools.scaffold new <key> --rows 8 --cols 8   # 3. create the three stub files
-# 4. edit impls/<key>.json (variables + layers) and impls/<key>.dsl (constraints)
+# 4. edit impls/<key>.json (variables + layers) and impls/<key>.dsl
+#    wrap the rule as def <key>(vars): ... then call it; import only loads defs
 python -m tools.check compile <key>            # 5. fast syntax/shape check
 # 6. add a hand-checked board to tools/samples.py, then
 python -m tools.samples && python -m tools.check solve <key>
@@ -90,7 +91,9 @@ Auxiliary variables are fine (LITS uses `t` for the tetromino type, Nanro uses a
 * Outside clues live in `params`: `param("top")[c]`; use the `outside` lib’s
   `row_count` / `col_runs` etc. — they tolerate missing/short lists (−1 = 无提示).
 * `import "shading"` etc. pulls in a template module; `def` helpers are hoisted,
-  so order does not matter.
+  so order does not matter. `import "sudoku"` likewise only loads `def`s — call
+  `sudoku(x)` to apply the rule. Each `impls/<key>.dsl` exports `key` with
+  hyphens turned into underscores.
 
 ### Verify before claiming success
 

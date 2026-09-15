@@ -3,13 +3,6 @@
 import "shading"
 import "regions"
 
-island_rule(x)
-no_white_crossing_3_regions(x)
-region_black_count(x, n)
-
-for reg in regions:
-    region_half_turn_symmetric(x, reg)
-
 def region_half_turn_symmetric(x, reg):
     let minr = row_of(reg[0])
     let maxr = row_of(reg[0])
@@ -26,3 +19,13 @@ def region_half_turn_symmetric(x, reg):
             let maxc = col_of(p)
     for p in reg:
         x[p] == x[cell(minr + maxr - row_of(p), minc + maxc - col_of(p))]
+
+def ayeheya(x, n):
+    island_rule(x)
+    no_white_crossing_3_regions(x)
+    region_black_count(x, n)
+
+    for reg in regions:
+        region_half_turn_symmetric(x, reg)
+
+ayeheya(x, n)

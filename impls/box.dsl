@@ -3,5 +3,8 @@
 
 import "outside"
 
-row_index_sum(x, "left")
-col_index_sum(x, "top")
+def box(x):
+    row_index_sum(x, "left")
+    col_index_sum(x, "top")
+
+box(x)

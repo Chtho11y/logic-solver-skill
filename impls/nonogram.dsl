@@ -3,5 +3,8 @@
 
 import "outside"
 
-col_runs(x, "top")
-row_runs(x, "left")
+def nonogram(x):
+    col_runs(x, "top")
+    row_runs(x, "left")
+
+nonogram(x)

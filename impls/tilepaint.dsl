@@ -5,6 +5,9 @@ import "shading"
 import "regions"
 import "outside"
 
-region_uniform(x)
-col_count(x, 1, "top")
-row_count(x, 1, "left")
+def tilepaint(x):
+    region_uniform(x)
+    col_count(x, 1, "top")
+    row_count(x, 1, "left")
+
+tilepaint(x)

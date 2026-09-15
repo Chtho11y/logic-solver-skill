@@ -2,16 +2,19 @@
 import "outside"
 import "regions"
 
-for reg in regions:
-    let plus = num_eq(x[reg], 1)
-    let minus = num_eq(x[reg], 2)
-    (plus == 0 and minus == 0) or (plus == 1 and minus == 1)
+def magnets(x):
+    for reg in regions:
+        let plus = num_eq(x[reg], 1)
+        let minus = num_eq(x[reg], 2)
+        (plus == 0 and minus == 0) or (plus == 1 and minus == 1)
 
-for p in cells():
-    for q in adj4(p):
-        not (x[p] != 0 and x[p] == x[q])
+    for p in cells():
+        for q in adj4(p):
+            not (x[p] != 0 and x[p] == x[q])
 
-row_count(x, 1, "left")
-row_count(x, 2, "right")
-col_count(x, 1, "top")
-col_count(x, 2, "bottom")
+    row_count(x, 1, "left")
+    row_count(x, 2, "right")
+    col_count(x, 1, "top")
+    col_count(x, 2, "bottom")
+
+magnets(x)
