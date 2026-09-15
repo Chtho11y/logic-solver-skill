@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -191,6 +192,28 @@ class PuzzlinkDecodeTests(unittest.TestCase):
             again["instance"]["clues"]["n"],
             {"0,1": 5, "1,2": 2, "3,2": 1, "4,3": 3},
         )
+
+
+class EncodeLayersTests(unittest.TestCase):
+    def test_from_layers_json_roundtrip(self) -> None:
+        from puzzle.importing import encode_layers, from_layers_json
+
+        board = LayerBoard(rows=3, cols=3)
+        board.cell(0, 1).number = 5
+        board.cell(2, 2).shade = 1
+        rebuilt = from_layers_json(3, 3, board.to_layers_json())
+        self.assertEqual(rebuilt.cell(0, 1).number, 5)
+        self.assertEqual(rebuilt.cell(2, 2).shade, 1)
+        url = encode_layers(3, 3, board.to_layers_json(), title="probe", tags=["nurikabe"])
+        payload = import_url(url)
+        layers = {layer["id"]: layer["values"] for layer in payload["layers"]}
+        self.assertEqual(layers["number"]["0,1"], 5)
+        self.assertEqual(layers["surface"]["2,2"], 1)
+        from puzzle.importing.penpa import parse_penpa_payload, _expand, _inflate
+
+        parts = _expand(_inflate(parse_penpa_payload(url)["p"])).split("\n")
+        center = json.loads(parts[5])
+        self.assertGreater(len(center), 0)
 
 
 class DirRayOrderTests(unittest.TestCase):

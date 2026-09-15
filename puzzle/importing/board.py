@@ -156,6 +156,104 @@ class LayerBoard:
         return layers
 
 
+_CELL_ATTR = {
+    "shade": "shade",
+    "number": "number",
+    "circle": "circle",
+    "square": "square",
+    "triangle": "triangle",
+    "star": "star",
+    "cross": "cross",
+    "arrow": "arrow",
+    "diagonal": "diagonal",
+    "tree": "tree",
+    "tent": "tent",
+    "ship": "ship",
+    "wave": "wave",
+    "bulb": "bulb",
+}
+
+_EDGE_ATTR = {
+    "edgeline": "line",
+    "link": "link",
+    "dot": "dot",
+}
+
+_SIDES = ("top", "bottom", "left", "right")
+
+
+def from_layers_json(rows: int, cols: int, layers: list[dict[str, Any]]) -> LayerBoard:
+    """Rebuild a :class:`LayerBoard` from ``to_layers_json`` (or the UI equivalent)."""
+
+    board = LayerBoard(rows=int(rows), cols=int(cols))
+    for layer in layers or []:
+        element = str(layer.get("element") or layer.get("id") or "")
+        if element == "surface":
+            element = "shade"
+        values = layer.get("values") or {}
+        if element in {"region", "regions"}:
+            for key, value in values.items():
+                try:
+                    board.regions[str(key)] = int(value)
+                except (TypeError, ValueError):
+                    continue
+            continue
+        if element == "outside":
+            for side in _SIDES:
+                raw = values.get(side)
+                if isinstance(raw, dict):
+                    length = cols if side in {"top", "bottom"} else rows
+                    arr = [-1] * length
+                    for idx, value in raw.items():
+                        try:
+                            i = int(idx)
+                            n = int(value) if not isinstance(value, list) else int(value[0])
+                        except (TypeError, ValueError):
+                            continue
+                        if 0 <= i < length:
+                            arr[i] = n
+                    board.outside[side] = arr
+                elif isinstance(raw, list):
+                    board.outside[side] = [
+                        int(v) if v is not None and v != "" else -1 for v in raw
+                    ]
+            continue
+        if element in _CELL_ATTR:
+            attr = _CELL_ATTR[element]
+            if not isinstance(values, dict):
+                continue
+            for key, value in values.items():
+                parts = str(key).split(",")
+                if len(parts) != 2:
+                    continue
+                try:
+                    row, col = int(parts[0]), int(parts[1])
+                    number = int(value)  # type: ignore[arg-type]
+                except (TypeError, ValueError):
+                    continue
+                if not board.in_bounds(row, col):
+                    continue
+                setattr(board.cell(row, col), attr, number)
+            continue
+        if element in _EDGE_ATTR:
+            attr = _EDGE_ATTR[element]
+            if not isinstance(values, dict):
+                continue
+            for key, value in values.items():
+                parts = str(key).split(",")
+                if len(parts) != 3:
+                    continue
+                try:
+                    orient, row, col = parts[0], int(parts[1]), int(parts[2])
+                    number = int(value)  # type: ignore[arg-type]
+                except (TypeError, ValueError):
+                    continue
+                if orient not in {"H", "V"}:
+                    continue
+                setattr(board.edge(orient, row, col), attr, number)
+    return board
+
+
 def regions_from_walls(rows: int, cols: int, walls: set[str]) -> dict[str, int]:
     """Union-find cells that are not separated by a lattice wall."""
 

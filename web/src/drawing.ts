@@ -319,6 +319,41 @@ export function drawingFromGenericLayers(
   return d;
 }
 
+export function drawingToGenericLayers(d: Drawing): GenericLayer[] {
+  const layers: GenericLayer[] = [];
+  for (const tool of DRAW_TOOLS) {
+    if (tool === "region") {
+      if (Object.keys(d.regions).length) {
+        layers.push({ id: "regions", element: "region", target: "cell", values: d.regions });
+      }
+      continue;
+    }
+    if (tool === "outside") {
+      const values: Record<string, unknown> = {};
+      for (const side of SIDES) {
+        const src = d.outside[side];
+        if (!src) continue;
+        const length = side === "top" || side === "bottom" ? d.cols : d.rows;
+        const arr: Array<number | number[]> = Array.from({ length }, (_, i) => src[String(i)] ?? -1);
+        if (arr.some((value) => value !== -1)) values[side] = arr;
+      }
+      if (Object.keys(values).length) {
+        layers.push({ id: "outside", element: "outside", target: "outside", values });
+      }
+      continue;
+    }
+    const values = numericMarks(d.marks[tool]);
+    if (!Object.keys(values).length) continue;
+    layers.push({
+      id: tool === "shade" ? "surface" : tool,
+      element: tool,
+      target: TOOL_TARGET[tool],
+      values,
+    });
+  }
+  return layers;
+}
+
 export function numericMarks(layer: Record<string, MarkValue> | undefined): Record<string, number> {
   const out: Record<string, number> = {};
   if (!layer) return out;
