@@ -56,7 +56,7 @@ class SemanticTokenTests(unittest.TestCase):
         self.assertEqual(tok[4], mod_mask("declaration"))
 
     def test_builtin_call(self) -> None:
-        tok = self._at("at")
+        tok = self._at("connected")
         self.assertEqual(tok[3], "function")
         self.assertEqual(tok[4], mod_mask("defaultLibrary"))
 

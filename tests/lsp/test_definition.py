@@ -44,7 +44,7 @@ class DefinitionTests(unittest.TestCase):
         self.assertEqual(loc["range"]["start"]["line"], 0)
 
     def test_builtin_does_not_jump(self) -> None:
-        loc = self._def(self.suri, self.stext, "at")
+        loc = self._def(self.suri, self.stext, "connected")
         self.assertIsNone(loc)
 
     def test_document_symbols_list_defs(self) -> None:
