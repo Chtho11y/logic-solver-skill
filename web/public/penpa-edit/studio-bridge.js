@@ -176,11 +176,44 @@
     return raw;
   }
 
+  function ensureCenterlist() {
+    const pu = window.pu;
+    if (!pu) return;
+    if (pu.centerlist && pu.centerlist.length) return;
+    pu.centerlist = [];
+    const top = (pu.space && pu.space[0]) || 0;
+    const bottom = (pu.space && pu.space[1]) || 0;
+    const left = (pu.space && pu.space[2]) || 0;
+    const right = (pu.space && pu.space[3]) || 0;
+    for (let j = 2 + top; j < pu.ny0 - 2 - bottom; j++) {
+      for (let i = 2 + left; i < pu.nx0 - 2 - right; i++) {
+        pu.centerlist.push(i + j * pu.nx0);
+      }
+    }
+  }
+
   function loadUrl(url) {
     const param = paramFromUrl(url);
     if (!param || typeof load !== "function") return false;
-    load(param);
-    notify();
+    function after() {
+      ensureCenterlist();
+      if (window.pu && typeof pu.redraw === "function") pu.redraw();
+      notify();
+    }
+    try {
+      const result = load(param);
+      if (result && typeof result.then === "function") {
+        result.then(after).catch(function (err) {
+          console.error("penpa load", err);
+          after();
+        });
+      } else {
+        after();
+      }
+    } catch (err) {
+      console.error("penpa load", err);
+      after();
+    }
     return true;
   }
 

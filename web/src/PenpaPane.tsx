@@ -24,6 +24,19 @@ export type PenpaHandle = {
   exportUrl: () => string;
 };
 
+function penpaParam(url: string): string {
+  let raw = url.trim();
+  const hash = raw.indexOf("#");
+  if (hash >= 0) raw = raw.slice(hash + 1);
+  else {
+    const q = raw.indexOf("?");
+    if (q >= 0 && /(?:^|[?&])p=/.test(raw.slice(q))) raw = raw.slice(q + 1);
+  }
+  raw = raw.replace(/^#/, "").replace(/^\?/, "");
+  if (raw && !raw.includes("p=")) raw = `m=edit&p=${raw}`;
+  return raw;
+}
+
 type Bridge = {
   loadUrl: (url: string) => boolean;
   setSize: (rows: number, cols: number) => void;
@@ -53,7 +66,11 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
 
   useImperativeHandle(ref, () => ({
     loadUrl(url) {
-      bridge()?.loadUrl(url);
+      const param = penpaParam(url);
+      const frame = frameRef.current;
+      if (param && frame) {
+        frame.src = `/penpa-edit/index.html#${param}`;
+      }
     },
     setSize(rows, cols) {
       bridge()?.setSize(rows, cols);

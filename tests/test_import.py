@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -208,6 +209,11 @@ class EncodeLayersTests(unittest.TestCase):
         layers = {layer["id"]: layer["values"] for layer in payload["layers"]}
         self.assertEqual(layers["number"]["0,1"], 5)
         self.assertEqual(layers["surface"]["2,2"], 1)
+        from puzzle.importing.penpa import parse_penpa_payload, _expand, _inflate
+
+        parts = _expand(_inflate(parse_penpa_payload(url)["p"])).split("\n")
+        center = json.loads(parts[5])
+        self.assertGreater(len(center), 0)
 
 
 class DirRayOrderTests(unittest.TestCase):

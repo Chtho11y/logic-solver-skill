@@ -54,7 +54,7 @@ COMPRESS_SUB: tuple[tuple[str, str], ...] = (
     ('"deletelineE"', "z4"),
     ('"killercages"', "z6"),
     ('"nobulbthermo"', "z7"),
-    ('"_a"', "z_"),
+    ('"__a"', "z_"),
     ("null", "zO"),
 )
 
@@ -145,7 +145,7 @@ def _inflate(payload: str) -> str:
 def _deflate(text: str) -> str:
     compressor = zlib.compressobj(wbits=-15)
     raw = compressor.compress(text.encode("utf-8")) + compressor.flush()
-    return b64encode(raw).decode("ascii")
+    return b64encode(raw).decode("ascii").rstrip("=")
 
 
 def _expand(text: str) -> str:
@@ -595,10 +595,25 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
         "deletelineE": {},
         "killercages": [],
         "nobulbthermo": [],
-        "command_redo": {"_a": []},
-        "command_undo": {"_a": []},
-        "command_replay": {"_a": []},
+        "command_redo": {"__a": []},
+        "command_undo": {"__a": []},
+        "command_replay": {"__a": []},
     }
+
+    def centerlist_delta() -> list[int]:
+        cells: list[int] = []
+        row0 = 2 + grid.top
+        col0 = 2 + grid.left
+        for row in range(board.rows):
+            for col in range(board.cols):
+                cells.append((row0 + row) * grid.real_cols + (col0 + col))
+        if not cells:
+            return []
+        out = [cells[0]]
+        for prev, cur in zip(cells, cells[1:]):
+            out.append(cur - prev)
+        return out
+
     for key, mark in board.cells.items():
         row, col = (int(p) for p in key.split(","))
         index = str(grid.cell_index(row, col))
@@ -657,7 +672,7 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
     lines = [
         header,
         dump([0, 0, 0, 0], compress=False),
-        dump({"edit_mode": "surface", "surface": ["", 1]}),
+        dump({}),
         dump(pu_q),
         dump(
             {
@@ -666,20 +681,21 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
                 "symbol": {},
                 "line": {},
                 "lineE": {},
-                "command_redo": {"_a": []},
-                "command_undo": {"_a": []},
-                "command_replay": {"_a": []},
+                "polygon": [],
+                "command_redo": {"__a": []},
+                "command_undo": {"__a": []},
+                "command_replay": {"__a": []},
             }
         ),
-        dump([]),
+        dump(centerlist_delta(), compress=False),
         dump([]),
         dump({}),
         "0",
         "0",
-        dump([3, 0, 5]),
-        dump({"edit_mode": "surface"}),
+        dump([3, 2, 4]),
         "",
-        "1",
+        "",
+        "0",
         dump({}),
         dump({}),
         dump({}),
