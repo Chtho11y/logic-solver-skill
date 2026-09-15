@@ -254,11 +254,11 @@ export function App() {
   }
 
   const viewport = useMemo(() => {
-    let pad = 44;
     const wantsOutside =
       activeTool === "outside" ||
       spec?.layers.some((layer) => layer.target === "outside") ||
       Object.values(drawing.outside).some((side) => Object.keys(side).length);
+    let pad = 8;
     if (wantsOutside) {
       let maxTokens = 1;
       for (const side of SIDES) {
@@ -267,7 +267,7 @@ export function App() {
           if (Array.isArray(entry)) maxTokens = Math.max(maxTokens, entry.length);
         }
       }
-      pad = Math.max(44, 20 + maxTokens * 16);
+      pad = Math.max(36, 16 + maxTokens * 16);
     }
     return makeViewport(drawing.rows, drawing.cols, 40, pad);
   }, [drawing, spec, activeTool]);

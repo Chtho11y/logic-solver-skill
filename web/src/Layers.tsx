@@ -66,7 +66,6 @@ export function Layers(props: LayersProps) {
             </button>
             <button className="layer-main" onClick={() => props.onSelect(layer)} title={layer.detail}>
               <span className="layer-title">{layer.title}</span>
-              <span className="layer-detail">{layer.detail}</span>
               <span className="layer-count">{layer.count}</span>
             </button>
           </div>

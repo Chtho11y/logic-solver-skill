@@ -27,7 +27,7 @@ body {
 .workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr) minmax(260px, 36%);
+  grid-template-columns: 148px minmax(0, 1fr) minmax(260px, 36%);
   min-height: 0;
   background: var(--bg);
 }
@@ -176,8 +176,7 @@ body {
 
 .layer-row:hover { background: #e8e8e8; }
 .layer-row.active { background: #e4e6f1; }
-.layer-row.hidden .layer-title,
-.layer-row.hidden .layer-detail { opacity: 0.45; }
+.layer-row.hidden .layer-title { opacity: 0.45; }
 
 .layer-eye {
   width: 22px;
@@ -209,20 +208,15 @@ body {
 }
 
 .layer-title {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  font-weight: 600;
-  color: #333;
-}
-
-.layer-detail {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 11px;
-  color: #888;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 400;
+  color: #333;
+  text-align: left;
 }
 
 .layer-count {
@@ -335,7 +329,7 @@ body {
   max-height: 100%;
   width: auto;
   height: auto;
-  background: #fff;
+  background: transparent;
   touch-action: none;
   user-select: none;
 }
