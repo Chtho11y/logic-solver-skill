@@ -4,4 +4,4 @@ import "regions"
 regions_are_squares(c)
 no_four_regions_at_vertex(c)
 for p in clue_cells(n):
-    region_width(c, p) == at(n, p)
+    region_width(c, p) == n[p]

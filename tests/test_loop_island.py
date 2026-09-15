@@ -57,7 +57,7 @@ class LoopEncodingTests(unittest.TestCase):
         grid, variables = _edges(1, 1)
         source = _program(
             "for p in edges():",
-            "    at(e, p) == 0",
+            "    e[p] == 0",
             "loop(e)",
         )
         result = _solve_on("z3", grid, variables, source)
@@ -77,7 +77,7 @@ class LoopEncodingTests(unittest.TestCase):
         grid, variables = _edges(2, 2)
         source = _program(
             "for p in edges():",
-            "    at(e, p) == 0",
+            "    e[p] == 0",
             "connect_edges(e)",
         )
         result = _solve_on("z3", grid, variables, source)
@@ -112,7 +112,7 @@ class IslandWallTests(unittest.TestCase):
         source = _program(
             "island_rule(x)",
             "for p in cells():",
-            "    at(x, p) == 0",
+            "    x[p] == 0",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)
@@ -121,10 +121,10 @@ class IslandWallTests(unittest.TestCase):
         grid, variables = _shade(2, 2)
         source = _program(
             "island_rule(x)",
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 0",
-            "at(x, cell(1, 0)) == 0",
-            "at(x, cell(1, 1)) == 0",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 0",
+            "x[cell(1, 0)] == 0",
+            "x[cell(1, 1)] == 0",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)
@@ -133,8 +133,8 @@ class IslandWallTests(unittest.TestCase):
         grid, variables = _shade(2, 2)
         source = _program(
             "island_rule(x)",
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 1",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 1",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_UNSAT, result.message)
@@ -143,10 +143,10 @@ class IslandWallTests(unittest.TestCase):
         grid, variables = _shade(2, 2)
         source = _program(
             "island_rule(x)",
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 0",
-            "at(x, cell(1, 0)) == 0",
-            "at(x, cell(1, 1)) == 1",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 0",
+            "x[cell(1, 0)] == 0",
+            "x[cell(1, 1)] == 1",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_UNSAT, result.message)
@@ -155,15 +155,15 @@ class IslandWallTests(unittest.TestCase):
         grid, variables = _shade(3, 3)
         source = _program(
             "island_rule(x)",
-            "at(x, cell(0, 1)) == 1",
-            "at(x, cell(1, 0)) == 1",
-            "at(x, cell(1, 2)) == 1",
-            "at(x, cell(2, 1)) == 1",
-            "at(x, cell(0, 0)) == 0",
-            "at(x, cell(0, 2)) == 0",
-            "at(x, cell(1, 1)) == 0",
-            "at(x, cell(2, 0)) == 0",
-            "at(x, cell(2, 2)) == 0",
+            "x[cell(0, 1)] == 1",
+            "x[cell(1, 0)] == 1",
+            "x[cell(1, 2)] == 1",
+            "x[cell(2, 1)] == 1",
+            "x[cell(0, 0)] == 0",
+            "x[cell(0, 2)] == 0",
+            "x[cell(1, 1)] == 0",
+            "x[cell(2, 0)] == 0",
+            "x[cell(2, 2)] == 0",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_UNSAT, result.message)
@@ -172,15 +172,15 @@ class IslandWallTests(unittest.TestCase):
         grid, variables = _shade(3, 3)
         source = _program(
             "island_rule(x)",
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 2)) == 1",
-            "at(x, cell(2, 0)) == 1",
-            "at(x, cell(2, 2)) == 1",
-            "at(x, cell(0, 1)) == 0",
-            "at(x, cell(1, 0)) == 0",
-            "at(x, cell(1, 1)) == 0",
-            "at(x, cell(1, 2)) == 0",
-            "at(x, cell(2, 1)) == 0",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 2)] == 1",
+            "x[cell(2, 0)] == 1",
+            "x[cell(2, 2)] == 1",
+            "x[cell(0, 1)] == 0",
+            "x[cell(1, 0)] == 0",
+            "x[cell(1, 1)] == 0",
+            "x[cell(1, 2)] == 0",
+            "x[cell(2, 1)] == 0",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)
@@ -190,7 +190,7 @@ class IslandWallTests(unittest.TestCase):
         source = _program(
             "wall_rule(x)",
             "for p in cells():",
-            "    at(x, p) == 1",
+            "    x[p] == 1",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_UNSAT, result.message)
@@ -199,10 +199,10 @@ class IslandWallTests(unittest.TestCase):
         grid, variables = _shade(2, 2)
         source = _program(
             "wall_rule(x)",
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 1",
-            "at(x, cell(1, 0)) == 1",
-            "at(x, cell(1, 1)) == 0",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 1",
+            "x[cell(1, 0)] == 1",
+            "x[cell(1, 1)] == 0",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)
@@ -211,10 +211,10 @@ class IslandWallTests(unittest.TestCase):
         grid, variables = _shade(2, 2)
         source = _program(
             "wall_rule(x)",
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 0",
-            "at(x, cell(1, 0)) == 0",
-            "at(x, cell(1, 1)) == 1",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 0",
+            "x[cell(1, 0)] == 0",
+            "x[cell(1, 1)] == 1",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_UNSAT, result.message)

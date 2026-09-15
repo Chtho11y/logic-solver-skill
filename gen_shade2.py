@@ -99,7 +99,7 @@ col_count(x, 1, "top")
 
 for p in clue_cells(o):
     is_black(x, p)
-    if at(o, p) == 2:
+    if o[p] == 2:
         n_adj4(x, p, 1) == 1
     else:
         n_adj4(x, p, 1) == 2
@@ -140,10 +140,10 @@ let ids = cc_id(x)
 for p in clue_cells(a):
     for q in clue_cells(a):
         if before(p, q):
-            if at(a, p) == at(a, q):
-                at(ids, p) == at(ids, q)
+            if a[p] == a[q]:
+                ids[p] == ids[q]
             else:
-                at(ids, p) != at(ids, q)
+                ids[p] != ids[q]
 ''',
     [S, const("a", "字母（同数字视为同字母）")], [num_layer("a", "字母"), SHADE_LAYER],
     notes="完全实现：涂黑格两两成 1x2 骨牌且不同骨牌互不相邻 + 字母格留白 + 同字母同区域/异字母异区域。",
@@ -161,7 +161,7 @@ wall_rule(x)
 is_rect_group(x, 0)
 
 for p in clue_cells(o):
-    if at(o, p) == 2:
+    if o[p] == 2:
         is_black(x, p)
     else:
         is_white(x, p)
@@ -185,7 +185,7 @@ clue_cells_white(x, n)
 
 for p in clue_cells(n):
     if has_value(d, p):
-        num_eq(x[dir(p, at(d, p))], 1) == at(n, p)
+        num_eq(x[dir(p, d[p])], 1) == n[p]
 ''',
     [S, const("d", "箭头方向 0=上 1=下 2=左 3=右"), const("n", "该方向黑格数")],
     [arrow_layer("d"), num_layer("n", "该方向黑格数"), SHADE_LAYER], rows=6, cols=6,
@@ -219,7 +219,7 @@ add("go",
 import "shading"
 
 for p in clue_cells(o):
-    if at(o, p) == 2:
+    if o[p] == 2:
         is_black(x, p)
     else:
         is_white(x, p)
@@ -315,7 +315,7 @@ connected(x, 0)
 no2x2(x, 0)
 
 for p in clue_cells(o):
-    if at(o, p) == 2:
+    if o[p] == 2:
         is_black(x, p)
     else:
         is_white(x, p)
@@ -480,7 +480,7 @@ for p in cells():
     if right.size == 1:
         if same_region(p, right):
             # 水面是平的：同区域同一行的相邻两格水位相同。
-            at(x, p) == at(x, right)
+            x[p] == x[right]
 
 row_count(x, 1, "left")
 col_count(x, 1, "top")

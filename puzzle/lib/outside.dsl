@@ -93,14 +93,14 @@ def visible_count(x, line, from_low):
     # from the first cell (left / top), false from the last (right / bottom).
     let vis = 0
     for p in line:
-        let taller = at(x, p) > 0
+        let taller = x[p] > 0
         for q in line:
             if from_low:
                 if before(q, p):
-                    let taller = taller and (at(x, p) > at(x, q))
+                    let taller = taller and (x[p] > x[q])
             else:
                 if before(p, q):
-                    let taller = taller and (at(x, p) > at(x, q))
+                    let taller = taller and (x[p] > x[q])
         let vis = vis + b2i(taller)
     return vis
 
@@ -108,15 +108,15 @@ def first_nonzero_low(x, line):
     let first = 0
     let seen = 0
     for p in line:
-        let take = seen == 0 and at(x, p) > 0
-        let first = first + ite(take, at(x, p), 0)
+        let take = seen == 0 and x[p] > 0
+        let first = first + ite(take, x[p], 0)
         let seen = seen + b2i(take)
     return first
 
 def first_nonzero_high(x, line):
     let first = 0
     for p in line:
-        let first = ite(at(x, p) > 0, at(x, p), first)
+        let first = ite(x[p] > 0, x[p], first)
     return first
 
 def outside_visible(x):
@@ -156,8 +156,8 @@ def between_two_count(x, line, v):
     let seen = 0
     let gap = 0
     for p in line:
-        let seen = seen + b2i(at(x, p) == v)
-        let gap = gap + b2i(seen == 1 and at(x, p) != v)
+        let seen = seen + b2i(x[p] == v)
+        let gap = gap + b2i(seen == 1 and x[p] != v)
     return gap
 
 def outside_gap_between(x, v):
@@ -181,8 +181,8 @@ def between_two_sum(x, line, wall):
     let seen = 0
     let total = 0
     for p in line:
-        let seen = seen + b2i(at(x, p) == wall)
-        let total = total + ite(seen == 1 and at(x, p) != wall, at(x, p), 0)
+        let seen = seen + b2i(x[p] == wall)
+        let total = total + ite(seen == 1 and x[p] != wall, x[p], 0)
     return total
 
 def outside_between_sum(x, wall):

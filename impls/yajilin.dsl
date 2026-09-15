@@ -10,8 +10,8 @@ no_adjacent(x, 1)
 
 for p in cells():
     if has_value(n, p):
-        at(x, p) == 0
+        x[p] == 0
         off_loop(e, p)
-        num_eq(x[dir(p, at(d, p))], 1) == at(n, p)
+        num_eq(x[dir(p, d[p])], 1) == n[p]
     else:
-        on_loop(e, p) == (at(x, p) == 0)
+        on_loop(e, p) == (x[p] == 0)

@@ -7,7 +7,7 @@ island_rule(x)
 no_white_crossing_3_regions(x)
 
 for p in clue_cells(o):
-    if at(o, p) == 1:
+    if o[p] == 1:
         n_adj8(x, p, 1) == 1
     else:
         n_adj8(x, p, 1) == 2

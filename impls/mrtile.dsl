@@ -10,4 +10,4 @@ group_size_clue(x, n)
 let s4 = cc_size(x)
 let s8 = cc8_size(x)
 for p in cells():
-    is_black(x, p) => at(s8, p) > at(s4, p)
+    is_black(x, p) => s8[p] > s4[p]

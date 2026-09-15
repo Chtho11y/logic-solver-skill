@@ -113,7 +113,7 @@ class ConnectedEncodingTests(unittest.TestCase):
             [],
             _program(
                 "for p in cells():",
-                "    at(x, p) == 0",
+                "    x[p] == 0",
                 "connected(x, 1)",
             ),
             backend="z3",
@@ -125,7 +125,7 @@ class ConnectedEncodingTests(unittest.TestCase):
             [],
             _program(
                 "for p in cells():",
-                "    at(x, p) == 1",
+                "    x[p] == 1",
                 "connected(x, 1)",
             ),
             backend="z3",
@@ -135,10 +135,10 @@ class ConnectedEncodingTests(unittest.TestCase):
     def test_diagonal_is_unsat_for_connected_and_sat_for_connected8(self) -> None:
         grid, variables = _shade()
         diagonal = _program(
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 0",
-            "at(x, cell(1, 0)) == 0",
-            "at(x, cell(1, 1)) == 1",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 0",
+            "x[cell(1, 0)] == 0",
+            "x[cell(1, 1)] == 1",
         )
         four = solve(
             grid, variables, [], diagonal + "connected(x, 1)\n", backend="z3"

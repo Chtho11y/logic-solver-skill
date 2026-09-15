@@ -13,14 +13,14 @@ let sz = cc_size(x)
 for p in clue_cells(a):
     let n = 0
     for q in clue_cells(a):
-        let n = n + b2i(at(a, p) == at(a, q))
+        let n = n + b2i(a[p] == a[q])
     n >= 2
 
 for p in clue_cells(a):
     if has_value(d, p):
         let found = false
-        for s in dir(p, at(d, p)):
+        for s in dir(p, d[p]):
             if has_value(a, s):
-                if at(a, s) == at(a, p) and not found:
-                    at(sz, s) == at(sz, p) + 1
+                if a[s] == a[p] and not found:
+                    sz[s] == sz[p] + 1
                     let found = true

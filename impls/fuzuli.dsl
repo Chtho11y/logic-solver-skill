@@ -6,7 +6,7 @@ subset_latin(x, k)
 for w in slide(2, 2):
     let filled = 0
     for p in w:
-        let filled = filled + b2i(at(x, p) != 0)
+        let filled = filled + b2i(x[p] != 0)
     filled < 4
 for p in clue_cells(m):
-    at(x, p) == 0
+    x[p] == 0

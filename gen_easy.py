@@ -118,10 +118,10 @@ distinct_rows(x)
 distinct_cols(x)
 
 for p in clue_cells(o):
-    if at(o, p) == 1:
-        at(x, p) == 0
+    if o[p] == 1:
+        x[p] == 0
     else:
-        at(x, p) == 1
+        x[p] == 1
 ''',
      [shade_var(), const("o", "1 = 白圈必须留白, 2 = 黑圈必须涂黑")],
      [circle_layer("o", "黑白圈"), SHADE_LAYER],
@@ -169,7 +169,7 @@ for reg in regions:
 
 for p in cells():
     for q in adj4(p):
-        not (at(x, p) != 0 and at(x, p) == at(x, q))
+        not (x[p] != 0 and x[p] == x[q])
 
 row_count(x, 1, "left")
 row_count(x, 2, "right")
@@ -198,13 +198,13 @@ easy("simplegako",
 import "core"
 
 for p in cells():
-    let v = at(x, p)
+    let v = x[p]
     let cnt = 0
     for q in row(row_of(p)):
-        let cnt = cnt + b2i(at(x, q) == v)
+        let cnt = cnt + b2i(x[q] == v)
     for q in col(col_of(p)):
         if row_of(q) != row_of(p):
-            let cnt = cnt + b2i(at(x, q) == v)
+            let cnt = cnt + b2i(x[q] == v)
     v == cnt
 ''',
      [fill_var(1, 16, "出现次数")],
@@ -220,8 +220,8 @@ import "core"
 for p in cells():
     let s = 0
     for q in adj4(p):
-        let s = s + abs(at(x, p) - at(x, q))
-    at(x, p) == s
+        let s = s + abs(x[p] - x[q])
+    x[p] == s
 ''',
      [fill_var(1, 40, "正整数")],
      [given_num(mn=1, mx=40), answer_num()],
@@ -238,10 +238,10 @@ subset_latin(x, k)
 for w in slide(2, 2):
     let filled = 0
     for p in w:
-        let filled = filled + b2i(at(x, p) != 0)
+        let filled = filled + b2i(x[p] != 0)
     filled < 4
 for p in clue_cells(m):
-    at(x, p) == 0
+    x[p] == 0
 ''',
      [fill_var(0, 9, "0 = 空"), const("m", "1 = 此格不能填数")],
      [cross_layer(), given_num(mn=1, mx=9), answer_num()],
@@ -316,9 +316,9 @@ latin_1_to_n(x)
 for e in clue_cells(d):
     let cs = cell_of(e)
     if cs.size == 2:
-        let a = at(x, cs[0])
-        let b = at(x, cs[1])
-        if at(d, e) == 1:
+        let a = x[cs[0]]
+        let b = x[cs[1]]
+        if d[e] == 1:
             kropki_white(a, b)
         else:
             kropki_black(a, b)
@@ -330,12 +330,12 @@ for p in cells():
     if q.size == 1:
         let e = edge("V", row_of(p), col_of(p) + 1)
         if not has_value(d, e):
-            not kropki_white(at(x, p), at(x, q)) and not kropki_black(at(x, p), at(x, q))
+            not kropki_white(x[p], x[q]) and not kropki_black(x[p], x[q])
     let q2 = shift(p, 1, 0)
     if q2.size == 1:
         let e = edge("H", row_of(p) + 1, col_of(p))
         if not has_value(d, e):
-            not kropki_white(at(x, p), at(x, q2)) and not kropki_black(at(x, p), at(x, q2))
+            not kropki_white(x[p], x[q2]) and not kropki_black(x[p], x[q2])
 ''',
      [fill_var(1, 9, "1..N"), edge_const("d", "1 = 白点, 2 = 黑点")],
      [dot_layer(), given_num(mn=1, mx=9), answer_num()],
@@ -356,9 +356,9 @@ latin_1_to_n(x)
 for e in clue_cells(d):
     let cs = cell_of(e)
     if cs.size == 2:
-        let a = at(x, cs[0])
-        let b = at(x, cs[1])
-        if at(d, e) == 1:
+        let a = x[cs[0]]
+        let b = x[cs[1]]
+        if d[e] == 1:
             kropki_white(a, b)
         else:
             kropki_black(a, b)
@@ -384,7 +384,7 @@ for p in cells():
     let q = shift(p, 1, 0)
     if q.size == 1:
         if same_region(p, q):
-            at(x, p) > at(x, q)
+            x[p] > x[q]
 ''',
      [fill_var(1, 16, "1..N")],
      [REGION_LAYER, given_num(mn=1, mx=16), answer_num()],
@@ -400,8 +400,8 @@ import "core"
 for reg in regions:
     let nz = 0
     for p in reg:
-        let nz = nz + b2i(at(x, p) != 0)
-        at(x, p) == 0 or at(x, p) == reg.size
+        let nz = nz + b2i(x[p] != 0)
+        x[p] == 0 or x[p] == reg.size
     nz == 1
 
 for p in cells():
@@ -412,16 +412,16 @@ for p in cells():
                 for t in row(row_of(p)):
                     if col_of(p) < col_of(t):
                         if col_of(t) < col_of(q):
-                            let blocked = blocked + b2i(at(x, t) != 0)
-                (at(x, p) != 0 and at(x, q) != 0 and blocked == 0) => (col_of(q) - col_of(p) - 1 == abs(at(x, p) - at(x, q)))
+                            let blocked = blocked + b2i(x[t] != 0)
+                (x[p] != 0 and x[q] != 0 and blocked == 0) => (col_of(q) - col_of(p) - 1 == abs(x[p] - x[q]))
         if col_of(p) == col_of(q):
             if row_of(p) < row_of(q):
                 let blocked = 0
                 for t in col(col_of(p)):
                     if row_of(p) < row_of(t):
                         if row_of(t) < row_of(q):
-                            let blocked = blocked + b2i(at(x, t) != 0)
-                (at(x, p) != 0 and at(x, q) != 0 and blocked == 0) => (row_of(q) - row_of(p) - 1 == abs(at(x, p) - at(x, q)))
+                            let blocked = blocked + b2i(x[t] != 0)
+                (x[p] != 0 and x[q] != 0 and blocked == 0) => (row_of(q) - row_of(p) - 1 == abs(x[p] - x[q]))
 ''',
      [fill_var(0, 20, "0 = 空, 否则 = 区域面积")],
      [REGION_LAYER, given_num(mn=1, mx=20), answer_num()],
@@ -441,30 +441,30 @@ for reg in regions:
             let nwhite = nwhite + 1
     for p in reg:
         if has_value(d, p):
-            at(x, p) == 0
+            x[p] == 0
         else:
-            at(x, p) >= 1
-            at(x, p) <= nwhite
+            x[p] >= 1
+            x[p] <= nwhite
     for p in reg:
         for q in reg:
             if before(p, q):
                 if not has_value(d, p):
                     if not has_value(d, q):
-                        at(x, p) != at(x, q)
+                        x[p] != x[q]
 
 for p in cells():
     for q in adj4(p):
-        (at(x, p) != 0 and at(x, q) != 0) => at(x, p) != at(x, q)
+        (x[p] != 0 and x[q] != 0) => x[p] != x[q]
 
 for p in clue_cells(d):
-    let tgt = step(p, at(d, p))
+    let tgt = step(p, d[p])
     if tgt.size == 0:
         false
     else:
-        at(x, tgt) != 0
+        x[tgt] != 0
         for q in adj4(p):
             if row_of(q) != row_of(tgt) or col_of(q) != col_of(tgt):
-                at(x, q) != 0 => at(x, q) < at(x, tgt)
+                x[q] != 0 => x[q] < x[tgt]
 ''',
      [fill_var(0, 16, "0 = 黑格/箭头格"), const("d", "箭头 0-3")],
      [REGION_LAYER, arrow_layer("d", "极大箭头"), given_num(mn=1, mx=16), answer_num()],
@@ -486,7 +486,7 @@ import "loops"
 
 all_regions_size(c, 4)
 for p in clue_cells(n):
-    cell_edge_count(c.border, p) == at(n, p)
+    cell_edge_count(c.border, p) == n[p]
 ''',
      [cc_var(), const("n", "边界边数 0-4")],
      [num_layer("n", "边界边数", options={"min": 0, "max": 4}), partition_layer()],
@@ -502,7 +502,7 @@ import "loops"
 
 all_regions_size(c, 5)
 for p in clue_cells(n):
-    cell_edge_count(c.border, p) == at(n, p)
+    cell_edge_count(c.border, p) == n[p]
 ''',
      [cc_var(), const("n", "边界边数 0-4")],
      [num_layer("n", "边界边数", options={"min": 0, "max": 4}), partition_layer()],
@@ -533,7 +533,7 @@ import "regions"
 regions_are_squares(c)
 no_four_regions_at_vertex(c)
 for p in clue_cells(n):
-    region_width(c, p) == at(n, p)
+    region_width(c, p) == n[p]
 ''',
      [cc_var(), const("n", "边长")],
      [num_layer("n", "边长"), partition_layer()],
@@ -550,9 +550,9 @@ regions_are_rectangles(c)
 one_clue_per_region(c, s)
 no_four_regions_at_vertex(c)
 for p in clue_cells(s):
-    if at(s, p) == 1:
+    if s[p] == 1:
         region_width(c, p) == region_height(c, p)
-    elif at(s, p) == 2:
+    elif s[p] == 2:
         region_width(c, p) > region_height(c, p)
     else:
         region_height(c, p) > region_width(c, p)
@@ -578,14 +578,14 @@ for p in cells():
                     if before(p2, q2):
                         if before(p, p2) or (row_of(p) == row_of(p2) and col_of(p) == col_of(p2) and before(q, q2)):
                             if same_pair(p, q, p2, q2):
-                                not (at(c, p) == at(c, q) and at(c, p2) == at(c, q2))
+                                not (c[p] == c[q] and c[p2] == c[q2])
 
 def same_pair(p, q, p2, q2):
-    if at(n, p) == at(n, p2):
-        if at(n, q) == at(n, q2):
+    if n[p] == n[p2]:
+        if n[q] == n[q2]:
             return true
-    if at(n, p) == at(n, q2):
-        if at(n, q) == at(n, p2):
+    if n[p] == n[q2]:
+        if n[q] == n[p2]:
             return true
     return false
 ''',
@@ -606,18 +606,18 @@ no_adjacent(x, 1)
 clue_cells_white(x, n)
 
 for p in cells():
-    at(x, p) == 1 => at(c.size, p) == 1
-    at(x, p) == 0 => at(c.size, p) == 2
+    x[p] == 1 => c.size[p] == 1
+    x[p] == 0 => c.size[p] == 2
 
 for p in clue_cells(n):
     let horiz = false
     let left = shift(p, 0, -1)
     let right = shift(p, 0, 1)
     if left.size == 1:
-        let horiz = horiz or (at(c, p) == at(c, left))
+        let horiz = horiz or (c[p] == c[left])
     if right.size == 1:
-        let horiz = horiz or (at(c, p) == at(c, right))
-    at(n, p) == ite(horiz, num_eq(x[row(row_of(p))], 1), num_eq(x[col(col_of(p))], 1))
+        let horiz = horiz or (c[p] == c[right])
+    n[p] == ite(horiz, num_eq(x[row(row_of(p))], 1), num_eq(x[col(col_of(p))], 1))
 ''',
      [shade_var(), cc_var(), const("n", "行或列黑格数")],
      [num_layer("n", "行/列黑格数"), SHADE_LAYER, partition_layer()],
@@ -648,8 +648,8 @@ neighbour_sizes_differ(c)
 for e in clue_cells(k):
     let cs = cell_of(e)
     if cs.size == 2:
-        at(c, cs[0]) != at(c, cs[1])
-        at(c.size, cs[0]) + at(c.size, cs[1]) == at(k, e)
+        c[cs[0]] != c[cs[1]]
+        c.size[cs[0]] + c.size[cs[1]] == k[e]
     else:
         false
 ''',
@@ -694,7 +694,7 @@ for p in clue_cells(o):
 for p in clue_cells(n):
     on_loop(e, p)
     goes_straight(e, p)
-    straight_len_through(e, p) == at(n, p)
+    straight_len_through(e, p) == n[p]
 ''',
      [edge_var(), const("o", "圆圈"), const("n", "直线段长度")],
      [circle_layer("o", "圆圈"), num_layer("n", "段长"), loop_layer()],
@@ -710,13 +710,13 @@ import "loops"
 cloop(e)
 for p in clue_cells(o):
     on_loop(e, p)
-    if at(o, p) == 1:
+    if o[p] == 1:
         two_arms_equal(e, p)
     else:
         not two_arms_equal(e, p)
 for p in clue_cells(n):
     on_loop(e, p)
-    two_arm_sum(e, p) == at(n, p)
+    two_arm_sum(e, p) == n[p]
 ''',
      [edge_var(), const("o", "1 = 白圈等长, 2 = 黑圈不等"), const("n", "两臂之和")],
      [circle_layer("o", "平衡圈"), num_layer("n", "两臂之和"), loop_layer()],
@@ -750,11 +750,11 @@ cloop(e)
 no_adjacent(x, 1)
 for p in cells():
     if has_value(n, p):
-        at(x, p) == 0
+        x[p] == 0
         off_loop(e, p)
-        n_adj4(x, p, 1) == at(n, p)
+        n_adj4(x, p, 1) == n[p]
     else:
-        on_loop(e, p) == (at(x, p) == 0)
+        on_loop(e, p) == (x[p] == 0)
 ''',
      [edge_var(), shade_var(), const("n", "邻格黑格数")],
      [num_layer("n", "邻格黑格数"), SHADE_LAYER, loop_layer()],
@@ -770,10 +770,10 @@ import "core"
 
 cloop(e)
 for p in cells():
-    on_loop(e, p) == (at(x, p) == 0)
+    on_loop(e, p) == (x[p] == 0)
 for p in clue_cells(n):
-    at(x, p) == 1
-    at(cc_size(x), p) == at(n, p)
+    x[p] == 1
+    cc_size(x)[p] == n[p]
 cc_count(x, 1) == clue_cells(n).size
 ''',
      [edge_var(), shade_var(), const("n", "离岛格数")],
@@ -794,16 +794,16 @@ import "core"
 
 let n = rows.size * cols.size
 for p in cells():
-    at(x, p) >= 1
-    at(x, p) <= n
+    x[p] >= 1
+    x[p] <= n
 for p in cells():
     for q in cells():
         if before(p, q):
-            at(x, p) != at(x, q)
+            x[p] != x[q]
 for p in cells():
-    let ok = b2i(at(x, p) == n)
+    let ok = b2i(x[p] == n)
     for q in adj8(p):
-        let ok = ok + b2i(at(x, q) == at(x, p) + 1)
+        let ok = ok + b2i(x[q] == x[p] + 1)
     ok >= 1
 ''',
      [fill_var(1, 81, "1..N")],

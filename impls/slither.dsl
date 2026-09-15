@@ -6,4 +6,4 @@ import "loops"
 loop(e)
 
 for p in clue_cells(n):
-    cell_edge_count(e, p) == at(n, p)
+    cell_edge_count(e, p) == n[p]

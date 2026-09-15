@@ -11,4 +11,4 @@ for reg in regions:
 
 # 数字是「一组」的面积，故区域总涂黑数为其两倍。
 for p in clue_cells(n):
-    num_eq(x[region_of(p)], 1) == 2 * at(n, p)
+    num_eq(x[region_of(p)], 1) == 2 * n[p]

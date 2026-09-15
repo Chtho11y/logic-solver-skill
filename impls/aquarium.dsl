@@ -15,7 +15,7 @@ for p in cells():
     if right.size == 1:
         if same_region(p, right):
             # 水面是平的：同区域同一行的相邻两格水位相同。
-            at(x, p) == at(x, right)
+            x[p] == x[right]
 
 row_count(x, 1, "left")
 col_count(x, 1, "top")

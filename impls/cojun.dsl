@@ -7,4 +7,4 @@ for p in cells():
     let q = shift(p, 1, 0)
     if q.size == 1:
         if same_region(p, q):
-            at(x, p) > at(x, q)
+            x[p] > x[q]

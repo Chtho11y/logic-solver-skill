@@ -7,15 +7,15 @@ no_adjacent(x, 1)
 clue_cells_white(x, n)
 
 for p in cells():
-    at(x, p) == 1 => at(c.size, p) == 1
-    at(x, p) == 0 => at(c.size, p) == 2
+    x[p] == 1 => c.size[p] == 1
+    x[p] == 0 => c.size[p] == 2
 
 for p in clue_cells(n):
     let horiz = false
     let left = shift(p, 0, -1)
     let right = shift(p, 0, 1)
     if left.size == 1:
-        let horiz = horiz or (at(c, p) == at(c, left))
+        let horiz = horiz or (c[p] == c[left])
     if right.size == 1:
-        let horiz = horiz or (at(c, p) == at(c, right))
-    at(n, p) == ite(horiz, num_eq(x[row(row_of(p))], 1), num_eq(x[col(col_of(p))], 1))
+        let horiz = horiz or (c[p] == c[right])
+    n[p] == ite(horiz, num_eq(x[row(row_of(p))], 1), num_eq(x[col(col_of(p))], 1))

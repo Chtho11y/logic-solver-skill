@@ -10,11 +10,11 @@ touching_differ(x)
 
 for reg in regions:
     for p in reg:
-        at(x, p) < reg.size => has_successor(x, p)
+        x[p] < reg.size => has_successor(x, p)
 
 def has_successor(x, p):
     let ok = false
     for q in adj4(p):
         if same_region(p, q):
-            let ok = ok or (at(x, q) == at(x, p) + 1)
+            let ok = ok or (x[q] == x[p] + 1)
     return ok

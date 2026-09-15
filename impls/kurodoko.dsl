@@ -8,4 +8,4 @@ island_rule(x)
 
 for p in clue_cells(n):
     is_white(x, p)
-    see4(x, p, 0) + 1 == at(n, p)
+    see4(x, p, 0) + 1 == n[p]

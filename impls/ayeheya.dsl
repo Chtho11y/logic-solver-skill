@@ -25,4 +25,4 @@ def region_half_turn_symmetric(x, reg):
         if col_of(p) > maxc:
             let maxc = col_of(p)
     for p in reg:
-        at(x, p) == at(x, cell(minr + maxr - row_of(p), minc + maxc - col_of(p)))
+        x[p] == x[cell(minr + maxr - row_of(p), minc + maxc - col_of(p))]

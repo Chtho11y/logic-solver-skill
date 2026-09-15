@@ -29,16 +29,16 @@ def right_edge(p):
     return edge("V", row_of(p), col_of(p) + 1)
 
 def link_up(e, p):
-    return at(e, up_edge(p))
+    return e[up_edge(p)]
 
 def link_down(e, p):
-    return at(e, down_edge(p))
+    return e[down_edge(p)]
 
 def link_left(e, p):
-    return at(e, left_edge(p))
+    return e[left_edge(p)]
 
 def link_right(e, p):
-    return at(e, right_edge(p))
+    return e[right_edge(p)]
 
 
 # -- how the loop crosses a cell ---------------------------------------------
@@ -78,11 +78,11 @@ def link_between(e, p, q):
     # The link variable joining two orthogonally adjacent cells.
     if row_of(p) == row_of(q):
         if col_of(q) > col_of(p):
-            return at(e, edge("V", row_of(p), col_of(q)))
-        return at(e, edge("V", row_of(p), col_of(p)))
+            return e[edge("V", row_of(p), col_of(q))]
+        return e[edge("V", row_of(p), col_of(p))]
     if row_of(q) > row_of(p):
-        return at(e, edge("H", row_of(q), col_of(p)))
-    return at(e, edge("H", row_of(p), col_of(p)))
+        return e[edge("H", row_of(q), col_of(p))]
+    return e[edge("H", row_of(p), col_of(p))]
 
 def straight_beside(e, p, d):
     let q = step(p, d)
@@ -106,7 +106,7 @@ def loop_visits_all_but(e, x):
     # 回路经过所有未涂黑的格子（Yajilin / Koburin 家族），x 为 0/1 涂黑变量
     cloop(e)
     for p in cells():
-        on_loop(e, p) == (at(x, p) == 0)
+        on_loop(e, p) == (x[p] == 0)
 
 
 # -- straight-segment lengths -------------------------------------------------
@@ -159,9 +159,9 @@ def inside_flag(e, ins):
     for p in cells():
         let up = shift(p, -1, 0)
         if up.size == 0:
-            at(ins, p) == link_up(e, p)
+            ins[p] == link_up(e, p)
         else:
-            (at(ins, p) != at(ins, up)) == (link_up(e, p) == 1)
+            (ins[p] != ins[up]) == (link_up(e, p) == 1)
 
 
 # -- regions visited by a cell loop ------------------------------------------

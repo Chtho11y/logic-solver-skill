@@ -8,4 +8,4 @@ for reg in regions:
 
 let s = cc_size(x)
 for p in cells():
-    is_black(x, p) => at(s, p) == 2
+    is_black(x, p) => s[p] == 2

@@ -13,4 +13,4 @@ for reg in regions:
     num_eq(x[reg], 1) == k
 
 for p in cells():
-    at(x, p) == 1 => n_adj8(x, p, 1) == 0
+    x[p] == 1 => n_adj8(x, p, 1) == 0

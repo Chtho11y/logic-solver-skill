@@ -8,7 +8,7 @@ cloop(e)
 
 for p in clue_cells(o):
     on_loop(e, p)
-    if at(o, p) == 1:
+    if o[p] == 1:
         goes_straight(e, p)
         white_pearl(e, p)
     else:

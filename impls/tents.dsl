@@ -7,24 +7,24 @@ import "core"
 import "outside"
 
 for p in clue_cells(t):
-    at(x, p) == 0
+    x[p] == 0
 
 for p in cells():
-    (at(a, p) > 0) == (at(x, p) == 1)
+    (a[p] > 0) == (x[p] == 1)
     for code, dr, dc in [[1, -1, 0], [2, 1, 0], [3, 0, -1], [4, 0, 1]]:
         let q = step_rc(p, dr, dc)
         if q.size == 0:
-            at(a, p) != code
+            a[p] != code
         else:
             if not has_value(t, q):
-                at(a, p) != code
+                a[p] != code
 
 # 每棵树恰好被一顶帐篷选中。
 for p in clue_cells(t):
     tree_tents(a, p) == 1
 
 for p in cells():
-    at(x, p) == 1 => n_adj8(x, p, 1) == 0
+    x[p] == 1 => n_adj8(x, p, 1) == 0
 
 row_count(x, 1, "left")
 col_count(x, 1, "top")
@@ -37,5 +37,5 @@ def tree_tents(a, p):
     for code, dr, dc in [[2, -1, 0], [1, 1, 0], [4, 0, -1], [3, 0, 1]]:
         let q = shift(p, dr, dc)
         if q.size == 1:
-            let total = total + b2i(at(a, q) == code)
+            let total = total + b2i(a[q] == code)
     return total

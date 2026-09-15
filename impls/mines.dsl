@@ -4,5 +4,5 @@
 import "core"
 
 for p in clue_cells(n):
-    at(x, p) == 0
-    num_eq(x[adj8(p)], 1) == at(n, p)
+    x[p] == 0
+    num_eq(x[adj8(p)], 1) == n[p]

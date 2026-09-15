@@ -5,16 +5,16 @@
 import "core"
 
 for p in clue_cells(w):
-    at(x, p) == 0
+    x[p] == 0
 
 for p in clue_cells(n):
-    num_eq(x[adj4(p)], 1) == at(n, p)
+    num_eq(x[adj4(p)], 1) == n[p]
 
 for p in cells():
     if not has_value(w, p):
         let seen = lit_count(x, w, p)
-        at(x, p) == 1 or seen >= 1
-        at(x, p) == 1 => seen == 0
+        x[p] == 1 or seen >= 1
+        x[p] == 1 => seen == 0
 
 def lit_count(x, w, p):
     let total = 0
@@ -25,5 +25,5 @@ def lit_count(x, w, p):
                 if has_value(w, q):
                     let alive = false
                 else:
-                    let total = total + b2i(at(x, q) == 1)
+                    let total = total + b2i(x[q] == 1)
     return total

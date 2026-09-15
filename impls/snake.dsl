@@ -9,7 +9,7 @@ col_count(x, 1, "top")
 
 for p in clue_cells(o):
     is_black(x, p)
-    if at(o, p) == 2:
+    if o[p] == 2:
         n_adj4(x, p, 1) == 1
     else:
         n_adj4(x, p, 1) == 2

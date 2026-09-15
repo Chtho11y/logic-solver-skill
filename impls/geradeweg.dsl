@@ -7,4 +7,4 @@ for p in clue_cells(o):
 for p in clue_cells(n):
     on_loop(e, p)
     goes_straight(e, p)
-    straight_len_through(e, p) == at(n, p)
+    straight_len_through(e, p) == n[p]

@@ -5,11 +5,11 @@
 import "core"
 
 for p in cells():
-    (at(f, p) == 1) == (at(x, p) > 0)
+    (f[p] == 1) == (x[p] > 0)
 
 connected(f, 1)
 
 for p in cells():
-    at(f, p) == 1 => at(x, p) == num_eq(f[adj4(p)], 1)
+    f[p] == 1 => x[p] == num_eq(f[adj4(p)], 1)
     for q in adj4(p):
-        at(f, p) == 1 and at(f, q) == 1 => at(x, p) != at(x, q)
+        f[p] == 1 and f[q] == 1 => x[p] != x[q]

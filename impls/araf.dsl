@@ -9,9 +9,9 @@ for p in cells():
 for p in clue_cells(n):
     for q in clue_cells(n):
         if before(p, q):
-            if at(n, p) < at(n, q):
-                at(c, p) == at(c, q) => at(c.size, p) > at(n, p) and at(c.size, p) < at(n, q)
-            if at(n, p) > at(n, q):
-                at(c, p) == at(c, q) => at(c.size, p) > at(n, q) and at(c.size, p) < at(n, p)
-            if at(n, p) == at(n, q):
-                at(c, p) != at(c, q)
+            if n[p] < n[q]:
+                c[p] == c[q] => c.size[p] > n[p] and c.size[p] < n[q]
+            if n[p] > n[q]:
+                c[p] == c[q] => c.size[p] > n[q] and c.size[p] < n[p]
+            if n[p] == n[q]:
+                c[p] != c[q]

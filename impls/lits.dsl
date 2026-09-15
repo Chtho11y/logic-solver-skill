@@ -18,9 +18,9 @@ for reg in regions:
     ordered_pairs_in(x, reg, 1) >= 6
 
     let rid = region_id(reg[0])
-    let ty = at(t, reg[0])
+    let ty = t[reg[0]]
     for p in reg:
-        at(t, p) == ty
+        t[p] == ty
 
     let deg3 = false
     for p in reg:
@@ -40,4 +40,4 @@ for reg in regions:
 for p in cells():
     for q in adj4(p):
         if not same_region(p, q):
-            is_black(x, p) and is_black(x, q) => at(t, p) != at(t, q)
+            is_black(x, p) and is_black(x, q) => t[p] != t[q]

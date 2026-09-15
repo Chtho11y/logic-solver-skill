@@ -158,7 +158,7 @@ class CspuzIntegrationTests(unittest.TestCase):
             Grid(1, 1),
             [variable],
             [],
-            "at(x, cell(0, 0)) / 3 == 2\nat(x, cell(0, 0)) % 3 == 1",
+            "x[cell(0, 0)] / 3 == 2\nat(x, cell(0, 0)) % 3 == 1",
             backend="z3",
         )
         self.assertTrue(result.ok, result.message)
@@ -168,7 +168,7 @@ class CspuzIntegrationTests(unittest.TestCase):
             Grid(1, 1),
             [Variable("x", domain=(0, 1))],
             [],
-            "1000000000 * at(x, cell(0, 0)) == 0",
+            "1000000000 * x[cell(0, 0)] == 0",
         )
         self.assertEqual(result.status, STATUS_COMPILED, result.message)
 
@@ -193,7 +193,7 @@ class CspuzIntegrationTests(unittest.TestCase):
                 )
             ],
             [],
-            "at(cc8_size(a), cell(2, 2)) == 1",
+            "cc8_size(a)[cell(2, 2)] == 1",
             backend="z3",
         )
         self.assertTrue(result.ok, result.message)

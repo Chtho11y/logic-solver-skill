@@ -53,8 +53,8 @@ class CcSizeDivisionTests(unittest.TestCase):
         source = _program(
             "let sz = cc_size(x)",
             "for p in cells():",
-            "    at(x, p) == 1",
-            "    at(sz, p) == 4",
+            "    x[p] == 1",
+            "    sz[p] == 4",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)
@@ -65,11 +65,11 @@ class CcSizeDivisionTests(unittest.TestCase):
         source = _program(
             "let sz = cc_size(x)",
             "for p in cells():",
-            "    at(x, p) == 1 => at(sz, p) == 2",
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 1",
-            "at(x, cell(1, 0)) == 1",
-            "at(x, cell(1, 1)) == 0",
+            "    x[p] == 1 => sz[p] == 2",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 1",
+            "x[cell(1, 0)] == 1",
+            "x[cell(1, 1)] == 0",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_UNSAT, result.message)
@@ -78,8 +78,8 @@ class CcSizeDivisionTests(unittest.TestCase):
         grid, variables = _shade(2, 2)
         source = _program(
             "for p in cells():",
-            "    at(x, p) == 1",
-            "    at(cc_id(x), p) == 0",
+            "    x[p] == 1",
+            "    cc_id(x)[p] == 0",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)
@@ -87,12 +87,12 @@ class CcSizeDivisionTests(unittest.TestCase):
     def test_cc_id_disconnected_blacks_keep_distinct_roots(self) -> None:
         grid, variables = _shade(2, 2)
         source = _program(
-            "at(x, cell(0, 0)) == 1",
-            "at(x, cell(0, 1)) == 0",
-            "at(x, cell(1, 0)) == 0",
-            "at(x, cell(1, 1)) == 1",
-            "at(cc_id(x), cell(0, 0)) == 0",
-            "at(cc_id(x), cell(1, 1)) == 3",
+            "x[cell(0, 0)] == 1",
+            "x[cell(0, 1)] == 0",
+            "x[cell(1, 0)] == 0",
+            "x[cell(1, 1)] == 1",
+            "cc_id(x)[cell(0, 0)] == 0",
+            "cc_id(x)[cell(1, 1)] == 3",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)
@@ -100,10 +100,10 @@ class CcSizeDivisionTests(unittest.TestCase):
     def test_cc_count_two_white_islands(self) -> None:
         grid, variables = _shade(2, 2)
         source = _program(
-            "at(x, cell(0, 0)) == 0",
-            "at(x, cell(0, 1)) == 1",
-            "at(x, cell(1, 0)) == 1",
-            "at(x, cell(1, 1)) == 0",
+            "x[cell(0, 0)] == 0",
+            "x[cell(0, 1)] == 1",
+            "x[cell(1, 0)] == 1",
+            "x[cell(1, 1)] == 0",
             "cc_count(x, 0) == 2",
             "cc_count(x, 1) == 2",
         )
@@ -114,7 +114,7 @@ class CcSizeDivisionTests(unittest.TestCase):
         grid, variables = _cc(2, 2)
         source = _program(
             "for p in cells():",
-            "    at(c.size, p) == 4",
+            "    c.size[p] == 4",
         )
         result = _solve_on("z3", grid, variables, source)
         self.assertEqual(result.status, STATUS_SAT, result.message)

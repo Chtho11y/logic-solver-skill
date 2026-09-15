@@ -4,4 +4,4 @@ import "loops"
 
 all_regions_size(c, 5)
 for p in clue_cells(n):
-    cell_edge_count(c.border, p) == at(n, p)
+    cell_edge_count(c.border, p) == n[p]

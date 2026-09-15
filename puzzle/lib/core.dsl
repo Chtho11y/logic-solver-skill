@@ -6,22 +6,22 @@
 # Conventions used throughout the library:
 #   * a *shading* variable is an integer cell variable with domain 0..1,
 #     where 1 = 涂黑 (black/filled) and 0 = 留白 (white/empty);
-#   * `at(x, p)` unwraps a variable at a single point into a plain scalar —
-#     always use it instead of `x[p]` when you need a scalar, because `x[p]`
-#     yields a one-element list and `and` merges lists instead of conjoining.
+#   * `x[p]` is the quantity at a single point (a scalar). `x[row(0)]` is
+#     still a list, so it broadcasts. `and` concatenates two lists, so a
+#     scalar index is what makes `x[p] != 0 and x[q] != 0` mean AND.
 # ============================================================================
 
 
 # -- predicates over a single cell -------------------------------------------
 
 def eq(x, p, v):
-    return at(x, p) == v
+    return x[p] == v
 
 def is_black(x, p):
-    return at(x, p) == 1
+    return x[p] == 1
 
 def is_white(x, p):
-    return at(x, p) == 0
+    return x[p] == 0
 
 
 # -- neighbourhood counting ---------------------------------------------------
@@ -77,7 +77,7 @@ def distinct_rows(x):
             if row_of(r1[0]) < row_of(r2[0]):
                 let diff = 0
                 for p in r1:
-                    let diff = diff + b2i(at(x, p) != at(x, cell(row_of(r2[0]), col_of(p))))
+                    let diff = diff + b2i(x[p] != x[cell(row_of(r2[0]), col_of(p))])
                 diff >= 1
 
 def distinct_cols(x):
@@ -86,7 +86,7 @@ def distinct_cols(x):
             if col_of(c1[0]) < col_of(c2[0]):
                 let diff = 0
                 for p in c1:
-                    let diff = diff + b2i(at(x, p) != at(x, cell(row_of(p), col_of(c2[0]))))
+                    let diff = diff + b2i(x[p] != x[cell(row_of(p), col_of(c2[0]))])
                 diff >= 1
 
 

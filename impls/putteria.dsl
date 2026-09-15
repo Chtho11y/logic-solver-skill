@@ -7,11 +7,11 @@ import "core"
 for reg in regions:
     num_eq(x[reg], reg.size) == 1
     for p in reg:
-        at(x, p) == 0 or at(x, p) == reg.size
+        x[p] == 0 or x[p] == reg.size
 
 for p in cells():
     for q in adj4(p):
-        not (at(x, p) > 0 and at(x, q) > 0)
+        not (x[p] > 0 and x[q] > 0)
 
 for r in rows:
     line_unique(x, r)
@@ -22,4 +22,4 @@ def line_unique(x, line):
     for p in line:
         for q in line:
             if before(p, q):
-                not (at(x, p) > 0 and at(x, p) == at(x, q))
+                not (x[p] > 0 and x[p] == x[q])

@@ -7,7 +7,7 @@ wall_rule(x)
 is_rect_group(x, 0)
 
 for p in clue_cells(o):
-    if at(o, p) == 2:
+    if o[p] == 2:
         is_black(x, p)
     else:
         is_white(x, p)

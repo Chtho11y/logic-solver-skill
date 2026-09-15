@@ -8,7 +8,7 @@ wall_rule(x)
 
 for p in clue_cells(n):
     is_white(x, p)
-    at(cc_size(x), p) == at(n, p)
+    cc_size(x)[p] == n[p]
 
 # 白连通组数 == 数字个数，配合“每个数字在一个白组里”即得双射。
 cc_count(x, 0) == clue_cells(n).size

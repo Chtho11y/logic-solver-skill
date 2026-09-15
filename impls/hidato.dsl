@@ -3,14 +3,14 @@ import "core"
 
 let n = rows.size * cols.size
 for p in cells():
-    at(x, p) >= 1
-    at(x, p) <= n
+    x[p] >= 1
+    x[p] <= n
 for p in cells():
     for q in cells():
         if before(p, q):
-            at(x, p) != at(x, q)
+            x[p] != x[q]
 for p in cells():
-    let ok = b2i(at(x, p) == n)
+    let ok = b2i(x[p] == n)
     for q in adj8(p):
-        let ok = ok + b2i(at(x, q) == at(x, p) + 1)
+        let ok = ok + b2i(x[q] == x[p] + 1)
     ok >= 1

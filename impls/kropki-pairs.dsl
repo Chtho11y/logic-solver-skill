@@ -6,9 +6,9 @@ latin_1_to_n(x)
 for e in clue_cells(d):
     let cs = cell_of(e)
     if cs.size == 2:
-        let a = at(x, cs[0])
-        let b = at(x, cs[1])
-        if at(d, e) == 1:
+        let a = x[cs[0]]
+        let b = x[cs[1]]
+        if d[e] == 1:
             kropki_white(a, b)
         else:
             kropki_black(a, b)
