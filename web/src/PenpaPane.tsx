@@ -120,7 +120,7 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
         ref={frameRef}
         className="penpa-frame"
         title="Penpa+"
-        src="/penpa-edit/index.html?v=stamp"
+        src="/penpa-edit/index.html"
       />
     </main>
   );
