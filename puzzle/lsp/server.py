@@ -632,13 +632,18 @@ class LanguageServer:
         if token.type == T_NAME and self._is_member_attr(doc.text, token):
             return "member", name
         program = self._program(uri, doc.text)
-        if program is not None:
-            locals_here = locals_covering(program, token.line)
-            if name in locals_here:
-                return "local", locals_here[name]
+        locals_here = locals_covering(program, token.line) if program is not None else {}
+        # let/for locals beat puzzle vars. Puzzle vars beat `def` params so
+        # hovering `x` in `def nurikabe(x, n)` still shows the spec, not
+        # `(param) x`. Library helpers without a json spec keep param hover.
+        non_param = {n: b for n, b in locals_here.items() if b.kind != "param"}
+        if name in non_param:
+            return "local", non_param[name]
         for spec in self._variables_for(uri):
             if spec.name == name:
                 return "variable", spec
+        if name in locals_here:
+            return "local", locals_here[name]
         if name in BUILTIN_CONSTANTS:
             return "constant", name
         sym = self.index.find_function(uri, name)
