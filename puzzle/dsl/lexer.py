@@ -58,8 +58,10 @@ class _Lexer:
 
     def _consume_line(self, lineno: int, raw: str) -> None:
         if self._depth > 0:
-            # Continuation line inside brackets: no indentation handling.
+            # Continuation line inside brackets: no indentation handling. The
+            # logical line still ends here if this line closed the last bracket.
             self._scan_tokens(lineno, raw, 0)
+            self._end_logical_line(lineno, raw)
             return
 
         indent, rest, col0 = self._measure_indent(raw)
@@ -69,7 +71,11 @@ class _Lexer:
 
         self._handle_indentation(lineno, indent)
         self._scan_tokens(lineno, rest, col0)
-        # A logical line ends here unless a bracket is still open.
+        self._end_logical_line(lineno, raw)
+
+    def _end_logical_line(self, lineno: int, raw: str) -> None:
+        """Terminate the logical line unless a bracket is still open."""
+
         if self._depth == 0 and self._tokens and self._tokens[-1].type != T_NEWLINE:
             self._tokens.append(Token(T_NEWLINE, "", lineno, len(raw)))
 

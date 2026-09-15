@@ -131,16 +131,50 @@ class CspuzModel(ConstraintModel):
         return cspuz.alldifferent(values)
 
     @staticmethod
-    def And(*values: Any) -> Any:
+    def _flatten_bools(values: Any) -> list:
+        """Flatten the varargs *and* single-list call styles of And/Or."""
+
+        out: list = []
+        stack = list(values)
+        while stack:
+            item = stack.pop(0)
+            if isinstance(item, (list, tuple)):
+                stack[:0] = list(item)
+            else:
+                out.append(item)
+        return out
+
+    @classmethod
+    def And(cls, *values: Any) -> Any:
         import cspuz
 
-        return cspuz.fold_and(*values)
+        # Constants are folded here: cspuz collapses an absorbing constant into
+        # a BoolConstant node that the pinned Z3 converter lowers to ``None``.
+        terms = []
+        for item in cls._flatten_bools(values):
+            if isinstance(item, bool):
+                if not item:
+                    return False
+                continue
+            terms.append(item)
+        if not terms:
+            return True
+        return terms[0] if len(terms) == 1 else cspuz.fold_and(terms)
 
-    @staticmethod
-    def Or(*values: Any) -> Any:
+    @classmethod
+    def Or(cls, *values: Any) -> Any:
         import cspuz
 
-        return cspuz.fold_or(*values)
+        terms = []
+        for item in cls._flatten_bools(values):
+            if isinstance(item, bool):
+                if item:
+                    return True
+                continue
+            terms.append(item)
+        if not terms:
+            return False
+        return terms[0] if len(terms) == 1 else cspuz.fold_or(terms)
 
     @staticmethod
     def Not(value: Any) -> Any:

@@ -230,8 +230,12 @@ def region_blacks_separated(x):
                 not (is_black(x, p) and is_black(x, q))
 
 def one_black_group_per_region(x):
-    # 每个区域恰好一组连通的涂黑格（组不跨区 + 组数 = 区域数）
+    # 每个区域恰好一组连通的涂黑格
+    # 前提：regions 是覆盖整个盘面且互不重叠的题面分区。
+    # 组不跨区 + 每区至少一格 + 组数 == 区域数 ⟹ 每区恰好一组。
     region_blacks_separated(x)
+    for reg in regions:
+        num_eq(x[reg], 1) >= 1
     cc_count(x, 1) == regions.size
 
 def at_most_one_black_group_per_region(x):

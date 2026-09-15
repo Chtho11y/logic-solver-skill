@@ -75,6 +75,10 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
   - 否则把 `body` 内每条约束包装为 `Implies(cond, c)`，`else` 分支包装为 `Implies(Not(cond), c)`。守卫（guard）会累积。**注意**：守卫只作用于被断言的约束，不会阻止 `let` 执行——需要条件性累加时请确保条件是编译期常量。
 - **`for v in iterable: body`**：在编译期**展开**循环，每次迭代把 `v` 绑定到一个元素。
 - **`def name(a, b): body`**：定义编译期内联的辅助函数。函数体内的约束按调用点的守卫被断言；`return expr` 返回一个值（可以是布尔表达式、区域、列表……），没有 `return` 时返回空列表。同一块内的 `def` 会被**提升**，因此可以先用后定义。函数体在独立的作用域栈中执行（只能看到自己的参数与全局的变量/区域/常量/函数）。
+  - **`return` 只能受编译期条件控制**。`return` 是改变执行流程的控制语句，而守卫只能约束「被断言的约束」，无法约束「函数返回了什么」。因此若某个 `return` 位于函数体内某个**符号条件** `if` 之下，编译器直接报错：
+    `'return' may only be controlled by compile-time if conditions; use ite(condition, a, b) for a symbolic result`。
+  - 需要「按待求解的条件取不同值」时改用条件表达式：`return ite(c, 1, 0)`。
+  - 该限制只针对**函数自身新增**的符号分支；在符号 `if` 中调用一个内部无条件 `return` 的函数依然合法（其约束仍按调用点守卫断言）。编译期条件（常量、`region_id`、`row_of`、`has_value`、`.size` 等）下的 `return` 也不受影响。
 - **`import "module"`**：把另一个 DSL 模块的定义引入当前程序（同名模块只加载一次）。解析顺序为 `puzzle/lib/` 然后 `impls/`，扩展名 `.dsl` 可省略。
 
 ### 结构化绑定（解包）
@@ -83,8 +87,11 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 - 单目标 `let x = expr` / `for x in expr` 保持原语义（不做解包）。
 
 ### 套件（suite）
-- 行内单语句：`if cond: stmt`（`else` 同样支持行内：`if cond: a else: b`）
+- 行内单语句：`if cond: stmt`。**`else` 不支持行内写法**：`if cond: a else: b` 会报
+  `expected 'NEWLINE'`；`else` 必须换行并与对应 `if` 同级缩进。
 - 块：换行 + 缩进的多条语句。空块报错。`else` 须与对应 `if` 同级缩进。
+- 括号内的续行不参与缩进处理；**闭合最后一个括号的那一行照常结束逻辑行**，因此多行
+  列表 / 多行调用之后可以直接接下一条语句。
 
 ---
 
@@ -267,11 +274,15 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | 签名 | 说明 |
 |------|------|
 | `loop(var)` | corner lattice 上恰好形成一个闭合回路 |
-| `cloop(var)` | 经过格中心恰好形成一个闭合回路（盘面外沿的 edge 强制为 0） |
+| `cloop(var)` | 经过格中心恰好形成一个闭合回路（盘面外沿的 edge 为 0，此条件是**返回值的一部分**） |
 | `deg(var, corner)` | corner 处被选中的格线条数 |
 | `cdeg(var, cell)` | cell 处引出的连线条数 |
 | `connect_edges(var)` | corner lattice 上被选中的边连通成一个整体（不限度数） |
-| `connect_links(var)` | 格中心连线连通成一个整体（不限度数） |
+| `connect_links(var)` | 格中心连线连通成一个整体（不限度数；同样包含盘面外沿 edge 为 0） |
+
+> `loop` / `cloop` / `connect_edges` / `connect_links` 返回**布尔谓词**，其全部要求都在
+> 返回值里，因此可以安全地放进 `if` 分支、取 `not`、参与 `or`。它们额外生成的 id/距离
+> 辅助量属于**定义性**约束（对任意边取值都可满足），不会限制 edge 变量本身。
 
 ### 6.8 调试函数（Debug）
 
@@ -472,5 +483,8 @@ print(row(0))
 1. `x[p]` 是**列表**，而 `and` 在两个列表上是**合并**而非逻辑与。需要标量时用 `at(x, p)`。
 2. 守卫不阻止 `let` 执行。想要“条件性累加”时，条件必须是编译期常量
    （`region_id` / `row_of` / `has_value` / 常量变量的值 / `.size` 都是）。
-3. `cc_size` 是 O(N²) 编码，大盘面谨慎；`cc_count` 便宜得多。
-4. `loop` / `cloop` 会为每个节点生成 id/距离辅助量，同一变量多次调用会复用缓存。
+3. 同理，`return` 不能受符号条件控制（编译期报错），需要符号结果时用 `ite`。
+4. `cc_size` 是 O(N²) 编码，大盘面谨慎；`cc_count` 便宜得多。
+5. `loop` / `cloop` 会为每个节点生成 id/距离辅助量，同一变量多次调用会复用缓存。
+6. `one_black_group_per_region` 等「每区一组」模板要求 `regions` **完整覆盖盘面且互不重叠**；
+   它由「组不跨区 + 每区至少一格 + 组数 == 区域数」共同保证，缺一不可。

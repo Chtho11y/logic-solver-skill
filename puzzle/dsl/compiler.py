@@ -127,6 +127,7 @@ class Compiler:
         self._imported: set[str] = set()
         self._functions: dict[str, UserFunction] = {}
         self._call_depth = 0
+        self._call_guard_depths: list[int] = []
         self._aux_counter = 0
         self.derived: dict[str, dict[Point, Any]] = {}
         self.derived_kinds: dict[str, PointKind] = {}
@@ -289,9 +290,16 @@ class Compiler:
         elif isinstance(stmt, ast.DefStmt):
             self._functions[stmt.name] = UserFunction(stmt.name, list(stmt.params), stmt.body)
         elif isinstance(stmt, ast.ReturnStmt):
-            value = self._eval(stmt.expr) if stmt.expr is not None else []
             if self._call_depth == 0:
                 raise CompileError("'return' outside of a def", stmt.line, stmt.col)
+            if len(self._guards) > self._call_guard_depths[-1]:
+                raise CompileError(
+                    "'return' may only be controlled by compile-time if conditions; "
+                    "use ite(condition, a, b) for a symbolic result",
+                    stmt.line,
+                    stmt.col,
+                )
+            value = self._eval(stmt.expr) if stmt.expr is not None else []
             raise _ReturnSignal(value)
         elif isinstance(stmt, ast.ImportStmt):
             self._exec_import(stmt)
@@ -343,12 +351,14 @@ class Compiler:
         frame = dict(zip(fn.params, args))
         saved_scopes, self._scopes = self._scopes, [frame]
         self._call_depth += 1
+        self._call_guard_depths.append(len(self._guards))
         try:
             self._exec_block(fn.body)
             return []
         except _ReturnSignal as signal:
             return signal.value
         finally:
+            self._call_guard_depths.pop()
             self._call_depth -= 1
             self._scopes = saved_scopes
 
