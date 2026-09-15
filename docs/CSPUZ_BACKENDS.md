@@ -39,7 +39,8 @@ pip install ./cspuz_core
   固定版本 cspuz 使用 `/dev/stdin`，因此原生 Windows 会将它们标为不可用。
 
 HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`、`reason`、
-`supportsTimeout` 和 `supportsGraphPrimitives`。求解请求可指定：
+`supportsTimeout`、`supportsGraphPrimitives` 和 `features`（当前后端真正
+打开的可选编码名）。求解请求可指定：
 
 ```json
 {
@@ -52,6 +53,18 @@ HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`�
 显式指定但不可用的后端返回 `status: "error"` 和具体原因。旧请求中的
 `logic: "AUTO"` 仍等价于 `backend: "auto"`；其他 Z3 logic 名称不再接受。
 
+DSL 也可用顶层语句选择后端（省略则与 `auto` 相同，即当前最好的可用后端）：
+
+```text
+use cspuz_core
+import "shading"
+island_rule(x)
+```
+
+`use` 只允许出现在主文件顶层。它与 API `backend` 同时给出且不一致时报错。
+`use cspuz_core` 配上 API `auto` 和正数 timeout 时会保留 core 并丢掉 timeout，
+而不会仅仅因为 UI 默认带了超时就退回 Z3。
+
 ## 当前已接入
 
 - 有限域整数标量，以及用整数 `0/1` 表示的现有布尔变量。
@@ -59,6 +72,20 @@ HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`�
 - 列表广播、条件表达式、计数、all-different、比较和布尔组合。
 - 有界线性常数乘法，以及对正整数常数的符号除法/取模。
 - 4/8 邻接连通分量、分区 id/size/border、边连通和单回路的兼容编码。
+- `connected` / `connected8`：在支持 `graph_vertex_connected` 的后端
+  （`cspuz_core`、`csugar`）上使用原生 `GRAPH_ACTIVE_VERTICES_CONNECTED`；
+  其余后端使用只针对目标取值的生成树，不再绕 `cc_count` 构建全盘 id/size。
+- `loop` / `cloop` / `connect_edges` / `connect_links`：同样在图原语后端上对
+  选中边的线图做顶点连通；度数 0-or-2 加上 `nonempty=True`，因此空边集仍
+  与原来的 `roots == 1` 一样是 UNSAT。Z3 继续用 `_link_connect` 生成树。
+- `island_rule`：图原语后端 = 白格 `connected` + 黑格正交不相邻；Z3 = cspuz
+  的对角 rank「不邻接且不分割」编码。不要在 `cspuz_core` 上改用那套展开。
+- `wall_rule`：黑格 `connected`（P0）+ 无全黑 2x2。
+- `cc_size` / `cc8_size` / `type: cc` 的 `.size` / `groups_of_size`：在支持
+  `graph_division` 的后端（目前仅 `cspuz_core`）上使用原生 `GRAPH_DIVISION`；
+  其余后端使用 cspuz 的生成树 + 下游尺寸展开。只问大小时不构建 `cc_id`。
+  `type: cc` 的答案键仍是最小线性下标 `r*cols+c`；`cc_count` / `cc_id` /
+  `cc_root` 仍走那棵树（与 size 双编码，nurikabe 会同时用到）。
 - `find_answer()` 完整模型读取，保持现有前端 `values/kinds` 协议。
 
 这些能力覆盖当前 `impls/` 下的全部 DSL，无需修改题型文件。
@@ -96,9 +123,61 @@ HTTP 的 `GET /api/health` 返回默认后端以及每个后端的 `available`�
 - 题目序列化组合器：`Grid`、`OneOf`、`Spaces`、`HexInt` 等，可扩展
   puzz.link / pzpr 风格 URL 的导入导出。
 
-建议下一步优先增加原生布尔变量和二维数组，再将 `loop`、`cloop` 与简单连通
-builtin 切换到图原语；这样能减少辅助整数和手写生成树约束，同时保持 DSL
-表面语法不变。
+`connected` / `connected8` / `loop` / `cloop` / `island_rule` / `wall_rule` /
+`cc_size`（及 `groups_of_size`、CC 变量 `.size`）已按后端能力切换。
+`cc_id` / `cc_count` / `type: cc` 的区域编号仍是最小线性下标，没有改成
+`GRAPH_DIVISION` 内部的 group id。下一步若继续切图原语，可考虑
+`active_edges_acyclic` / 单路径，而不是先把 Bool 数组暴露给 DSL。
+
+## 性能（Z3 vs 原生）
+
+用 `python -m tools.bench_backends --samples`（或 `--all-samples`）对比
+`find_answer()`，不要拿 `Solver.solve()` 的 irrefutable 答案键来比。
+
+本环境实测（cspuz `1d07443` + cspuz_core `0a51e897`）：
+
+12×12 微基准（P0–P2，无额外线索，只跑对应 builtin）：
+
+| encoding | Z3 | cspuz_core | Z3/core |
+|---|---|---|---|
+| `connected` | 148ms | 2.9ms | 51× |
+| `connected8` | 207ms | 2.7ms | 76× |
+| `island_rule` | 154ms | 4.9ms | 31× |
+| `wall_rule` | 157ms | 4.1ms | 38× |
+| `loop` | 488ms | 38ms | 13× |
+| `cloop` | 409ms | 24ms | 17× |
+
+P3 之后 8×8 `cc_size` / `groups_of_size`（空盘，`find_answer`）：
+
+| encoding | Z3 | cspuz_core | Z3/core |
+|---|---|---|---|
+| `cc_size` | 1.40s | 7.8ms | 178× |
+| `groups_of_size`（每黑组 4 格） | 15.59s | 8.1ms | ~1900× |
+
+相关样本（P3 后）：
+
+| puzzle | size | Z3 | cspuz_core |
+|---|---|---|---|
+| tetrochain | 6×6 | 664ms | 8.4ms |
+| tetrochaink | 6×6 | 1.45s | 8.1ms |
+| nurikabe | 5×5 | 394ms | 14ms |
+| fillomino | 3×3 | 45ms | 4.9ms |
+| shikaku | 4×4 | 184ms | 11ms |
+
+P0–P2 时 tetrochain 一类会被 O(N²) `cc_size` 拖住。换成 `graph_division` 后
+6×6 样本在 Z3 上大约从数秒降到亚秒，`cspuz_core` 上大约 8ms。
+`groups_of_size` 空盘在 Z3 上仍偏慢（展开后的搜索空间），原生传播则很快。
+
+79 个 `impls/samples`（P0–P2 时状态一致：77 sat + 2 unsat）：Z3 **21.42s** vs
+`cspuz_core` **3.48s**（约 **6.2×**）。本轮未重跑全样本。
+
+P0 单独落地时另一次全样本对比约为 4.8×（Z3 ~49s / core ~10s）；机器和搜索运气会让
+绝对秒数波动，相对倍数和微基准更稳。
+
+图原语必须作为 CSP **顶层语句**交给 cspuz_core。`loop` / `island_rule` /
+`graph_division` 会把若干布尔条件合进一个 `And`，适配层在 `add_constraints`
+时把 `And` 拆开，避免 parser 把 `graph-active-vertices-connected` /
+`graph-division` 当成普通布尔子表达式而 panic。
 
 ## 兼容边界
 

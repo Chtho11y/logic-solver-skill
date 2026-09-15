@@ -78,7 +78,7 @@ def iter_cases(directory: Path | None = None):
     folder = directory or CASES_DIR
     if not folder.is_dir():
         return
-    for path in sorted(folder.glob("*.json")):
+    for path in sorted(folder.rglob("*.json")):
         data = load_fixture(path)
         puzzle = data.get("puzzle") or path.stem
         timeout = int(data.get("timeoutMs", 120000))

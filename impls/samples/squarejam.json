@@ -1,0 +1,11 @@
+{
+  "puzzle": "squarejam",
+  "rows": 2,
+  "cols": 2,
+  "title": "正方密铺",
+  "clues": {
+    "n": {
+      "0,0": 2
+    }
+  }
+}

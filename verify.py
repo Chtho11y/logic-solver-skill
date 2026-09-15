@@ -16,9 +16,20 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from puzzle.dsl import compile_only
+from puzzle.grid import Grid
+from puzzle.models import point_key
 from puzzle.spec import (build_grid, build_params, build_regions, build_variables,
                          load_sample, load_spec, make_loader, Instance)
 from puzzle.runner import solve_instance
+
+
+def _free_spot(kind, existing, rows, cols):
+    """A lattice point of ``kind`` that does not yet carry a clue."""
+    for point in Grid(rows, cols).points(kind):
+        key = point_key(point)
+        if key not in existing:
+            return key
+    return None
 
 
 def _count(spec, instance):
@@ -39,6 +50,8 @@ def check(key, backend="auto"):
     expected_dead = set(raw.get("unencodedClues", []))
     sm = load_sample(key)
     out = []
+    if sm is None:
+        return [f"FAIL {key:16} no sample"]
 
     # 1. compile + 2. solve the shipped sample
     n0, err = _count(spec, sm)
@@ -55,17 +68,17 @@ def check(key, backend="auto"):
         if var.var_type.value != "constant" or var.name in expected_dead:
             continue
         existing = sm.clues.get(var.name, {})
-        spot = next((f"{r},{c}" for r in range(sm.rows) for c in range(sm.cols)
-                     if f"{r},{c}" not in existing), None)
+        spot = _free_spot(var.kind, existing, sm.rows, sm.cols)
         if spot is None:
             continue
         probe = Instance(puzzle=key, rows=sm.rows, cols=sm.cols,
                          clues={k: dict(v) for k, v in sm.clues.items()},
                          regions=dict(sm.regions), params=dict(sm.params))
-        # every other constant gets a value at the same spot, so companion
-        # clues (e.g. an arrow paired with its number) stay consistent
+        # Companion constants on the same lattice get a value at the same
+        # spot (e.g. an arrow paired with its number). Edge/corner clues
+        # cannot share a cell key with a cell constant.
         for other in spec.variables:
-            if other.var_type.value == "constant":
+            if other.var_type.value == "constant" and other.kind == var.kind:
                 got = dict(probe.clues.get(other.name, {}))
                 got.setdefault(spot, 1)
                 probe.clues[other.name] = got

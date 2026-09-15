@@ -29,7 +29,12 @@ export type ElementId =
   | "link"
   | "diagonal"
   | "region"
-  | "outside";
+  | "outside"
+  | "tree"
+  | "tent"
+  | "ship"
+  | "wave"
+  | "bulb";
 
 export interface ElementType {
   id: ElementId;
@@ -95,6 +100,29 @@ export interface Instance {
   title: string;
 }
 
+export interface GenericLayer {
+  id: string;
+  element: string;
+  target: string;
+  values: Record<string, number> | Record<string, unknown>;
+}
+
+export interface ImportResult {
+  kind: "penpa" | "puzzlink";
+  puzzle: string | null;
+  instance: Instance | null;
+  layers: GenericLayer[];
+  warnings: string[];
+  title: string;
+  author?: string;
+  sourceUrl: string;
+  pid: string;
+  rows: number;
+  cols: number;
+  tags: string[];
+  error?: string;
+}
+
 export type SolveStatus = "sat" | "unsat" | "unknown" | "error" | "compiled";
 
 export interface SolverBackend {
@@ -104,6 +132,7 @@ export interface SolverBackend {
   reason: string;
   supportsTimeout: boolean;
   supportsGraphPrimitives: boolean;
+  features?: string[];
 }
 
 export interface SolverHealth {
@@ -142,8 +171,8 @@ export const REGION_VAR = "__regions";
 
 /** What the user is currently keyboard-editing. */
 export type Selection =
-  | { kind: "point"; layerId: string; key: PointKey }
-  | { kind: "outside"; layerId: string; side: string; index: number };
+  | { kind: "point"; tool: string; key: PointKey }
+  | { kind: "outside"; side: string; index: number };
 
 /** The active stamp: a value, click-to-cycle, or the eraser. */
 export type Brush = number | "cycle" | "erase";

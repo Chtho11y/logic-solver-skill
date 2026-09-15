@@ -52,6 +52,7 @@ from .convert import (
     uri_to_path,
 )
 from .docs import (
+    format_backend_hover,
     format_builtin_hover,
     format_import_hover,
     format_user_hover,
@@ -421,6 +422,8 @@ class LanguageServer:
         callish = nxt is not None and nxt.type == T_OP and nxt.value == "("
         if prev is not None and prev.type == T_KEYWORD and prev.value == "def":
             return "function", _mod("declaration")
+        if prev is not None and prev.type == T_KEYWORD and prev.value == "use":
+            return "keyword", 0
         if name in BUILTIN_FUNCTIONS and callish:
             mods = _mod("defaultLibrary")
             if name in DEBUG_BUILTINS:
@@ -476,11 +479,15 @@ class LanguageServer:
                 path, names = imp
                 return format_import_hover(path, names)
             return None
-        if token.type == T_OP or (token.type == T_KEYWORD and name in {"and", "or", "not"}):
+        if token.type == T_OP or (token.type == T_KEYWORD and name in {"and", "or", "not", "use"}):
             builtin = lookup_builtin(name)
             if builtin:
                 return format_builtin_hover(name, *builtin)
             return None
+        if token.type == T_NAME:
+            backend_hover = self._use_backend_hover(doc, token)
+            if backend_hover is not None:
+                return backend_hover
         if token.type != T_NAME and token.type != T_KEYWORD:
             return None
         resolved = self._resolve_name(uri, doc, token)
@@ -652,6 +659,36 @@ class LanguageServer:
                 return prev is not None and prev.type == T_OP and prev.value == "."
         return False
 
+    def _use_backend_hover(self, doc: Document, token: Token) -> str | None:
+        try:
+            tokens = tokenize(doc.text)
+        except DSLError:
+            return None
+        prev = None
+        for item in tokens:
+            if item is token or (
+                item.type == token.type
+                and item.value == token.value
+                and item.line == token.line
+                and item.col == token.col
+            ):
+                break
+            if item.type not in {T_NEWLINE, T_INDENT, T_DEDENT, T_EOF}:
+                prev = item
+        else:
+            return None
+        if prev is None or prev.type != T_KEYWORD or prev.value != "use":
+            return None
+        from puzzle.backends import BackendError, backend_info
+
+        try:
+            info = backend_info(token.value)
+        except BackendError:
+            return f"(backend) {token.value}\nunknown solver backend"
+        return format_backend_hover(
+            info.name, info.label, info.available, info.features, info.reason
+        )
+
     def _import_at(self, uri: str, doc: Document, token: Token) -> tuple[Path, list[str]] | None:
         if token.type != T_STR:
             return None
@@ -741,6 +778,20 @@ class LanguageServer:
                     for path in sorted(folder.glob("*.dsl")):
                         add(path.stem, 17, str(path))  # File
                 return {"isIncomplete": False, "items": items}
+            stripped = line.lstrip()
+            if stripped.startswith("use") and (
+                stripped == "use" or stripped[3:4].isspace()
+            ):
+                from puzzle.backends import list_backends
+
+                for item in list_backends():
+                    add(
+                        item.name,
+                        12,
+                        item.label,
+                        f"features: {', '.join(item.features) or '(none)'}",
+                    )
+                return {"isIncomplete": False, "items": items}
             program = self._program(uri, doc.text)
             if program is not None:
                 for name, binding in locals_covering(program, line_1).items():
@@ -754,7 +805,13 @@ class LanguageServer:
         for entry in function_table():
             if " " in entry.name or "/" in entry.name:
                 continue
-            add(entry.name, 3 if entry.category not in {"Constant", "Operator"} else 21, entry.signature, entry.doc)
+            if entry.category == "Keyword":
+                kind = 14
+            elif entry.category in {"Constant", "Operator"}:
+                kind = 21
+            else:
+                kind = 3
+            add(entry.name, kind, entry.signature, entry.doc)
         return {"isIncomplete": False, "items": items}
 
     def signature_help(self, params: dict) -> dict | None:

@@ -1,0 +1,58 @@
+{
+  "key": "hanare",
+  "en": "Hanare-gumi",
+  "zh": "差距一致",
+  "category": "填写",
+  "subcategory": "",
+  "rule": "在每个区域中的一格填上等于该区域面积的数字。若两个数字在同一行或同一列，且它们之间没有其他数字，则它们之间必须恰有N个空格，其中N为这两数之差。",
+  "defaultRows": 8,
+  "defaultCols": 8,
+  "usesRegions": true,
+  "variables": [
+    {
+      "name": "x",
+      "kind": "cell",
+      "type": "normal",
+      "domain": [
+        0,
+        20
+      ],
+      "doc": "0 = 空, 否则 = 区域面积"
+    }
+  ],
+  "layers": [
+    {
+      "id": "regions",
+      "label": "区域划分",
+      "element": "region",
+      "target": "cell",
+      "role": "input",
+      "var": "__regions"
+    },
+    {
+      "id": "given",
+      "label": "已给数字",
+      "element": "number",
+      "target": "cell",
+      "role": "input",
+      "var": "x",
+      "options": {
+        "min": 1,
+        "max": 20
+      }
+    },
+    {
+      "id": "answer",
+      "label": "解",
+      "element": "number",
+      "target": "cell",
+      "role": "output",
+      "var": "x",
+      "palette": {
+        "*": "#1565c0"
+      }
+    }
+  ],
+  "params": {},
+  "notes": ""
+}

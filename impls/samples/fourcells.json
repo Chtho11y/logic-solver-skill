@@ -1,0 +1,11 @@
+{
+  "puzzle": "fourcells",
+  "rows": 4,
+  "cols": 4,
+  "title": "四格分区",
+  "clues": {
+    "n": {
+      "0,0": 2
+    }
+  }
+}

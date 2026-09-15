@@ -1,10 +1,21 @@
 /**
- * The board: renders the frame plus every visible layer, and turns pointer
- * gestures into edits according to the active layer's editor kind.
+ * The board: renders the frame plus every visible drawing tool, then puzzle
+ * output overlays after a solve. Gestures follow the active Penpa-like tool.
  */
 
 import { useRef } from "react";
-import { cycleValues, editorOf } from "./editors";
+import { cycleValuesFor, EDITOR_OF } from "./editors";
+import {
+  DRAW_Z_ORDER,
+  numericMarks,
+  outsideEntry,
+  outsideText,
+  SIDES,
+  TOOL_TARGET,
+  toolLayer,
+  type DrawTool,
+  type Drawing,
+} from "./drawing";
 import {
   cellCentre,
   edgeKey,
@@ -15,34 +26,34 @@ import {
   viewBox,
 } from "./geometry";
 import type { Viewport } from "./geometry";
-import { layerValues, outsideText, paramEntry } from "./instance";
 import { anchorFor, renderLayer } from "./render";
-import type { Brush, Instance, LayerSpec, PuzzleSpec, Selection, SolveResult } from "./types";
+import type { Brush, PuzzleSpec, Selection, SolveResult } from "./types";
 
 export interface BoardProps {
-  spec: PuzzleSpec;
-  instance: Instance;
+  spec: PuzzleSpec | null;
+  drawing: Drawing;
   result: SolveResult | null;
   viewport: Viewport;
   visible: Record<string, boolean>;
-  activeLayer: LayerSpec | null;
+  activeTool: DrawTool;
   brush: Brush;
   selection: Selection | null;
   draft: string;
-  onEdit: (layer: LayerSpec, key: string, value: number | null) => void;
+  onEdit: (tool: DrawTool, key: string, value: number | null) => void;
   onSelect: (selection: Selection | null) => void;
 }
 
 type Drag = { kind: "paint" | "toggle"; value: number | null } | null;
 
 export function Board(props: BoardProps) {
-  const { spec, instance, result, viewport, visible, activeLayer, brush, selection, draft } = props;
+  const { spec, drawing, result, viewport, visible, activeTool, brush, selection, draft } = props;
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<Drag>(null);
 
   const v = viewport;
   const width = v.cols * v.size + v.pad * 2;
   const height = v.rows * v.size + v.pad * 2;
+  const layer = toolLayer(activeTool, spec);
 
   function toSvg(e: React.PointerEvent): { x: number; y: number } {
     const rect = svgRef.current!.getBoundingClientRect();
@@ -52,14 +63,14 @@ export function Board(props: BoardProps) {
     };
   }
 
-  function valuesOf(layer: LayerSpec) {
-    return layerValues(layer, instance, result);
+  function valuesOf(tool: DrawTool): Record<string, number> {
+    if (tool === "region") return drawing.regions;
+    return numericMarks(drawing.marks[tool]);
   }
 
   function applyAt(x: number, y: number, button: number, drag: boolean) {
-    const layer = activeLayer;
-    if (!layer || layer.role === "output") return;
-    const editor = editorOf(layer);
+    const editor = EDITOR_OF[activeTool] ?? "none";
+    const target = TOOL_TARGET[activeTool];
 
     if (editor === "paint") {
       const cell = pickCell(v, x, y);
@@ -69,38 +80,44 @@ export function Board(props: BoardProps) {
       if (drag && dragRef.current?.kind === "paint") {
         value = dragRef.current.value;
       } else {
-        value = button === 2 || brush === "erase" ? null : typeof brush === "number" ? brush : 1;
-        if (!drag && value !== null && valuesOf(layer)[key] === value) value = null; // click same → erase
+        const stamp =
+          typeof brush === "number"
+            ? brush
+            : activeTool === "shade"
+              ? drawing.surfaceColor
+              : 1;
+        value = button === 2 || brush === "erase" ? null : stamp;
+        if (!drag && value !== null && valuesOf(activeTool)[key] === value) value = null;
         dragRef.current = { kind: "paint", value };
       }
-      props.onEdit(layer, key, value);
+      props.onEdit(activeTool, key, value);
       return;
     }
 
     if (editor === "toggle") {
       const edge = pickEdge(v, x, y);
       if (!edge) return;
-      if (layer.element === "link" && !linkSegment(v, edge.orient, edge.r, edge.c)) return;
+      if (activeTool === "link" && !linkSegment(v, edge.orient, edge.r, edge.c)) return;
       const key = edgeKey(edge.orient, edge.r, edge.c);
       let value: number | null;
       if (drag && dragRef.current?.kind === "toggle") {
         value = dragRef.current.value;
       } else {
-        value = button === 2 ? null : valuesOf(layer)[key] ? null : 1;
+        value = button === 2 || brush === "erase" ? null : valuesOf(activeTool)[key] ? null : 1;
         dragRef.current = { kind: "toggle", value };
       }
-      props.onEdit(layer, key, value);
+      props.onEdit(activeTool, key, value);
       return;
     }
 
     if (drag) return;
 
     const pointKeyAt = (): string | null => {
-      if (layer.target === "edge") {
+      if (target === "edge") {
         const edge = pickEdge(v, x, y);
         return edge ? edgeKey(edge.orient, edge.r, edge.c) : null;
       }
-      const p = layer.target === "corner" ? pickCorner(v, x, y) : pickCell(v, x, y);
+      const p = target === "corner" ? pickCorner(v, x, y) : pickCell(v, x, y);
       return p ? `${p.r},${p.c}` : null;
     };
 
@@ -108,18 +125,18 @@ export function Board(props: BoardProps) {
       const key = pointKeyAt();
       if (!key) return;
       if (button === 2 || brush === "erase") {
-        props.onEdit(layer, key, null);
+        props.onEdit(activeTool, key, null);
         return;
       }
       if (typeof brush === "number") {
-        props.onEdit(layer, key, valuesOf(layer)[key] === brush ? null : brush);
+        props.onEdit(activeTool, key, valuesOf(activeTool)[key] === brush ? null : brush);
         return;
       }
-      const cycle = cycleValues(layer);
-      const current = valuesOf(layer)[key];
+      const cycle = cycleValuesFor(activeTool, layer.palette);
+      const current = valuesOf(activeTool)[key];
       const idx = current === undefined ? -1 : cycle.indexOf(current);
       const next = idx + 1 >= cycle.length ? null : cycle[idx + 1];
-      props.onEdit(layer, key, next);
+      props.onEdit(activeTool, key, next);
       return;
     }
 
@@ -130,17 +147,16 @@ export function Board(props: BoardProps) {
         return;
       }
       if (button === 2) {
-        props.onEdit(layer, key, null);
+        props.onEdit(activeTool, key, null);
         return;
       }
-      props.onSelect({ kind: "point", layerId: layer.id, key });
+      props.onSelect({ kind: "point", tool: activeTool, key });
     }
   }
 
   function handleDown(e: React.PointerEvent) {
     if (e.button !== 0 && e.button !== 2) return;
     const { x, y } = toSvg(e);
-    // Outside the board → outside-clue slot or deselect.
     if (x < v.pad || y < v.pad || x > width - v.pad || y > height - v.pad) {
       const slot = pickOutside(x, y);
       if (slot) props.onSelect(slot);
@@ -161,32 +177,37 @@ export function Board(props: BoardProps) {
     dragRef.current = null;
   }
 
-  // -- outside clue slots -----------------------------------------------------
-
-  const outsideLayers = spec.layers.filter(
-    (layer) => layer.target === "outside" && visible[layer.id] !== false,
-  );
-  const sides = new Set<string>();
-  for (const layer of outsideLayers) {
-    for (const side of (layer.options?.sides as string[]) ?? []) sides.add(side);
+  const hasOutsideMarks = SIDES.some((side) => Object.keys(drawing.outside[side] ?? {}).length > 0);
+  const specWantsOutside = Boolean(spec?.layers.some((l) => l.target === "outside" && l.role === "input"));
+  const showOutside = activeTool === "outside" || hasOutsideMarks || specWantsOutside;
+  const sides = showOutside
+    ? new Set<string>(
+        (spec?.layers.find((l) => l.target === "outside")?.options?.sides as string[]) ?? [...SIDES],
+      )
+    : new Set<string>();
+  if (hasOutsideMarks) {
+    for (const side of SIDES) {
+      if (Object.keys(drawing.outside[side] ?? {}).length) sides.add(side);
+    }
+  }
+  if (activeTool === "outside") {
+    for (const side of SIDES) sides.add(side);
   }
 
   function pickOutside(x: number, y: number): Selection | null {
-    const layer = outsideLayers.find((l) => l.id === activeLayer?.id) ?? outsideLayers[0];
-    if (!layer) return null;
-    const layerSides = ((layer.options?.sides as string[]) ?? []).filter((s) => sides.has(s));
-    for (const side of layerSides) {
+    if (!showOutside) return null;
+    for (const side of sides) {
       if (side === "top" && y < v.pad && x >= v.pad && x <= width - v.pad) {
-        return { kind: "outside", layerId: layer.id, side, index: Math.floor((x - v.pad) / v.size) };
+        return { kind: "outside", side, index: Math.floor((x - v.pad) / v.size) };
       }
       if (side === "bottom" && y > height - v.pad && x >= v.pad && x <= width - v.pad) {
-        return { kind: "outside", layerId: layer.id, side, index: Math.floor((x - v.pad) / v.size) };
+        return { kind: "outside", side, index: Math.floor((x - v.pad) / v.size) };
       }
       if (side === "left" && x < v.pad && y >= v.pad && y <= height - v.pad) {
-        return { kind: "outside", layerId: layer.id, side, index: Math.floor((y - v.pad) / v.size) };
+        return { kind: "outside", side, index: Math.floor((y - v.pad) / v.size) };
       }
       if (side === "right" && x > width - v.pad && y >= v.pad && y <= height - v.pad) {
-        return { kind: "outside", layerId: layer.id, side, index: Math.floor((y - v.pad) / v.size) };
+        return { kind: "outside", side, index: Math.floor((y - v.pad) / v.size) };
       }
     }
     return null;
@@ -199,7 +220,7 @@ export function Board(props: BoardProps) {
       for (let i = 0; i < count; i++) {
         const isSelected =
           selection?.kind === "outside" && selection.side === side && selection.index === i;
-        const text = isSelected ? draft : outsideText(paramEntry(instance, side, i));
+        const text = isSelected ? draft : outsideText(outsideEntry(drawing, side, i));
         const tokens = text.split(/\s+/).filter(Boolean);
         let cx: number, cy: number;
         if (side === "top") { cx = v.pad + i * v.size + v.size / 2; cy = v.pad - 8; }
@@ -242,8 +263,6 @@ export function Board(props: BoardProps) {
     return nodes;
   }
 
-  // -- frame + selection --------------------------------------------------------
-
   const gridLines: JSX.Element[] = [];
   for (let r = 0; r <= v.rows; r++) {
     gridLines.push(
@@ -258,26 +277,26 @@ export function Board(props: BoardProps) {
 
   let selectionNode: JSX.Element | null = null;
   if (selection?.kind === "point") {
-    const layer = spec.layers.find((l) => l.id === selection.layerId);
-    if (layer) {
-      const at = anchorFor(v, layer, selection.key);
-      selectionNode = (
-        <g>
-          <rect x={at.x - v.size / 2 + 1.5} y={at.y - v.size / 2 + 1.5} width={v.size - 3} height={v.size - 3}
-            fill="none" stroke="#e2a93b" strokeWidth={3} rx={3} />
-          {draft !== "" && (
-            <text x={at.x} y={at.y} textAnchor="middle" dominantBaseline="central"
-              fontSize={v.size * 0.5} fontWeight={700} fill="#1565c0">
-              {draft}
-            </text>
-          )}
-        </g>
-      );
-    }
+    const selLayer = toolLayer(selection.tool as DrawTool, spec);
+    const at = anchorFor(v, selLayer, selection.key);
+    selectionNode = (
+      <g>
+        <rect x={at.x - v.size / 2 + 1.5} y={at.y - v.size / 2 + 1.5} width={v.size - 3} height={v.size - 3}
+          fill="none" stroke="#e2a93b" strokeWidth={3} rx={3} />
+        {draft !== "" && (
+          <text x={at.x} y={at.y} textAnchor="middle" dominantBaseline="central"
+            fontSize={v.size * 0.5} fontWeight={700} fill="#1565c0">
+            {draft}
+          </text>
+        )}
+      </g>
+    );
   }
 
-  // Cell centre dots on empty boards help orientation for loop puzzles.
-  const showDots = spec.layers.some((l) => l.element === "link");
+  const showDots =
+    activeTool === "link" ||
+    Boolean(drawing.marks.link && Object.keys(drawing.marks.link).length) ||
+    Boolean(spec?.layers.some((l) => l.element === "link"));
   const dots: JSX.Element[] = [];
   if (showDots) {
     for (let r = 0; r < v.rows; r++) {
@@ -287,6 +306,8 @@ export function Board(props: BoardProps) {
       }
     }
   }
+
+  const outputLayers = spec?.layers.filter((l) => l.role === "output") ?? [];
 
   return (
     <svg
@@ -301,13 +322,26 @@ export function Board(props: BoardProps) {
       <rect x={v.pad} y={v.pad} width={width - 2 * v.pad} height={height - 2 * v.pad} fill="#ffffff" />
       <g stroke="#ccd3da" strokeWidth={1}>{gridLines}</g>
       {dots}
-      {spec.layers.map((layer) =>
-        visible[layer.id] === false || layer.target === "outside" ? null : (
-          <g key={layer.id}>
-            {renderLayer({ viewport: v, layer, instance, values: layerValues(layer, instance, result) })}
+      {DRAW_Z_ORDER.map((tool) => {
+        if (visible[tool] === false) return null;
+        const values = valuesOf(tool);
+        if (!Object.keys(values).length) return null;
+        return (
+          <g key={tool}>
+            {renderLayer({ viewport: v, layer: toolLayer(tool, spec), values })}
           </g>
-        ),
-      )}
+        );
+      })}
+      {outputLayers.map((outLayer) => {
+        if (visible[`out:${outLayer.id}`] === false) return null;
+        const values = (outLayer.var && result?.values?.[outLayer.var]) || {};
+        if (!Object.keys(values).length) return null;
+        return (
+          <g key={`out:${outLayer.id}`} className="solve-overlay">
+            {renderLayer({ viewport: v, layer: outLayer, values })}
+          </g>
+        );
+      })}
       <rect x={v.pad} y={v.pad} width={width - 2 * v.pad} height={height - 2 * v.pad}
         fill="none" stroke="#3a4750" strokeWidth={2.5} />
       {outsideSlots()}

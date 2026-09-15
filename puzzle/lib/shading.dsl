@@ -37,17 +37,11 @@ def no_mono_2x2(x):
     no2x2(x, 0)
 
 
-# The two most reused whole-puzzle skeletons ---------------------------------
-
-def island_rule(x):
-    # “涂黑格互不相邻 + 留白连通” (Hitori / Kurodoko / Heyawake / Nurimisaki …)
-    blacks_isolated(x)
-    white_connected(x)
-
-def wall_rule(x):
-    # “涂黑格连通 + 无 2x2 全黑” (Nurikabe / Aqre / Canal View / Tapa …)
-    black_connected(x)
-    no_black_2x2(x)
+# island_rule / wall_rule are compiler builtins (not defined here):
+#   island_rule — 涂黑格互不相邻 + 留白连通
+#                 native: connected(white) + orthogonal adjacency ban
+#                 Z3: cspuz diagonal-rank "not adjacent and not segmenting"
+#   wall_rule   — 涂黑格连通 + 无 2x2 全黑 (connectivity follows connected())
 
 
 # -- clue helpers -------------------------------------------------------------

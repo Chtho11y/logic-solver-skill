@@ -23,7 +23,7 @@
 
 ### 关键字（KEYWORDS）
 ```
-if  elif  else  for  in  let  and  or  not  true  false  def  return  import
+if  elif  else  for  in  let  and  or  not  true  false  def  return  import  use
 ```
 
 ### 运算符
@@ -51,7 +51,7 @@ if_stmt     := 'if' expr ':' suite { 'elif' expr ':' suite } [ 'else' ':' suite 
 for_stmt    := 'for' name_list 'in' expr ':' suite
 def_stmt    := 'def' NAME '(' [ name_list ] ')' ':' suite
 suite       := simple NEWLINE | NEWLINE INDENT statement+ DEDENT
-simple      := 'let' name_list '=' expr | 'return' [ expr ] | 'import' STR | expr
+simple      := 'let' name_list '=' expr | 'return' [ expr ] | 'import' STR | 'use' (NAME | STR) | expr
 name_list   := NAME { ',' NAME }
 expr        := implies_expr
 implies_expr:= or_expr ['=>' implies_expr]          # 右结合
@@ -80,6 +80,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
   - 需要「按待求解的条件取不同值」时改用条件表达式：`return ite(c, 1, 0)`。
   - 该限制只针对**函数自身新增**的符号分支；在符号 `if` 中调用一个内部无条件 `return` 的函数依然合法（其约束仍按调用点守卫断言）。编译期条件（常量、`region_id`、`row_of`、`has_value`、`.size` 等）下的 `return` 也不受影响。
 - **`import "module"`**：把另一个 DSL 模块的定义引入当前程序（同名模块只加载一次）。解析顺序为 `puzzle/lib/` 然后 `impls/`，扩展名 `.dsl` 可省略。
+- **`use backend`**：选择本程序的求解后端。可写标识符（`use cspuz_core`）或字符串（`use "z3"`）。只能出现在**主文件顶层**，导入的库里不能写。省略时等价于 `use auto`：选用当前可用的最好后端（无 timeout 时 `cspuz_core` 优先，否则 Z3）。与 API 的 `backend=` 同时给出且不一致时编译/求解报错。后端能力（图连通原语、timeout 等）按所选后端选择性启用。
 
 ### 结构化绑定（解包）
 - `let a, b, c = expr` 与 `for a, b, c in expr:` 把 `expr`（或每个循环元素）按位解包到多个目标名。
@@ -253,13 +254,18 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 ### 6.6 同值连通分量（Connectivity）
 
-作用于 **cell 变量**，把「取值相同且相邻」的格子归为一组。
+作用于 **cell 变量**。只要求「某种颜色至多一组」时用 `connected` / `connected8`；
+需要分量编号或大小时才用 `cc_id` / `cc_size` / `cc_count`。
 
 | 签名 | 说明 |
 |------|------|
+| `connected(var, value)` | 取值为 value 的格子至多形成一个 4-连通组（空盘合法）。所选后端支持 `graph_vertex_connected` 时用原生图算子，否则用只针对该取值的生成树，**不会**构建 `cc_id`/`cc_size` |
+| `connected8(var, value)` | 同上，8-连通（含对角） |
+| `island_rule(var)` | 涂黑格互不相邻 + 留白连通。`cspuz_core`/`csugar` 上是 `connected(white)` + 正交禁邻；Z3 上用 cspuz 的对角 rank「不分割」编码，不要在原生后端上套那套展开 |
+| `wall_rule(var)` | 涂黑格连通 + 无全黑 2x2；连通部分与 `connected(var, 1)` 相同 |
 | `cc_id(var)` | 每格所在 4-连通同值分量的 id（分量内最小线性下标） |
-| `cc_size(var)` | 每格所在分量的格数（O(N²)，谨慎使用） |
-| `cc_count(var, value)` | 取值为 value 的分量个数；`== 1` 即「全部连通」 |
+| `cc_size(var)` | 每格所在分量的格数。`cspuz_core` 上用原生 `GRAPH_DIVISION`；Z3 上用 O(N) 生成树/下游尺寸展开。只问大小时**不会**构建 `cc_id` |
+| `cc_count(var, value)` | 取值为 value 的分量个数；需要精确组数时用这个，不要用它来写 `connected` |
 | `cc_root(var, cell)` | 该格是否为其分量的代表元 |
 | `cc8_id` / `cc8_size` / `cc8_count` / `cc8_root` | 上述的 8-连通（含对角）版本 |
 
@@ -273,12 +279,12 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 
 | 签名 | 说明 |
 |------|------|
-| `loop(var)` | corner lattice 上恰好形成一个闭合回路 |
-| `cloop(var)` | 经过格中心恰好形成一个闭合回路（盘面外沿的 edge 为 0，此条件是**返回值的一部分**） |
+| `loop(var)` | corner lattice 上恰好形成一个**非空**闭合回路（每点度数 0 或 2）。支持 `graph_vertex_connected` 时对选中边的线图做原生连通；否则用生成树 |
+| `cloop(var)` | 经过格中心恰好形成一个非空闭合回路（盘面外沿的 edge 为 0，此条件是**返回值的一部分**）。编码同 `loop` |
 | `deg(var, corner)` | corner 处被选中的格线条数 |
 | `cdeg(var, cell)` | cell 处引出的连线条数 |
-| `connect_edges(var)` | corner lattice 上被选中的边连通成一个整体（不限度数） |
-| `connect_links(var)` | 格中心连线连通成一个整体（不限度数；同样包含盘面外沿 edge 为 0） |
+| `connect_edges(var)` | corner lattice 上被选中的边连通成一个**非空**整体（不限度数） |
+| `connect_links(var)` | 格中心连线连通成一个非空整体（不限度数；同样包含盘面外沿 edge 为 0） |
 
 > `loop` / `cloop` / `connect_edges` / `connect_links` 返回**布尔谓词**，其全部要求都在
 > 返回值里，因此可以安全地放进 `if` 分支、取 `not`、参与 `or`。它们额外生成的 id/距离
@@ -339,13 +345,13 @@ print(x[row(0)])     # 打印变量 x 在第 0 行的量列表
 |--------|------|
 | `c` | 直接使用即每个 cell 的区域 id 量集合（等价 `c.id`） |
 | `c.id[cell(r,c)]` | 每个 cell 的区域 id；id 相等 ⟺ 连通；id = 区域内最小线性下标 `r*cols+c` |
-| `c.size[cell(r,c)]` | 每个 cell 所在区域的 cell 数；O(N²)，谨慎使用 |
+| `c.size[cell(r,c)]` | 每个 cell 所在区域的 cell 数；`graph_division`（id 仍是最小线性下标） |
 | `c.border[edge(...)]` | 每条 edge 的 0/1 整数：当且仅当该 edge 位于**网格边界**、或其两侧 cell 属于**不同区域**（cc id 不等）时为 1 |
 
 编码方式：在 4-连通网格上，每个区域的 `id` 等于其所有 cell 中最小的线性下标
 `r*cols+c`（即其唯一根，亦即 CC 变量自身的求解器量），并通过生成树距离见证
 （distance witness）保证同 id 的 cell 必然连通。`.size` / `.border` 仅在被引用时
-才生成（`.size` 为每个 cell 一个 If 求和；`.border` 为每条 edge 一个 0/1 量）。
+才生成（`.size` 走 `graph_division`，与 id 编码独立；`.border` 为每条 edge 一个 0/1 量）。
 
 > 注意：旧版本通过普通 cell 变量的 `x.cc` 派生连通分量的写法**已移除**。请改为新建一个 CC 类型变量并引用 `c.id` / `c.size` / `c.border`。
 
@@ -388,11 +394,15 @@ CC 变量自身编码连通约束（id/size/border），不接受 domain/givens�
 上层封装见 `puzzle.runner.solve_instance(spec, instance)`，它会从 `PuzzleSpec` /
 `Instance` 构造好网格、变量、区域与参数。
 
-### 求解器后端（`backend`）
-`backend="auto"` 无 timeout 时按 `cspuz_core → z3` 选择；带正数 timeout
-时选择能够落实超时的 Z3。也可显式指定
-`cspuz_core`、`z3`、`csugar`、`sugar` 或 `sugar_extended`。显式后端不可用时
-返回带原因的 `STATUS_ERROR`，不会静默回退。旧 `logic="AUTO"` 仍映射到 `auto`；
+### 求解器后端（`backend` / `use`）
+默认 `auto`：无 timeout 时按 `cspuz_core → z3` 选择最好的可用后端；带正数
+timeout 且未用 `use` 指定后端时，选择能够落实超时的 Z3。DSL 里写
+`use cspuz_core`（或其它具体名字）会固定编译与求解所用的后端，并按该后端的
+能力表启用可选编码（例如 `graph_vertex_connected`）。此时若 API 仍是 `auto`
+并带 timeout，对不支持 timeout 的后端会丢掉 timeout 而不是报错。也可通过
+API 显式指定 `cspuz_core`、`z3`、`csugar`、`sugar` 或 `sugar_extended`。
+显式后端不可用时返回带原因的 `STATUS_ERROR`，不会静默回退。DSL `use` 与 API
+`backend=` 同时给出且不一致时报错。旧 `logic="AUTO"` 仍映射到 `auto`；
 其他 Z3 logic 名称不再作为后端选择器。
 
 ### SolveResult 状态
@@ -471,12 +481,12 @@ print(row(0))
 
 | 模块 | 内容 |
 |------|------|
-| `core` | `eq` / `is_black` / `is_white`、`n_adj4` / `n_adj8` / `n_diag4` / `n_around`、`no2x2` / `no_run` / `no_adjacent`、`connected` / `connected8` / `group_count`、`is_rect_group`、`clue_cells` / `before` / `step` |
-| `shading` | 涂黑家族骨架：`island_rule`（黑格不相邻 + 白格连通）、`wall_rule`（黑格连通 + 无全黑 2x2）、`no_mono_2x2`、`adj_black_clue` / `around_black_clue` / `adj8_black_clue`、`region_black_count`、`see_count` / `see4`、`group_touches_border`、`clues_in_distinct_groups` |
-| `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` |
-| `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
-| `fill` | `latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、箭头辅助 |
-| `outside` | `row_count` / `col_count`、`row_runs` / `col_runs`、`row_index_sum` / `col_index_sum` |
+| `core` | `eq` / `is_black` / `is_white`、`n_adj4` / `n_adj8` / `n_diag4` / `n_around`、`no2x2` / `no_run` / `no_adjacent` / `no_touch`、`distinct_rows` / `distinct_cols`、`group_count`、`is_rect_group`、`clue_cells` / `before` / `step`。`connected` / `connected8` / `island_rule` / `wall_rule` 是编译器 builtin，不在本库里定义 |
+| `shading` | 涂黑家族骨架：`black_connected` / `white_connected` / `blacks_isolated` / `no_black_2x2`、`no_mono_2x2`、`adj_black_clue` / `around_black_clue` / `adj8_black_clue`、`region_black_count`、`see_count` / `see4`、`group_touches_border`、`clues_in_distinct_groups`。`island_rule` / `wall_rule` 已提升为编译器 builtin |
+| `regions` | `for_each_region_count`、`region_uniform`、`cross_region_pairs`、`in_region_count` / `ordered_pairs_in` / `region_cells_in`、`no_white_crossing_3_regions`、`neighbour_sizes_differ`、`region_size_clue`、`one_clue_per_region`、`regions_are_rectangles` / `regions_are_squares` / `region_width` / `region_height` / `no_four_regions_at_vertex` / `region_180_symmetric` |
+| `loops` | `up_edge`/`down_edge`/`left_edge`/`right_edge` 与 `link_*`、`on_loop` / `off_loop` / `turns` / `goes_straight` / `goes_horizontal` / `goes_vertical`、`full_loop` / `loop_visits_all_but`、`arm_len` / `seg_len` / `used_arm_len` / `straight_len_through` / `two_arm_sum` / `two_arms_equal`、`cell_edge_count` / `inside_flag`、`region_crossings` / `region_visited_cells` / `region_turns` |
+| `fill` | `latin` / `latin_1_to_n` / `subset_latin`、`boxes`、`region_1_to_n`、`touching_differ` / `adjacent_differ`、`region_consecutive`、`kropki_white` / `kropki_black`、箭头辅助 |
+| `outside` | `row_count` / `col_count`、`row_runs` / `col_runs`、`row_index_sum` / `col_index_sum`、`outside_visible` / `outside_first_letter` / `outside_gap_between` / `outside_between_sum` |
 
 ### 常见陷阱
 
@@ -484,7 +494,7 @@ print(row(0))
 2. 守卫不阻止 `let` 执行。想要“条件性累加”时，条件必须是编译期常量
    （`region_id` / `row_of` / `has_value` / 常量变量的值 / `.size` 都是）。
 3. 同理，`return` 不能受符号条件控制（编译期报错），需要符号结果时用 `ite`。
-4. `cc_size` 是 O(N²) 编码，大盘面谨慎；`cc_count` 便宜得多。
-5. `loop` / `cloop` 会为每个节点生成 id/距离辅助量，同一变量多次调用会复用缓存。
+4. 只要求「某种颜色连通」时用 `connected` / `connected8`，不要写 `cc_count(...) <= 1`。`cc_size` / `groups_of_size` 已改走 `graph_division`，不必再为 O(N²) 求和担心；需要精确组数时仍用 `cc_count`（会构建最小线性下标 id）。
+5. `loop` / `cloop` 在 Z3 上会为每个节点生成 id/距离辅助量；同一变量多次调用会复用缓存。支持图原语的后端改为对选中边的线图做 `GRAPH_ACTIVE_VERTICES_CONNECTED`，并额外禁止空回路。
 6. `one_black_group_per_region` 等「每区一组」模板要求 `regions` **完整覆盖盘面且互不重叠**；
    它由「组不跨区 + 每区至少一格 + 组数 == 区域数」共同保证，缺一不可。

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Protocol, runtime_checkable
+from dataclasses import dataclass, field
+from typing import Any, Protocol, Sequence, runtime_checkable
 
 
 class BackendError(RuntimeError):
@@ -32,6 +32,7 @@ class BackendInfo:
     reason: str = ""
     supports_timeout: bool = False
     supports_graph_primitives: bool = False
+    features: tuple[str, ...] = field(default_factory=tuple)
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -41,6 +42,7 @@ class BackendInfo:
             "reason": self.reason,
             "supportsTimeout": self.supports_timeout,
             "supportsGraphPrimitives": self.supports_graph_primitives,
+            "features": list(self.features),
         }
 
 
@@ -85,3 +87,56 @@ class ConstraintModel(Protocol):
     def find_answer(self, backend: str, timeout_ms: int | None = None) -> bool: ...
 
     def value(self, variable: Any) -> int | bool | None: ...
+
+    def vertices_connected(
+        self,
+        is_active: Sequence[Any],
+        edges: Sequence[tuple[int, int]],
+    ) -> Any:
+        """Bool: the active vertices form at most one connected component."""
+        ...
+
+    def edges_single_cycle(
+        self,
+        is_active: Sequence[Any],
+        pairs: Sequence[tuple[int, int]],
+        n_vertices: int,
+        *,
+        nonempty: bool = True,
+    ) -> Any:
+        """Bool: selected edges form one cycle (empty allowed iff not nonempty)."""
+        ...
+
+    def edges_connected(
+        self,
+        is_active: Sequence[Any],
+        pairs: Sequence[tuple[int, int]],
+        n_vertices: int,
+        *,
+        nonempty: bool = True,
+    ) -> Any:
+        """Bool: selected edges form one connected component."""
+        ...
+
+    def vertices_isolated_and_complement_connected(
+        self,
+        is_active: Sequence[Any],
+        pairs: Sequence[tuple[int, int]],
+        shape: tuple[int, int] | None = None,
+    ) -> Any:
+        """Bool: active vertices are not adjacent and do not split the rest."""
+        ...
+
+    def graph_division(
+        self,
+        group_size: Sequence[Any],
+        edges: Sequence[tuple[int, int]],
+        is_border: Sequence[Any],
+    ) -> Any:
+        """Bool: vertices are partitioned by ``is_border`` into connected groups.
+
+        ``group_size[i]`` is the number of vertices in the group that contains
+        vertex ``i``. ``is_border[e]`` is true iff edge ``e`` joins two
+        different groups. Must be posted as a top-level CSP statement.
+        """
+        ...

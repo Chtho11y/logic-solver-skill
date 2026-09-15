@@ -83,3 +83,120 @@ def weighted_row_sum(x, reg):
     for p in reg:
         let total = total + b2i(is_black(x, p)) * (row_of(p) + 1)
     return total
+
+
+# -- visibility / first-nonzero (Skyscrapers, Easy as ABC, Gaps, Doppelblock)
+
+def visible_count(x, line, from_low):
+    # How many positive values in `line` are strictly taller than everything
+    # between them and the near side. `from_low` is compile-time: true reads
+    # from the first cell (left / top), false from the last (right / bottom).
+    let vis = 0
+    for p in line:
+        let taller = at(x, p) > 0
+        for q in line:
+            if from_low:
+                if before(q, p):
+                    let taller = taller and (at(x, p) > at(x, q))
+            else:
+                if before(p, q):
+                    let taller = taller and (at(x, p) > at(x, q))
+        let vis = vis + b2i(taller)
+    return vis
+
+def first_nonzero_low(x, line):
+    let first = 0
+    let seen = 0
+    for p in line:
+        let take = seen == 0 and at(x, p) > 0
+        let first = first + ite(take, at(x, p), 0)
+        let seen = seen + b2i(take)
+    return first
+
+def first_nonzero_high(x, line):
+    let first = 0
+    for p in line:
+        let first = ite(at(x, p) > 0, at(x, p), first)
+    return first
+
+def outside_visible(x):
+    for i in rows:
+        let k = side_clue("left", row_of(i[0]))
+        if not no_clue(k):
+            visible_count(x, i, true) == k
+        let kr = side_clue("right", row_of(i[0]))
+        if not no_clue(kr):
+            visible_count(x, i, false) == kr
+    for j in cols:
+        let k = side_clue("top", col_of(j[0]))
+        if not no_clue(k):
+            visible_count(x, j, true) == k
+        let kb = side_clue("bottom", col_of(j[0]))
+        if not no_clue(kb):
+            visible_count(x, j, false) == kb
+
+def outside_first_letter(x):
+    for i in rows:
+        let k = side_clue("left", row_of(i[0]))
+        if not no_clue(k):
+            first_nonzero_low(x, i) == k
+        let kr = side_clue("right", row_of(i[0]))
+        if not no_clue(kr):
+            first_nonzero_high(x, i) == kr
+    for j in cols:
+        let k = side_clue("top", col_of(j[0]))
+        if not no_clue(k):
+            first_nonzero_low(x, j) == k
+        let kb = side_clue("bottom", col_of(j[0]))
+        if not no_clue(kb):
+            first_nonzero_high(x, j) == kb
+
+def between_two_count(x, line, v):
+    # How many cells sit strictly between the two cells holding `v`.
+    let seen = 0
+    let gap = 0
+    for p in line:
+        let seen = seen + b2i(at(x, p) == v)
+        let gap = gap + b2i(seen == 1 and at(x, p) != v)
+    return gap
+
+def outside_gap_between(x, v):
+    for i in rows:
+        let k = side_clue("left", row_of(i[0]))
+        if not no_clue(k):
+            between_two_count(x, i, v) == k
+        let kr = side_clue("right", row_of(i[0]))
+        if not no_clue(kr):
+            between_two_count(x, i, v) == kr
+    for j in cols:
+        let k = side_clue("top", col_of(j[0]))
+        if not no_clue(k):
+            between_two_count(x, j, v) == k
+        let kb = side_clue("bottom", col_of(j[0]))
+        if not no_clue(kb):
+            between_two_count(x, j, v) == kb
+
+def between_two_sum(x, line, wall):
+    # Sum of values strictly between the two cells holding `wall`.
+    let seen = 0
+    let total = 0
+    for p in line:
+        let seen = seen + b2i(at(x, p) == wall)
+        let total = total + ite(seen == 1 and at(x, p) != wall, at(x, p), 0)
+    return total
+
+def outside_between_sum(x, wall):
+    for i in rows:
+        let k = side_clue("left", row_of(i[0]))
+        if not no_clue(k):
+            between_two_sum(x, i, wall) == k
+        let kr = side_clue("right", row_of(i[0]))
+        if not no_clue(kr):
+            between_two_sum(x, i, wall) == kr
+    for j in cols:
+        let k = side_clue("top", col_of(j[0]))
+        if not no_clue(k):
+            between_two_sum(x, j, wall) == k
+        let kb = side_clue("bottom", col_of(j[0]))
+        if not no_clue(kb):
+            between_two_sum(x, j, wall) == kb

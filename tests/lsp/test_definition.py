@@ -27,11 +27,15 @@ class DefinitionTests(unittest.TestCase):
             {"textDocument": {"uri": uri}, "position": {"line": line, "character": col}}
         )
 
-    def test_wall_rule_jumps_to_shading(self) -> None:
+    def test_wall_rule_is_builtin(self) -> None:
         loc = self._def(self.nuri, self.ntext, "wall_rule")
+        self.assertIsNone(loc)
+
+    def test_black_connected_jumps_to_shading(self) -> None:
+        loc = self._def(self.suri, self.stext, "black_connected", after_def=True)
         self.assertIsNotNone(loc)
         self.assertIn("shading.dsl", loc["uri"])
-        self.assertEqual(loc["range"]["start"]["line"], 46)  # 0-based; def is line 47
+        self.assertEqual(loc["range"]["start"]["line"], 13)
 
     def test_import_jumps_to_library_file(self) -> None:
         loc = self._def(self.nuri, self.ntext, "shading")
@@ -46,12 +50,13 @@ class DefinitionTests(unittest.TestCase):
     def test_document_symbols_list_defs(self) -> None:
         symbols = self.server.document_symbol({"textDocument": {"uri": self.suri}})
         names = [item["name"].split("(")[0] for item in symbols]
-        self.assertIn("island_rule", names)
-        self.assertIn("wall_rule", names)
+        self.assertIn("black_connected", names)
+        self.assertNotIn("island_rule", names)
+        self.assertNotIn("wall_rule", names)
 
     def test_workspace_symbol(self) -> None:
-        hits = self.server.workspace_symbol({"query": "island_rule"})
-        self.assertTrue(any("island_rule" in item["name"] for item in hits))
+        hits = self.server.workspace_symbol({"query": "black_connected"})
+        self.assertTrue(any("black_connected" in item["name"] for item in hits))
 
 
 if __name__ == "__main__":

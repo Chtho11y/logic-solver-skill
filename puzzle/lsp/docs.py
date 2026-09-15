@@ -121,6 +121,26 @@ def format_variable_hover(spec: VarSpec) -> str:
     return "\n".join(lines)
 
 
+def format_backend_hover(
+    name: str,
+    label: str,
+    available: bool,
+    features: tuple[str, ...] | list[str],
+    reason: str = "",
+) -> str:
+    del name
+    feat = ", ".join(features) if features else "(none)"
+    lines = [
+        f"(backend) {label}",
+        "─" * 36,
+        f"available: {'yes' if available else 'no'}",
+        f"features: {feat}",
+    ]
+    if reason:
+        lines.append(reason)
+    return "\n".join(lines)
+
+
 def format_import_hover(path: Path, names: list[str]) -> str:
     exported = ", ".join(names) if names else "(no defs)"
     return "\n".join(

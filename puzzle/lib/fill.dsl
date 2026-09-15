@@ -14,6 +14,30 @@ def latin(x):
     for c in cols:
         distinct(x[c])
 
+def latin_1_to_n(x):
+    # 方阵：每行每列是 1..N 的排列（N = 列数）
+    subset_latin(x, cols.size)
+
+def subset_latin(x, k):
+    # 每行每列中 1..k 各出现一次，其余格子为 0
+    for p in cells():
+        at(x, p) >= 0
+        at(x, p) <= k
+    for line in rows:
+        subset_latin_line(x, line, k)
+    for line in cols:
+        subset_latin_line(x, line, k)
+
+def subset_latin_line(x, line, k):
+    let filled = 0
+    for p in line:
+        let filled = filled + b2i(at(x, p) != 0)
+    filled == k
+    for p in line:
+        for q in line:
+            if before(p, q):
+                (at(x, p) != 0 and at(x, q) != 0) => at(x, p) != at(x, q)
+
 def boxes(x, w, h):
     # 每个 w×h 宫内的数字互不相同
     for b in grid(w, h):
@@ -37,6 +61,12 @@ def adjacent_differ(x):
     for p in cells():
         for q in adj4(p):
             at(x, p) != at(x, q)
+
+def kropki_white(a, b):
+    return abs(a - b) == 1
+
+def kropki_black(a, b):
+    return a == b + b or b == a + a
 
 def region_consecutive(x):
     # 每个区域内的所有数必须构成一个连续数字序列（顺序任意）
