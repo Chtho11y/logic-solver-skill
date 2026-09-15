@@ -4,7 +4,7 @@
  */
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import type { DrawTool } from "./drawing";
+import type { DrawTool, Drawing } from "./drawing";
 import type { LayerCounts } from "./layers";
 
 export type PenpaOccupancy = {
@@ -16,6 +16,7 @@ export type PenpaOccupancy = {
 
 export type PenpaHandle = {
   loadUrl: (url: string) => void;
+  stamp: (drawing: Drawing) => boolean;
   setSize: (rows: number, cols: number) => void;
   setTool: (tool: DrawTool) => void;
   setHidden: (keys: string[], hide: boolean) => void;
@@ -39,7 +40,8 @@ function penpaParam(url: string): string {
 
 type Bridge = {
   loadUrl: (url: string) => boolean;
-  setSize: (rows: number, cols: number) => void;
+  stamp: (drawing: Drawing) => boolean;
+  setSize: (rows: number, cols: number) => boolean | void;
   setTool: (tool: string) => void;
   setHidden: (keys: string[], hide: boolean) => void;
   applySolution: (element: string, values: Record<string, number>) => void;
@@ -71,6 +73,9 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
       if (param && frame) {
         frame.src = `/penpa-edit/index.html#${param}`;
       }
+    },
+    stamp(drawing) {
+      return bridge()?.stamp(drawing) ?? false;
     },
     setSize(rows, cols) {
       bridge()?.setSize(rows, cols);
@@ -115,7 +120,7 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
         ref={frameRef}
         className="penpa-frame"
         title="Penpa+"
-        src="/penpa-edit/index.html"
+        src="/penpa-edit/index.html?v=stamp"
       />
     </main>
   );

@@ -12,5 +12,5 @@ License: MIT. See `LICENSE` in this folder and the repository `NOTICE`.
 Studio-only files (not part of upstream):
 
 - `embed.css` — layout tweaks when `?embed=1`
-- `studio-bridge.js` — postMessage API for the React host
+- `studio-bridge.js` — occupancy / stamp / export API for the React host
 - GTM / gtag disabled so the iframe does not phone home

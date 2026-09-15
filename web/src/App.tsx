@@ -8,7 +8,6 @@ import { bindDrawing, instanceToDrawing } from "./bind";
 import { EDITOR_OF } from "./editors";
 import {
   drawingFromGenericLayers,
-  drawingToGenericLayers,
   emptyDrawing,
   indexedTools,
   isEmptyDrawing,
@@ -41,11 +40,6 @@ const MODE_TOOL: Record<string, DrawTool> = {
   wall: "diagonal",
 };
 
-function looksLikePenpa(url: string): boolean {
-  const lower = url.toLowerCase();
-  return lower.includes("penpa") || lower.includes("swaroopg92") || lower.includes("#m=") || lower.includes("&p=");
-}
-
 export function App() {
   const [puzzles, setPuzzles] = useState<PuzzleSpec[]>([]);
   const [spec, setSpec] = useState<PuzzleSpec | null>(null);
@@ -66,7 +60,7 @@ export function App() {
   const [importBusy, setImportBusy] = useState(false);
   const [importNote, setImportNote] = useState("");
   const penpaRef = useRef<PenpaHandle>(null);
-  const pendingUrl = useRef<string | null>(null);
+  const pendingStamp = useRef<Drawing | null>(null);
   const penpaReady = useRef(false);
 
   useEffect(() => {
@@ -79,36 +73,23 @@ export function App() {
       .catch(() => setSolverAvailable(false));
   }, []);
 
-  function loadIntoPenpa(url: string) {
-    pendingUrl.current = url;
-    if (penpaReady.current) {
-      pendingUrl.current = null;
-      penpaRef.current?.loadUrl(url);
+  function stampIntoPenpa(next: Drawing) {
+    pendingStamp.current = next;
+    if (penpaReady.current && penpaRef.current?.stamp(next)) {
+      pendingStamp.current = null;
     }
   }
 
-  async function pushDrawing(next: Drawing, title?: string, tags?: string[]) {
+  function pushDrawing(next: Drawing) {
     setDrawing(next);
-    const encoded = await api.encodePenpa({
-      rows: next.rows,
-      cols: next.cols,
-      layers: drawingToGenericLayers(next),
-      title,
-      tags,
-    });
-    if (encoded.error || !encoded.url) {
-      setImportNote(encoded.error || "无法编码盘面");
-      return;
-    }
-    loadIntoPenpa(encoded.url);
+    stampIntoPenpa(next);
   }
 
   const onOccupancy = useCallback((occ: PenpaOccupancy) => {
     penpaReady.current = true;
-    if (pendingUrl.current) {
-      const url = pendingUrl.current;
-      pendingUrl.current = null;
-      penpaRef.current?.loadUrl(url);
+    if (pendingStamp.current) {
+      const next = pendingStamp.current;
+      if (penpaRef.current?.stamp(next)) pendingStamp.current = null;
     }
     setCounts(occ.counts);
     setDrawing((prev) => (
@@ -157,24 +138,19 @@ export function App() {
     const next = data.sample
       ? instanceToDrawing(data.sample, data.puzzle)
       : emptyDrawing(data.puzzle.defaultRows, data.puzzle.defaultCols);
-    await pushDrawing(next, data.puzzle.key, [data.puzzle.key]);
+    pushDrawing(next);
   }
 
-  async function applyImport(data: ImportResult, sourceUrl?: string) {
+  async function applyImport(data: ImportResult) {
     const layerIds = data.layers.map((layer) => layer.id).join(", ");
     if (data.rows > 0 && data.cols > 0) {
       const next = drawingFromGenericLayers(data.layers, data.rows, data.cols);
-      setDrawing(next);
-      setResult(null);
       const tagged = data.puzzle;
       if (tagged && (!spec || spec.key !== tagged)) {
         await loadPuzzleMeta(tagged);
       }
-      if (sourceUrl && looksLikePenpa(sourceUrl)) {
-        loadIntoPenpa(sourceUrl);
-      } else {
-        await pushDrawing(next, tagged ?? "", tagged ? [tagged] : data.tags);
-      }
+      setResult(null);
+      pushDrawing(next);
       const bits = [
         data.kind === "penpa" ? "Penpa+" : "puzz.link",
         `${data.rows}×${data.cols}`,
@@ -207,7 +183,7 @@ export function App() {
         setImportNote(data.error);
         return;
       }
-      await applyImport(data, url);
+      await applyImport(data);
     } catch (error) {
       setImportNote(String(error));
     } finally {
@@ -260,7 +236,7 @@ export function App() {
   function resize(rows: number, cols: number) {
     if (rows < 1 || cols < 1 || rows > 40 || cols > 40) return;
     const next = resizeDrawing(drawing, rows, cols);
-    void pushDrawing(next, spec?.key, spec ? [spec.key] : undefined);
+    void pushDrawing(next);
     setResult(null);
   }
 
@@ -321,7 +297,7 @@ export function App() {
             className="ghost"
             onClick={() => {
               const next = instanceToDrawing(sample, spec);
-              void pushDrawing(next, spec.key, [spec.key]);
+              void pushDrawing(next);
               setResult(null);
               penpaRef.current?.clearSolution();
             }}
@@ -355,7 +331,7 @@ export function App() {
         <button
           className="ghost"
           onClick={() => {
-            void pushDrawing(emptyDrawing(drawing.rows, drawing.cols), spec?.key, spec ? [spec.key] : undefined);
+            void pushDrawing(emptyDrawing(drawing.rows, drawing.cols));
             setResult(null);
             penpaRef.current?.clearSolution();
           }}

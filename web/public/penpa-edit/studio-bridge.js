@@ -5,6 +5,17 @@
 (function () {
   "use strict";
 
+  // Cookies from earlier Penpa sessions overwrite display size mid-load and
+  // leave a one-cell canvas. This copy is only used inside the studio iframe.
+  function disableCookies() {
+    if (!window.UserSettings) return false;
+    UserSettings.loadFromCookies = function () {};
+    return true;
+  }
+  if (!disableCookies()) {
+    window.addEventListener("load", disableCookies);
+  }
+
   const TOOL_MODE = {
     shade: "surface",
     number: "number",
@@ -178,8 +189,7 @@
 
   function ensureCenterlist() {
     const pu = window.pu;
-    if (!pu) return;
-    if (pu.centerlist && pu.centerlist.length) return;
+    if (!pu || !pu.nx0) return;
     pu.centerlist = [];
     const top = (pu.space && pu.space[0]) || 0;
     const bottom = (pu.space && pu.space[1]) || 0;
@@ -192,12 +202,51 @@
     }
   }
 
+  function cloneMarks(obj) {
+    const skip = { command_redo: true, command_undo: true, command_replay: true };
+    const out = {};
+    if (!obj) return out;
+    Object.keys(obj).forEach(function (key) {
+      if (skip[key]) return;
+      try {
+        out[key] = JSON.parse(JSON.stringify(obj[key]));
+      } catch (err) { /* ignore */ }
+    });
+    return out;
+  }
+
+  function restoreMarks(dest, src) {
+    if (!dest || !src) return;
+    Object.keys(src).forEach(function (key) {
+      dest[key] = src[key];
+    });
+  }
+
+  function repairCanvas() {
+    const pu = window.pu;
+    if (!pu || typeof pu.reset_frame !== "function") {
+      ensureCenterlist();
+      return;
+    }
+    const q = cloneMarks(pu.pu_q);
+    const a = cloneMarks(pu.pu_a);
+    try {
+      pu.reset_frame();
+      restoreMarks(pu.pu_q, q);
+      restoreMarks(pu.pu_a, a);
+      if (typeof pu.redraw === "function") pu.redraw();
+    } catch (err) {
+      console.error("penpa repair", err);
+      ensureCenterlist();
+      if (typeof pu.redraw === "function") pu.redraw();
+    }
+  }
+
   function loadUrl(url) {
     const param = paramFromUrl(url);
     if (!param || typeof load !== "function") return false;
     function after() {
-      ensureCenterlist();
-      if (window.pu && typeof pu.redraw === "function") pu.redraw();
+      repairCanvas();
       notify();
     }
     try {
@@ -222,18 +271,179 @@
     return pu.maketext();
   }
 
-  function setSize(rows, cols) {
+  function setSize(rows, cols, quiet) {
     rows = Math.max(1, Math.min(40, Number(rows) || 10));
     cols = Math.max(1, Math.min(40, Number(cols) || 10));
-    document.getElementById("nb_size1").value = String(cols);
-    document.getElementById("nb_size2").value = String(rows);
+    const size1 = document.getElementById("nb_size1");
+    const size2 = document.getElementById("nb_size2");
+    if (!size1 || !size2 || typeof create_newboard !== "function") return false;
+    size1.value = String(cols);
+    size2.value = String(rows);
     ["nb_space1", "nb_space2", "nb_space3", "nb_space4"].forEach(function (id) {
       const el = document.getElementById(id);
       if (el) el.value = "0";
     });
-    if (window.UserSettings) UserSettings.gridtype = "square";
-    if (typeof create_newboard === "function") create_newboard();
-    notify();
+    if (window.UserSettings) {
+      UserSettings.gridtype = "square";
+      const size = Number(UserSettings.displaysize);
+      if (!(size >= 12 && size <= 90)) UserSettings.displaysize = 38;
+    }
+    create_newboard();
+    if (!quiet) notify();
+    return true;
+  }
+
+  function parseRC(key) {
+    const parts = String(key).split(",");
+    if (parts.length !== 2) return null;
+    const r = Number(parts[0]);
+    const c = Number(parts[1]);
+    if (!Number.isInteger(r) || !Number.isInteger(c)) return null;
+    return { r: r, c: c };
+  }
+
+  function parseEdge(key) {
+    const parts = String(key).split(",");
+    if (parts.length !== 3) return null;
+    const orient = parts[0];
+    const r = Number(parts[1]);
+    const c = Number(parts[2]);
+    if ((orient !== "H" && orient !== "V") || !Number.isInteger(r) || !Number.isInteger(c)) return null;
+    return { orient: orient, r: r, c: c };
+  }
+
+  function cornerIndex(row, col) {
+    const pu = window.pu;
+    const pr = row + 1 + (pu.space[0] || 0);
+    const pc = col + 1 + (pu.space[2] || 0);
+    return pr * pu.nx0 + pc + pu.ny0 * pu.nx0;
+  }
+
+  const SYMBOL_STAMP = {
+    circle: function (v) { return [Number(v) || 1, "circle_M", 1]; },
+    square: function (v) { return [Number(v) || 1, "square_M", 1]; },
+    triangle: function (v) { return [Number(v) || 1, "triup_M", 1]; },
+    star: function () { return [1, "star", 1]; },
+    cross: function () { return [2, "cross", 1]; },
+    tree: function () { return [2, "tents", 1]; },
+    tent: function () { return [1, "tents", 1]; },
+    ship: function (v) { return [Number(v) || 1, "battleship", 1]; },
+    wave: function () { return [1, "water", 1]; },
+    bulb: function () { return [1, "sun_moon", 1]; },
+  };
+
+  const OURS_DIR_TO_PENPA = { "0": "0", "1": "3", "2": "1", "3": "2" };
+
+  function stamp(drawing) {
+    if (!drawing || !window.pu || typeof create_newboard !== "function") return false;
+    try {
+      Object.keys(hidden).forEach(function (k) { delete hidden[k]; });
+      const rows = Math.max(1, Math.min(40, Number(drawing.rows) || 10));
+      const cols = Math.max(1, Math.min(40, Number(drawing.cols) || 10));
+      if (!setSize(rows, cols, true)) return false;
+      const pu = window.pu;
+      if (!pu || !pu.pu_q) return false;
+      const q = pu.pu_q;
+      ["surface", "number", "symbol", "line", "lineE"].forEach(function (field) {
+        if (!q[field] || typeof q[field] !== "object" || Array.isArray(q[field])) q[field] = {};
+      });
+      const marks = drawing.marks || {};
+
+      Object.entries(marks.shade || {}).forEach(function (pair) {
+        const pos = parseRC(pair[0]);
+        if (!pos) return;
+        const v = Number(pair[1]);
+        if (!v) return;
+        q.surface[String(cellIndex(pos.r, pos.c))] = v === 1 ? 4 : v;
+      });
+
+      Object.entries(marks.number || {}).forEach(function (pair) {
+        const pos = parseRC(pair[0]);
+        if (!pos) return;
+        q.number[String(cellIndex(pos.r, pos.c))] = [String(pair[1]), 1, "1"];
+      });
+
+      Object.entries(marks.text || {}).forEach(function (pair) {
+        const pos = parseRC(pair[0]);
+        if (!pos) return;
+        q.number[String(cellIndex(pos.r, pos.c))] = [String(pair[1]), 1, "1"];
+      });
+
+      Object.entries(marks.arrow || {}).forEach(function (pair) {
+        const pos = parseRC(pair[0]);
+        if (!pos) return;
+        const idx = String(cellIndex(pos.r, pos.c));
+        const suffix = OURS_DIR_TO_PENPA[String(pair[1])] || "0";
+        const existing = q.number[idx];
+        const prefix = existing ? String(existing[0]).split("_")[0] : "";
+        q.number[idx] = [(prefix || "") + "_" + suffix, 1, "2"];
+      });
+
+      Object.keys(SYMBOL_STAMP).forEach(function (tool) {
+        Object.entries(marks[tool] || {}).forEach(function (pair) {
+          const pos = parseRC(pair[0]);
+          if (!pos) return;
+          q.symbol[String(cellIndex(pos.r, pos.c))] = SYMBOL_STAMP[tool](pair[1]);
+        });
+      });
+
+      Object.entries(marks.edgeline || {}).forEach(function (pair) {
+        const e = parseEdge(pair[0]);
+        if (!e) return;
+        const a = cornerIndex(e.r, e.c);
+        const b = e.orient === "H" ? cornerIndex(e.r, e.c + 1) : cornerIndex(e.r + 1, e.c);
+        q.lineE[a + "," + b] = 2;
+      });
+
+      Object.entries(marks.link || {}).forEach(function (pair) {
+        const e = parseEdge(pair[0]);
+        if (!e) return;
+        const a = e.orient === "V" ? cellIndex(e.r, e.c - 1) : cellIndex(e.r - 1, e.c);
+        const b = e.orient === "V" ? cellIndex(e.r, e.c) : cellIndex(e.r, e.c);
+        q.line[a + "," + b] = 3;
+      });
+
+      const outside = drawing.outside || {};
+      ["top", "bottom", "left", "right"].forEach(function (side) {
+        Object.entries(outside[side] || {}).forEach(function (pair) {
+          const i = Number(pair[0]);
+          const v = pair[1];
+          if (!Number.isInteger(i) || v === undefined || v === null || Number(v) < 0) return;
+          let pr, pc;
+          if (side === "top") {
+            pr = 1 + (pu.space[0] || 0);
+            pc = i + 2 + (pu.space[2] || 0);
+          } else if (side === "bottom") {
+            pr = 2 + rows + (pu.space[0] || 0);
+            pc = i + 2 + (pu.space[2] || 0);
+          } else if (side === "left") {
+            pr = i + 2 + (pu.space[0] || 0);
+            pc = 1 + (pu.space[2] || 0);
+          } else {
+            pr = i + 2 + (pu.space[0] || 0);
+            pc = 2 + cols + (pu.space[2] || 0);
+          }
+          q.number[String(pr * pu.nx0 + pc)] = [String(Array.isArray(v) ? v[0] : v), 1, "1"];
+        });
+      });
+
+      const groups = {};
+      Object.entries(drawing.regions || {}).forEach(function (pair) {
+        const pos = parseRC(pair[0]);
+        if (!pos) return;
+        const id = String(pair[1]);
+        (groups[id] = groups[id] || []).push(cellIndex(pos.r, pos.c));
+      });
+      const cages = Object.keys(groups).map(function (id) { return groups[id]; });
+      if (cages.length) q.killercages = cages;
+
+      if (typeof pu.redraw === "function") pu.redraw();
+      notify();
+      return true;
+    } catch (err) {
+      console.error("penpa stamp", err);
+      return false;
+    }
   }
 
   function setTool(tool) {
@@ -327,6 +537,7 @@
   window.StudioBridge = {
     occupancy: occupancy,
     loadUrl: loadUrl,
+    stamp: stamp,
     exportUrl: exportUrl,
     setSize: setSize,
     setTool: setTool,
@@ -335,6 +546,19 @@
     clearSolution: clearSolution,
     notify: notify,
   };
+
+  if (typeof boot === "function") {
+    const originalBoot = boot;
+    boot = async function () {
+      disableCookies();
+      try {
+        await originalBoot.apply(this, arguments);
+      } catch (err) {
+        console.error("penpa boot", err);
+      }
+      window.parent.postMessage({ type: "penpa-ready", ...occupancy() }, "*");
+    };
+  }
 
   window.addEventListener("load", function () {
     window.onbeforeunload = null;
@@ -358,6 +582,7 @@
     const api = window.StudioBridge;
     if (!api || !data || !data.type) return;
     if (data.type === "penpa-load") api.loadUrl(data.url);
+    if (data.type === "penpa-stamp") api.stamp(data.drawing);
     if (data.type === "penpa-size") api.setSize(data.rows, data.cols);
     if (data.type === "penpa-tool") api.setTool(data.tool);
     if (data.type === "penpa-hide") api.setHidden(data.keys, data.hide);

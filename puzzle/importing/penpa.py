@@ -549,6 +549,7 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
     theta = 0
     title_s = f"Title: {(title or board.title or '').replace(',', '%2C')}"
     author_s = f"Author: {(board.author or '').replace(',', '%2C')}"
+    center_n = (2 + grid.top + board.rows // 2) * grid.real_cols + (2 + grid.left + board.cols // 2)
     header = ",".join(
         str(x)
         for x in [
@@ -561,8 +562,8 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
             1,
             (board.cols + 1) * size,
             (board.rows + 1) * size,
-            0,
-            0,
+            center_n,
+            center_n,
             0,
             0,
             0,
