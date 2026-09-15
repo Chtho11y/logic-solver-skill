@@ -4,13 +4,16 @@
 
 import "shading"
 
-no_black_2x2(x)
-cc8_count(x, 0) <= 1
-is_rect_group(x, 0)
+def mochikoro(x, n):
+    no_black_2x2(x)
+    cc8_count(x, 0) <= 1
+    is_rect_group(x, 0)
 
-let sz = cc_size(x)
-for p in clue_cells(n):
-    is_white(x, p)
-    sz[p] == n[p]
+    let sz = cc_size(x)
+    for p in clue_cells(n):
+        is_white(x, p)
+        sz[p] == n[p]
 
-clues_in_distinct_groups(x, n)
+    clues_in_distinct_groups(x, n)
+
+mochikoro(x, n)

@@ -2,6 +2,9 @@
 import "regions"
 import "loops"
 
-all_regions_size(c, 4)
-for p in clue_cells(n):
-    cell_edge_count(c.border, p) == n[p]
+def fourcells(c, n):
+    all_regions_size(c, 4)
+    for p in clue_cells(n):
+        cell_edge_count(c.border, p) == n[p]
+
+fourcells(c, n)

@@ -3,6 +3,9 @@
 
 import "core"
 
-for p in clue_cells(n):
-    x[p] == 0
-    num_eq(x[adj8(p)], 1) == n[p]
+def mines(x, n):
+    for p in clue_cells(n):
+        x[p] == 0
+        num_eq(x[adj8(p)], 1) == n[p]
+
+mines(x, n)

@@ -6,20 +6,23 @@
 import "shading"
 import "regions"
 
-at_most_one_black_group_per_region(x)
-connected8(x, 1)
+def martini(x, o, n):
+    at_most_one_black_group_per_region(x)
+    connected8(x, 1)
 
-for p in clue_cells(o):
-    if o[p] == 2:
-        is_black(x, p)
-    if o[p] == 1:
+    for p in clue_cells(o):
+        if o[p] == 2:
+            is_black(x, p)
+        if o[p] == 1:
+            is_white(x, p)
+
+    let ids = cc_id(x)
+    for p in clue_cells(n):
         is_white(x, p)
+        let total = 0
+        for q in clue_cells(o):
+            if o[q] == 1:
+                let total = total + b2i(ids[p] == ids[q])
+        total == n[p]
 
-let ids = cc_id(x)
-for p in clue_cells(n):
-    is_white(x, p)
-    let total = 0
-    for q in clue_cells(o):
-        if o[q] == 1:
-            let total = total + b2i(ids[p] == ids[q])
-    total == n[p]
+martini(x, o, n)

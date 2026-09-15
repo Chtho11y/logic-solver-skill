@@ -4,7 +4,10 @@
 import "loops"
 import "regions"
 
-full_loop(e)
+def doubleback(e):
+    full_loop(e)
 
-for reg in regions:
-    region_crossings(e, reg) == 4
+    for reg in regions:
+        region_crossings(e, reg) == 4
+
+doubleback(e)

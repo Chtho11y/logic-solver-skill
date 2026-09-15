@@ -3,10 +3,13 @@
 # 数字 = 与之相邻的（至多）四格中的枕头个数。
 import "shading"
 
-wall_rule(x)
-# 床占据留白格，且每张床是一个 1x2 骨牌。
-all_dominoes(x, 0)
+def shugaku(x, n):
+    wall_rule(x)
+    # 床占据留白格，且每张床是一个 1x2 骨牌。
+    all_dominoes(x, 0)
 
-# 每张床至少与一个涂黑格相邻。
-for p in cells():
-    is_white(x, p) => n_adj4(x, p, 1) >= 1
+    # 每张床至少与一个涂黑格相邻。
+    for p in cells():
+        is_white(x, p) => n_adj4(x, p, 1) >= 1
+
+shugaku(x, n)

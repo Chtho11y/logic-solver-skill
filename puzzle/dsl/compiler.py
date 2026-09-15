@@ -391,8 +391,17 @@ class Compiler:
             if isinstance(stmt, ast.DefStmt):
                 self._functions[stmt.name] = UserFunction(stmt.name, list(stmt.params), stmt.body)
         for stmt in statements:
-            if not isinstance(stmt, ast.DefStmt):
-                self._exec_stmt(stmt)
+            if isinstance(stmt, ast.DefStmt):
+                continue
+            # An imported module contributes nested imports and `def`s, not
+            # its top-level constraints. `import "sudoku"` therefore defines
+            # `sudoku` without asserting `sudoku(x)`; the caller writes that.
+            # Function bodies still run fully (`_call_depth > 0`).
+            if self._in_import and self._call_depth == 0:
+                if isinstance(stmt, (ast.ImportStmt, ast.UseStmt)):
+                    self._exec_stmt(stmt)
+                continue
+            self._exec_stmt(stmt)
 
     def _exec_stmt(self, stmt) -> None:
         if isinstance(stmt, ast.LetStmt):

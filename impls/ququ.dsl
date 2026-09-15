@@ -4,6 +4,9 @@
 
 import "shading"
 
-clue_cells_white(x, n)
-group_size_clue(x, n)
-cc_count(x, 0) == clue_cells(n).size
+def ququ(x, n):
+    clue_cells_white(x, n)
+    group_size_clue(x, n)
+    cc_count(x, 0) == clue_cells(n).size
+
+ququ(x, n)

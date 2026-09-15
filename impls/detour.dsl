@@ -4,7 +4,10 @@
 import "loops"
 import "regions"
 
-full_loop(e)
+def detour(e, n):
+    full_loop(e)
 
-for p in clue_cells(n):
-    region_turns(e, region_of(p)) == n[p]
+    for p in clue_cells(n):
+        region_turns(e, region_of(p)) == n[p]
+
+detour(e, n)

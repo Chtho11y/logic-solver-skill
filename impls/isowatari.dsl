@@ -2,12 +2,15 @@
 # 黑圈格必须涂黑，白圈格必须留白；无全白 2x2。
 import "shading"
 
-groups_of_size(x, 1, param("n"))
-connected(x, 0)
-no2x2(x, 0)
+def isowatari(x, o):
+    groups_of_size(x, 1, param("n"))
+    connected(x, 0)
+    no2x2(x, 0)
 
-for p in clue_cells(o):
-    if o[p] == 2:
-        is_black(x, p)
-    else:
-        is_white(x, p)
+    for p in clue_cells(o):
+        if o[p] == 2:
+            is_black(x, p)
+        else:
+            is_white(x, p)
+
+isowatari(x, o)

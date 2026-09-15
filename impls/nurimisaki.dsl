@@ -4,16 +4,19 @@
 
 import "shading"
 
-white_connected(x)
-no_mono_2x2(x)
+def nurimisaki(x, n):
+    white_connected(x)
+    no_mono_2x2(x)
 
-for p in cells():
-    if has_value(n, p):
-        is_white(x, p)
-        n_adj4(x, p, 0) == 1
-    else:
-        is_black(x, p) or n_adj4(x, p, 0) != 1
+    for p in cells():
+        if has_value(n, p):
+            is_white(x, p)
+            n_adj4(x, p, 0) == 1
+        else:
+            is_black(x, p) or n_adj4(x, p, 0) != 1
 
-for p in clue_cells(n):
-    if n[p] > 0:
-        see4(x, p, 0) + 1 == n[p]
+    for p in clue_cells(n):
+        if n[p] > 0:
+            see4(x, p, 0) + 1 == n[p]
+
+nurimisaki(x, n)

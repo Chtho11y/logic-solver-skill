@@ -3,7 +3,10 @@
 
 import "shading"
 
-white_connected(x)
+def creek(x, n):
+    white_connected(x)
 
-for v in clue_cells(n):
-    num_eq(x[cell_of(v)], 1) == n[v]
+    for v in clue_cells(n):
+        num_eq(x[cell_of(v)], 1) == n[v]
+
+creek(x, n)

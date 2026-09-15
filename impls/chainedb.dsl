@@ -5,15 +5,18 @@
 
 import "shading"
 
-clue_cells_black(x, n)
-cc_count(x, 1) == clue_cells(n).size
+def chainedb(x, n):
+    clue_cells_black(x, n)
+    cc_count(x, 1) == clue_cells(n).size
 
-let sz = cc_size(x)
-for p in clue_cells(n):
-    if n[p] >= 0:
-        sz[p] == n[p]
+    let sz = cc_size(x)
+    for p in clue_cells(n):
+        if n[p] >= 0:
+            sz[p] == n[p]
 
-let s4 = cc_size(x)
-let s8 = cc8_size(x)
-for p in cells():
-    is_black(x, p) => s8[p] > s4[p]
+    let s4 = cc_size(x)
+    let s8 = cc8_size(x)
+    for p in cells():
+        is_black(x, p) => s8[p] > s4[p]
+
+chainedb(x, n)

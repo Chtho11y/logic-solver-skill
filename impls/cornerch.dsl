@@ -2,6 +2,9 @@
 # 数字 = 其所在留白连通组的面积；面积为偶数则必须是长方形，为奇数则不能是长方形。
 import "shading"
 
-connected8(x, 0)
-clue_cells_white(x, n)
-group_size_clue(x, n)
+def cornerch(x, n):
+    connected8(x, 0)
+    clue_cells_white(x, n)
+    group_size_clue(x, n)
+
+cornerch(x, n)

@@ -5,7 +5,10 @@
 import "shading"
 import "regions"
 
-at_most_one_black_group_per_region(x)
-region_black_count(x, n)
-connected8(x, 1)
-no_black_2x2(x)
+def cocktail(x, n):
+    at_most_one_black_group_per_region(x)
+    region_black_count(x, n)
+    connected8(x, 1)
+    no_black_2x2(x)
+
+cocktail(x, n)

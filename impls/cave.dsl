@@ -4,9 +4,12 @@
 
 import "shading"
 
-white_connected(x)
-group_touches_border(x, 1)
+def cave(x, n):
+    white_connected(x)
+    group_touches_border(x, 1)
 
-for p in clue_cells(n):
-    is_white(x, p)
-    see4(x, p, 0) + 1 == n[p]
+    for p in clue_cells(n):
+        is_white(x, p)
+        see4(x, p, 0) + 1 == n[p]
+
+cave(x, n)

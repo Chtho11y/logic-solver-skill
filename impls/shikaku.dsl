@@ -3,6 +3,9 @@
 
 import "regions"
 
-regions_are_rectangles(c)
-region_size_clue(c, n)
-one_clue_per_region(c, n)
+def shikaku(c, n):
+    regions_are_rectangles(c)
+    region_size_clue(c, n)
+    one_clue_per_region(c, n)
+
+shikaku(c, n)

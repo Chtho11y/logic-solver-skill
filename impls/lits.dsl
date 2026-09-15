@@ -9,35 +9,38 @@
 import "shading"
 import "regions"
 
-black_connected(x)
-no_black_2x2(x)
+def lits(x, t):
+    black_connected(x)
+    no_black_2x2(x)
 
-for reg in regions:
-    num_eq(x[reg], 1) == 4
-    # 4 个黑格连通 <=> 区域内有序黑相邻对数 >= 6
-    ordered_pairs_in(x, reg, 1) >= 6
+    for reg in regions:
+        num_eq(x[reg], 1) == 4
+        # 4 个黑格连通 <=> 区域内有序黑相邻对数 >= 6
+        ordered_pairs_in(x, reg, 1) >= 6
 
-    let rid = region_id(reg[0])
-    let ty = t[reg[0]]
-    for p in reg:
-        t[p] == ty
+        let rid = region_id(reg[0])
+        let ty = t[reg[0]]
+        for p in reg:
+            t[p] == ty
 
-    let deg3 = false
-    for p in reg:
-        let deg3 = deg3 or (is_black(x, p) and in_region_count(x, p, 1) == 3)
+        let deg3 = false
+        for p in reg:
+            let deg3 = deg3 or (is_black(x, p) and in_region_count(x, p, 1) == 3)
 
-    let c3 = 0
-    for w in slide(2, 2):
-        let sub = region_cells_in(w, rid)
-        if sub.size >= 3:
-            let c3 = c3 + b2i(num_eq(x[sub], 1) == 3)
+        let c3 = 0
+        for w in slide(2, 2):
+            let sub = region_cells_in(w, rid)
+            if sub.size >= 3:
+                let c3 = c3 + b2i(num_eq(x[sub], 1) == 3)
 
-    (ty == 3) == deg3
-    (ty == 0) == (not deg3 and c3 == 0)
-    (ty == 1) == (not deg3 and c3 == 1)
-    (ty == 2) == (not deg3 and c3 == 2)
+        (ty == 3) == deg3
+        (ty == 0) == (not deg3 and c3 == 0)
+        (ty == 1) == (not deg3 and c3 == 1)
+        (ty == 2) == (not deg3 and c3 == 2)
 
-for p in cells():
-    for q in adj4(p):
-        if not same_region(p, q):
-            is_black(x, p) and is_black(x, q) => t[p] != t[q]
+    for p in cells():
+        for q in adj4(p):
+            if not same_region(p, q):
+                is_black(x, p) and is_black(x, q) => t[p] != t[q]
+
+lits(x, t)

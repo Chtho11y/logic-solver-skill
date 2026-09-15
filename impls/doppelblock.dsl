@@ -2,5 +2,8 @@
 import "fill"
 import "outside"
 
-subset_latin(x, cols.size - 2)
-outside_between_sum(x, 0)
+def doppelblock(x):
+    subset_latin(x, cols.size - 2)
+    outside_between_sum(x, 0)
+
+doppelblock(x)

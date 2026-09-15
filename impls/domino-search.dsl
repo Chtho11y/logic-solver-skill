@@ -1,17 +1,6 @@
 # 分成 1x2；盘面数字给定，每种无序数对至多出现在一个骨牌上。
 import "regions"
 
-all_regions_size(c, 2)
-for p in cells():
-    for q in adj4(p):
-        if before(p, q):
-            for p2 in cells():
-                for q2 in adj4(p2):
-                    if before(p2, q2):
-                        if before(p, p2) or (row_of(p) == row_of(p2) and col_of(p) == col_of(p2) and before(q, q2)):
-                            if same_pair(p, q, p2, q2):
-                                not (c[p] == c[q] and c[p2] == c[q2])
-
 def same_pair(p, q, p2, q2):
     if not (has_value(n, p) and has_value(n, q) and has_value(n, p2) and has_value(n, q2)):
         return false
@@ -22,3 +11,17 @@ def same_pair(p, q, p2, q2):
         if n[q] == n[p2]:
             return true
     return false
+
+def domino_search(c, n):
+    all_regions_size(c, 2)
+    for p in cells():
+        for q in adj4(p):
+            if before(p, q):
+                for p2 in cells():
+                    for q2 in adj4(p2):
+                        if before(p2, q2):
+                            if before(p, p2) or (row_of(p) == row_of(p2) and col_of(p) == col_of(p2) and before(q, q2)):
+                                if same_pair(p, q, p2, q2):
+                                    not (c[p] == c[q] and c[p2] == c[q2])
+
+domino_search(c, n)

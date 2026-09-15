@@ -2,5 +2,8 @@
 # 不能在两个全等的正方形里；数字 = 此格及与其相邻的（至多）四格中涂黑格的个数。
 import "shading"
 
-is_rect_group(x, 1)
-around_black_clue(x, n)
+def lookair(x, n):
+    is_rect_group(x, 1)
+    around_black_clue(x, n)
+
+lookair(x, n)

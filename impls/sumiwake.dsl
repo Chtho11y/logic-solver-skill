@@ -3,11 +3,14 @@
 import "shading"
 import "regions"
 
-island_rule(x)
-no_white_crossing_3_regions(x)
+def sumiwake(x, o):
+    island_rule(x)
+    no_white_crossing_3_regions(x)
 
-for p in clue_cells(o):
-    if o[p] == 1:
-        n_adj8(x, p, 1) == 1
-    else:
-        n_adj8(x, p, 1) == 2
+    for p in clue_cells(o):
+        if o[p] == 1:
+            n_adj8(x, p, 1) == 1
+        else:
+            n_adj8(x, p, 1) == 2
+
+sumiwake(x, o)

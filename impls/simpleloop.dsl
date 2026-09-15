@@ -3,10 +3,13 @@
 
 import "loops"
 
-cloop(e)
+def simpleloop(e, w):
+    cloop(e)
 
-for p in cells():
-    if has_value(w, p):
-        off_loop(e, p)
-    else:
-        on_loop(e, p)
+    for p in cells():
+        if has_value(w, p):
+            off_loop(e, p)
+        else:
+            on_loop(e, p)
+
+simpleloop(e, w)

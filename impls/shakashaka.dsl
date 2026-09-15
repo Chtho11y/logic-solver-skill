@@ -2,4 +2,7 @@
 # 黑格里的数字表示与此格相邻的、涂了三角形的空格数。
 import "shading"
 
-adj_black_clue(x, n)
+def shakashaka(x, n):
+    adj_black_clue(x, n)
+
+shakashaka(x, n)

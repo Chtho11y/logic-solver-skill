@@ -2,4 +2,7 @@
 # 菱形不能与黑格或其他菱形重叠或有公共边；黑格中的数字 = 与此格共顶点的菱形数。
 import "shading"
 
-connected8(x, 1)
+def diamond(x, w, n):
+    connected8(x, 1)
+
+diamond(x, w, n)

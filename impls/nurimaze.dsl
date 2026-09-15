@@ -4,7 +4,10 @@
 import "shading"
 import "regions"
 
-no_mono_2x2(x)
-region_uniform(x)
-# 连通且无环 ⟺ 树 ⟺ 任两格之间路径唯一。
-color_is_tree(x, 0)
+def nurimaze(x, m):
+    no_mono_2x2(x)
+    region_uniform(x)
+    # 连通且无环 ⟺ 树 ⟺ 任两格之间路径唯一。
+    color_is_tree(x, 0)
+
+nurimaze(x, m)

@@ -3,7 +3,10 @@
 
 import "loops"
 
-loop(e)
+def slither(e, n):
+    loop(e)
 
-for p in clue_cells(n):
-    cell_edge_count(e, p) == n[p]
+    for p in clue_cells(n):
+        cell_edge_count(e, p) == n[p]
+
+slither(e, n)

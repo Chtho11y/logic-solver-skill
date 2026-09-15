@@ -5,17 +5,20 @@ import "shading"
 import "regions"
 import "outside"
 
-for p in cells():
-    let below = shift(p, 1, 0)
-    if below.size == 1:
-        if same_region(p, below):
-            # 水往下沉：此格有水则其下方（同区域）也有水。
-            is_black(x, p) => is_black(x, below)
-    let right = shift(p, 0, 1)
-    if right.size == 1:
-        if same_region(p, right):
-            # 水面是平的：同区域同一行的相邻两格水位相同。
-            x[p] == x[right]
+def aquarium(x):
+    for p in cells():
+        let below = shift(p, 1, 0)
+        if below.size == 1:
+            if same_region(p, below):
+                # 水往下沉：此格有水则其下方（同区域）也有水。
+                is_black(x, p) => is_black(x, below)
+        let right = shift(p, 0, 1)
+        if right.size == 1:
+            if same_region(p, right):
+                # 水面是平的：同区域同一行的相邻两格水位相同。
+                x[p] == x[right]
 
-row_count(x, 1, "left")
-col_count(x, 1, "top")
+    row_count(x, 1, "left")
+    col_count(x, 1, "top")
+
+aquarium(x)

@@ -1,3 +1,7 @@
 # battleship — 战舰（前端展示占位；求解器待实现）
 # 把给出的船放入盘面，任意两条船不重叠也不接触；盘外数字表示行/列内船格数。
-true
+
+def battleship(x, g, w):
+    true
+
+battleship(x, g, w)

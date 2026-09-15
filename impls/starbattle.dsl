@@ -3,14 +3,17 @@
 
 import "core"
 
-let k = param("stars")
+def starbattle(x):
+    let k = param("stars")
 
-for r in rows:
-    num_eq(x[r], 1) == k
-for c in cols:
-    num_eq(x[c], 1) == k
-for reg in regions:
-    num_eq(x[reg], 1) == k
+    for r in rows:
+        num_eq(x[r], 1) == k
+    for c in cols:
+        num_eq(x[c], 1) == k
+    for reg in regions:
+        num_eq(x[reg], 1) == k
 
-for p in cells():
-    x[p] == 1 => n_adj8(x, p, 1) == 0
+    for p in cells():
+        x[p] == 1 => n_adj8(x, p, 1) == 0
+
+starbattle(x)

@@ -3,9 +3,12 @@
 
 import "shading"
 
-for p in clue_cells(g):
-    x[p] == g[p]
+def yinyang(x, g):
+    for p in clue_cells(g):
+        x[p] == g[p]
 
-black_connected(x)
-white_connected(x)
-no_mono_2x2(x)
+    black_connected(x)
+    white_connected(x)
+    no_mono_2x2(x)
+
+yinyang(x, g)

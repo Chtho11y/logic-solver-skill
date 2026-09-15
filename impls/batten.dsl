@@ -5,15 +5,18 @@
 import "shading"
 import "outside"
 
-col_count(x, 1, "top")
-row_count(x, 1, "left")
+def batten(x, m):
+    col_count(x, 1, "top")
+    row_count(x, 1, "left")
 
-for p in cells():
-    let right = shift(p, 0, 1)
-    let down = shift(p, 1, 0)
-    let diag = shift(p, 1, 1)
-    if right.size + down.size + diag.size == 3:
-        let w = cell_of(p) and right and down and diag
-        let checker = (num_eq(x[w], 1) == 2) and (x[p] == x[diag])
-        has_value(m, p) => checker
-        checker => has_value(m, p)
+    for p in cells():
+        let right = shift(p, 0, 1)
+        let down = shift(p, 1, 0)
+        let diag = shift(p, 1, 1)
+        if right.size + down.size + diag.size == 3:
+            let w = cell_of(p) and right and down and diag
+            let checker = (num_eq(x[w], 1) == 2) and (x[p] == x[diag])
+            has_value(m, p) => checker
+            checker => has_value(m, p)
+
+batten(x, m)

@@ -3,9 +3,12 @@
 
 import "shading"
 
-for reg in regions:
-    num_eq(x[reg], 1) == 2
+def norinori(x):
+    for reg in regions:
+        num_eq(x[reg], 1) == 2
 
-let s = cc_size(x)
-for p in cells():
-    is_black(x, p) => s[p] == 2
+    let s = cc_size(x)
+    for p in cells():
+        is_black(x, p) => s[p] == 2
+
+norinori(x)

@@ -3,4 +3,7 @@
 import "shading"
 import "regions"
 
-region_black_count(x, n)
+def hinge(x, n):
+    region_black_count(x, n)
+
+hinge(x, n)

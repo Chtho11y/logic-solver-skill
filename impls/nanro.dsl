@@ -5,21 +5,24 @@
 
 import "core"
 
-for p in cells():
-    (f[p] == 1) == (x[p] > 0)
+def nanro(x, f):
+    for p in cells():
+        (f[p] == 1) == (x[p] > 0)
 
-connected(f, 1)
+    connected(f, 1)
 
-for w in slide(2, 2):
-    num_eq(f[w], 1) < 4
+    for w in slide(2, 2):
+        num_eq(f[w], 1) < 4
 
-for reg in regions:
-    let cnt = num_eq(f[reg], 1)
-    cnt >= 1
-    for p in reg:
-        f[p] == 1 => x[p] == cnt
+    for reg in regions:
+        let cnt = num_eq(f[reg], 1)
+        cnt >= 1
+        for p in reg:
+            f[p] == 1 => x[p] == cnt
 
-for p in cells():
-    for q in adj4(p):
-        if not same_region(p, q):
-            not (f[p] == 1 and f[q] == 1 and x[p] == x[q])
+    for p in cells():
+        for q in adj4(p):
+            if not same_region(p, q):
+                not (f[p] == 1 and f[q] == 1 and x[p] == x[q])
+
+nanro(x, f)

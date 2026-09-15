@@ -3,15 +3,18 @@
 
 import "regions"
 
-for p in cells():
-    num_eq_cells_with_clue(c, n, p) == 2
+def araf(c, n):
+    for p in cells():
+        num_eq_cells_with_clue(c, n, p) == 2
 
-for p in clue_cells(n):
-    for q in clue_cells(n):
-        if before(p, q):
-            if n[p] < n[q]:
-                c[p] == c[q] => c.size[p] > n[p] and c.size[p] < n[q]
-            if n[p] > n[q]:
-                c[p] == c[q] => c.size[p] > n[q] and c.size[p] < n[p]
-            if n[p] == n[q]:
-                c[p] != c[q]
+    for p in clue_cells(n):
+        for q in clue_cells(n):
+            if before(p, q):
+                if n[p] < n[q]:
+                    c[p] == c[q] => c.size[p] > n[p] and c.size[p] < n[q]
+                if n[p] > n[q]:
+                    c[p] == c[q] => c.size[p] > n[q] and c.size[p] < n[p]
+                if n[p] == n[q]:
+                    c[p] != c[q]
+
+araf(c, n)

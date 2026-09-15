@@ -4,12 +4,15 @@
 
 import "core"
 
-for p in cells():
-    (f[p] == 1) == (x[p] > 0)
+def sukoro(x, f):
+    for p in cells():
+        (f[p] == 1) == (x[p] > 0)
 
-connected(f, 1)
+    connected(f, 1)
 
-for p in cells():
-    f[p] == 1 => x[p] == num_eq(f[adj4(p)], 1)
-    for q in adj4(p):
-        f[p] == 1 and f[q] == 1 => x[p] != x[q]
+    for p in cells():
+        f[p] == 1 => x[p] == num_eq(f[adj4(p)], 1)
+        for q in adj4(p):
+            f[p] == 1 and f[q] == 1 => x[p] != x[q]
+
+sukoro(x, f)

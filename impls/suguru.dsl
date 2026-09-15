@@ -3,5 +3,8 @@
 
 import "fill"
 
-region_1_to_n(x)
-touching_differ(x)
+def suguru(x):
+    region_1_to_n(x)
+    touching_differ(x)
+
+suguru(x)

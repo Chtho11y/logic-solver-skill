@@ -2,13 +2,16 @@
 # 白色三角形格必须留白且恰和三个留白格相邻；其余留白格恰和两个留白格相邻。
 import "shading"
 
-connected(x, 0)
-no2x2(x, 0)
-majority_dot_clue(x, t)
+def sansaroad(x, t, v):
+    connected(x, 0)
+    no2x2(x, 0)
+    majority_dot_clue(x, t)
 
-for p in cells():
-    if has_value(v, p):
-        is_white(x, p)
-        n_adj4(x, p, 0) == 3
-    else:
-        is_white(x, p) => n_adj4(x, p, 0) == 2
+    for p in cells():
+        if has_value(v, p):
+            is_white(x, p)
+            n_adj4(x, p, 0) == 3
+        else:
+            is_white(x, p) => n_adj4(x, p, 0) == 2
+
+sansaroad(x, t, v)

@@ -3,6 +3,9 @@
 import "shading"
 import "outside"
 
-wall_rule(x)
-row_runs(x, "left")
-col_runs(x, "top")
+def cts(x):
+    wall_rule(x)
+    row_runs(x, "left")
+    col_runs(x, "top")
+
+cts(x)

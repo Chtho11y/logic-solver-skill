@@ -75,7 +75,7 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
   - 否则把 `body` 内每条约束包装为 `Implies(cond, c)`，`else` 分支包装为 `Implies(Not(cond), c)`。守卫（guard）会累积。**注意**：守卫只作用于被断言的约束，不会阻止 `let` 执行——需要条件性累加时请确保条件是编译期常量。
 - **`for v in iterable: body`**：在编译期**展开**循环，每次迭代把 `v` 绑定到一个元素。
 - **`def name(a, b): body`**：定义编译期内联的辅助函数。函数体内的约束按调用点的守卫被断言；`return expr` 返回一个值（可以是布尔表达式、区域、列表……），没有 `return` 时返回空列表。同一块内的 `def` 会被**提升**，因此可以先用后定义。函数体在独立的作用域栈中执行（只能看到自己的参数与全局的变量/区域/常量/函数）。
-- **`import "module"`**：把另一个 DSL 模块的定义引入当前程序（同名模块只加载一次）。解析顺序为 `puzzle/lib/` 然后 `impls/`，扩展名 `.dsl` 可省略。
+- **`import "module"`**：把另一个 DSL 模块的 **`def`** 引入当前程序（同名模块只加载一次）。解析顺序为 `puzzle/lib/` 然后 `impls/`，扩展名 `.dsl` 可省略。导入时只执行嵌套的 `import` 并登记函数，**不会**把被导入文件顶层的约束断言进来。因此 `import "sudoku"` 之后需要再写 `sudoku(x)` 才会套用数独规则。主文件自身的顶层语句仍会执行（每个 `impls/<key>.dsl` 末尾会调用自己的规则函数，所以单独打开该文件行为不变）。
 - **`use backend`**：选择本程序的求解后端。可写标识符（`use cspuz_core`）或字符串（`use "z3"`）。只能出现在**主文件顶层**，导入的库里不能写。省略时等价于 `use auto`：选用当前可用的最好后端（无 timeout 时 `cspuz_core` 优先，否则 Z3）。与 API 的 `backend=` 同时给出且不一致时编译/求解报错。后端能力（图连通原语、timeout 等）按所选后端选择性启用。
 
 ### 结构化绑定（解包）
@@ -467,6 +467,14 @@ print(row(0))
 ## 13. 公共模板库（`puzzle/lib/*.dsl`）
 
 用 `import "模块名"` 引入。运行 `python -m tools.puzzle_rules lib` 可列出全部辅助函数。
+
+每个 `impls/<key>.dsl` 把该题规则封装为与 key 同名的函数（连字符改下划线），参数为 spec 里的全部变量。可以组合：
+
+```
+import "sudoku"
+sudoku(x)
+# 额外约束写在调用之后
+```
 
 | 模块 | 内容 |
 |------|------|

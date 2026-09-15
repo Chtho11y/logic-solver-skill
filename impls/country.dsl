@@ -5,15 +5,18 @@
 import "loops"
 import "regions"
 
-cloop(e)
+def country(e, n):
+    cloop(e)
 
-for reg in regions:
-    region_crossings(e, reg) == 2
+    for reg in regions:
+        region_crossings(e, reg) == 2
 
-for p in cells():
-    for q in adj4(p):
-        if not same_region(p, q):
-            on_loop(e, p) or on_loop(e, q)
+    for p in cells():
+        for q in adj4(p):
+            if not same_region(p, q):
+                on_loop(e, p) or on_loop(e, q)
 
-for p in clue_cells(n):
-    region_visited_cells(e, region_of(p)) == n[p]
+    for p in clue_cells(n):
+        region_visited_cells(e, region_of(p)) == n[p]
+
+country(e, n)

@@ -4,8 +4,11 @@
 
 import "shading"
 
-wall_rule(x)
+def canal(x, n):
+    wall_rule(x)
 
-for p in clue_cells(n):
-    is_white(x, p)
-    see4(x, p, 1) == n[p]
+    for p in clue_cells(n):
+        is_white(x, p)
+        see4(x, p, 1) == n[p]
+
+canal(x, n)

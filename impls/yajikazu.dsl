@@ -3,8 +3,11 @@
 # 这些提示数若位于涂黑格内则不提供任何信息。
 import "shading"
 
-island_rule(x)
+def yajikazu(x, d, n):
+    island_rule(x)
 
-for p in clue_cells(n):
-    if has_value(d, p):
-        is_white(x, p) => num_eq(x[dir(p, d[p])], 1) == n[p]
+    for p in clue_cells(n):
+        if has_value(d, p):
+            is_white(x, p) => num_eq(x[dir(p, d[p])], 1) == n[p]
+
+yajikazu(x, d, n)
