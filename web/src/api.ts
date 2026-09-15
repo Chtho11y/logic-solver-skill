@@ -2,6 +2,7 @@
 
 import type {
   ElementType,
+  GenericLayer,
   ImportResult,
   Instance,
   PuzzleSpec,
@@ -53,6 +54,13 @@ export const api = {
 
   importUrl: (url: string, puzzle?: string) =>
     post<ImportResult>("/import", { url, puzzle }),
+  encodePenpa: (body: {
+    rows: number;
+    cols: number;
+    layers: GenericLayer[];
+    title?: string;
+    tags?: string[];
+  }) => post<{ url: string; kind: "penpa"; error?: string }>("/encode", body),
   solve: (
     instance: Instance,
     options: {

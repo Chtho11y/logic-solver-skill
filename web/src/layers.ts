@@ -23,6 +23,8 @@ export type OccupiedLayer = {
   role: "input" | "output" | "drawing";
 };
 
+export type LayerCounts = Partial<Record<DrawTool, number>>;
+
 function markCount(drawing: Drawing, tool: DrawTool): number {
   if (tool === "region") return Object.keys(drawing.regions).length;
   if (tool === "outside") {
@@ -41,10 +43,16 @@ function firstTool(spec: PuzzleSpec, varName: string): DrawTool {
   return "number";
 }
 
+function countOf(tool: DrawTool, drawing: Drawing, counts?: LayerCounts): number {
+  if (counts && typeof counts[tool] === "number") return counts[tool] ?? 0;
+  return markCount(drawing, tool);
+}
+
 export function occupiedLayers(
   drawing: Drawing,
   spec: PuzzleSpec | null,
   result: SolveResult | null,
+  counts?: LayerCounts,
 ): OccupiedLayer[] {
   const rows: OccupiedLayer[] = [];
   const claimed = new Set<DrawTool>();
@@ -61,21 +69,23 @@ export function occupiedLayers(
       for (const layer of inputs) {
         const element = layer.element as DrawTool;
         if (layer.target === "outside") {
-          count += markCount(drawing, "outside");
+          count += countOf("outside", drawing, counts);
           hideKeys.push("outside");
           claimed.add("outside");
           tool = "outside";
           continue;
         }
         if (element === "region" || layer.var === REGION_VAR) {
-          count += markCount(drawing, "region");
+          count += countOf("region", drawing, counts);
           hideKeys.push("region");
           claimed.add("region");
           tool = "region";
           continue;
         }
         if (!DRAW_TOOLS.includes(element)) continue;
-        count += Object.keys(valuesForLayer(layer, drawing, null)).length;
+        count += counts
+          ? countOf(element, drawing, counts)
+          : Object.keys(valuesForLayer(layer, drawing, null)).length;
         hideKeys.push(element);
         claimed.add(element);
         tool = element;
@@ -85,9 +95,9 @@ export function occupiedLayers(
         const n = Object.keys(values).length;
         if (n) {
           count += n;
-          hideKeys.push(`out:${layer.id}`);
-          role = inputs.length ? "input" : "output";
           const element = layer.element as DrawTool;
+          hideKeys.push(`out:${element}`);
+          role = inputs.length ? "input" : "output";
           if (DRAW_TOOLS.includes(element)) tool = element;
         }
       }
@@ -104,13 +114,13 @@ export function occupiedLayers(
       });
     }
 
-    if (spec.usesRegions && markCount(drawing, "region") > 0 && !claimed.has("region")) {
+    if (spec.usesRegions && countOf("region", drawing, counts) > 0 && !claimed.has("region")) {
       claimed.add("region");
       rows.push({
         id: "var:regions",
         title: "regions",
         detail: "房间",
-        count: markCount(drawing, "region"),
+        count: countOf("region", drawing, counts),
         tool: "region",
         hideKeys: ["region"],
         role: "input",
@@ -120,7 +130,7 @@ export function occupiedLayers(
 
   for (const tool of DRAW_TOOLS) {
     if (claimed.has(tool)) continue;
-    const count = markCount(drawing, tool);
+    const count = countOf(tool, drawing, counts);
     if (!count) continue;
     rows.push({
       id: `draw:${tool}`,

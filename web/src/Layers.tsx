@@ -1,6 +1,6 @@
 /** VS Code-style occupancy list: only variables/tools that have marks on the board. */
 
-import { occupiedLayers, type OccupiedLayer } from "./layers";
+import { occupiedLayers, type LayerCounts, type OccupiedLayer } from "./layers";
 import type { DrawTool, Drawing } from "./drawing";
 import type { PuzzleSpec, SolveResult } from "./types";
 
@@ -12,6 +12,7 @@ export interface LayersProps {
   setVisible: (next: Record<string, boolean>) => void;
   activeTool: DrawTool;
   onSelect: (layer: OccupiedLayer) => void;
+  counts?: LayerCounts;
 }
 
 function Eye({ on }: { on: boolean }) {
@@ -37,7 +38,7 @@ function isHidden(layer: OccupiedLayer, visible: Record<string, boolean>): boole
 }
 
 export function Layers(props: LayersProps) {
-  const rows = occupiedLayers(props.drawing, props.spec, props.result);
+  const rows = occupiedLayers(props.drawing, props.spec, props.result, props.counts);
 
   return (
     <aside className="layers" aria-label="图层">

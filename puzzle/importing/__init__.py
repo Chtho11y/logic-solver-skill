@@ -7,7 +7,7 @@ from typing import Any
 from puzzle.spec import load_spec
 
 from .bind import bind_instance
-from .board import LayerBoard
+from .board import LayerBoard, from_layers_json
 from .errors import PuzzleImportError
 from .penpa import decode_penpa, encode_penpa, looks_like_penpa
 from .pids import guess_from_tags, resolve_puzzle_key
@@ -16,9 +16,11 @@ from .puzzlink import decode_puzzlink, looks_like_puzzlink, parse_puzzlink
 __all__ = [
     "PuzzleImportError",
     "LayerBoard",
+    "from_layers_json",
     "decode_penpa",
     "decode_puzzlink",
     "encode_penpa",
+    "encode_layers",
     "import_url",
     "looks_like_penpa",
     "looks_like_puzzlink",
@@ -96,3 +98,21 @@ the ``puzzle`` hint).
         "cols": board.cols,
         "tags": board.tags,
     }
+
+
+def encode_layers(
+    rows: int,
+    cols: int,
+    layers: list[dict[str, Any]] | None = None,
+    *,
+    title: str = "",
+    tags: list[str] | None = None,
+) -> str:
+    """Turn generic UI layers into a Penpa+ edit URL."""
+
+    board = from_layers_json(int(rows), int(cols), layers or [])
+    if title:
+        board.title = title
+    if tags:
+        board.tags = list(tags)
+    return encode_penpa(board, title=title, tags=tags)

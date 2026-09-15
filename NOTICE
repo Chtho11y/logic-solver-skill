@@ -3,19 +3,22 @@ Third-party notices
 
 Penpa+
 ------
-The middle-pane editor chrome (Mode / Sub / Style layout, Surface color
-numbers, and tool names) follows [Penpa+](https://github.com/swaroopg92/penpa-edit)
-version 3.x.
+The middle pane hosts a vendored copy of the [Penpa+](https://github.com/swaroopg92/penpa-edit)
+editor (docs/ tree, version 3.2.4, commit 34e3fe97804e518288870b70d919e7e76ee18b4d)
+under `web/public/penpa-edit/`.
 
 Penpa+ is released under the MIT License:
 
   Original Work/Project Initiator - Copyright (c) 2019 Opt-Pan
   New Features/Upgrades - Copyright (c) 2020 Swaroop Guggilam
 
-The full Penpa+ license text is included below. This project does not vendor
-the Penpa+ JavaScript canvas engine; the grid is rendered by our SVG board so
-it can bind to the DSL solver. Visual arrangement and labels are used with
-permission of that MIT license.
+The full Penpa+ license text is in `web/public/penpa-edit/LICENSE` and is
+reproduced below. This project is also MIT-licensed (see `LICENSE`). An older
+Penpa+ changelog line about “secondary distribution” is superseded by that
+MIT LICENSE file, which is the license Penpa+ currently ships.
+
+Studio-only additions in that folder (`embed.css`, `studio-bridge.js`, and
+disabling Google Tag Manager / gtag) are not part of upstream Penpa+.
 
 MIT License
 

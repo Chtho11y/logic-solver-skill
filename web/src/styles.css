@@ -235,82 +235,16 @@ body {
   background: #eee;
 }
 
-.penpa-toolbar {
-  background: #f7f7f7;
-  border-bottom: 1px solid #ccc;
-  padding: 4px 8px 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex-shrink: 0;
+.penpa-frame {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: #eee;
 }
 
-.penpa-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: nowrap;
-  min-height: 26px;
-}
-
-.penpa-row.wrap { flex-wrap: wrap; }
-
-.penpa-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #555;
-  width: 46px;
-  flex-shrink: 0;
-}
-
-.penpa-mode,
-.penpa-sub {
-  font: 12px/1.2 "Helvetica Neue", Arial, sans-serif;
-  height: 24px;
-  padding: 0 8px;
-  border: 1px solid #bbb;
-  border-radius: 3px;
-  background: linear-gradient(to bottom, #fff, #eee);
-  color: #444;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-.penpa-mode.on,
-.penpa-sub.on {
-  background: #ffd56a;
-  border-color: #c9a227;
-  font-weight: 700;
-}
-
-.penpa-swatch {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid #bbb;
-  border-radius: 3px;
-  background: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-}
-
-.penpa-swatch.on {
-  outline: 2px solid #c9a227;
-  outline-offset: -1px;
-}
-
-.penpa-hint {
-  font-size: 12px;
-  color: #777;
-}
-
-/* -- board ------------------------------------------------------------------- */
+/* -- board (unused when Penpa iframe is the canvas; kept for Board.tsx) --- */
 
 .board-area {
   flex: 1;

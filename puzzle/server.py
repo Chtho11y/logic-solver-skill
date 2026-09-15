@@ -13,6 +13,7 @@ Endpoints (all JSON):
 ``/api/puzzles/<key>``  GET     one spec, its DSL source and sample instance
 ``/api/solve``          POST    ``{"instance": {...}}`` -> solved values
 ``/api/import``         POST    ``{"url": "...", "puzzle": "..."}`` -> layers
+``/api/encode``         POST    ``{"rows", "cols", "layers"}`` -> Penpa URL
 ======================  ======  ===========================================
 
 Static files from ``web/dist`` (the built front-end) are served at ``/`` when
@@ -37,7 +38,7 @@ from puzzle.backends import BackendError, backend_info, resolve_backend  # noqa:
 from puzzle.dsl import backend_status, function_table, is_available  # noqa: E402
 from puzzle.elements import elements_json  # noqa: E402
 from puzzle.registry import catalogue, get_rule, search_by_description, search_rules  # noqa: E402
-from puzzle.importing import PuzzleImportError, import_url  # noqa: E402
+from puzzle.importing import PuzzleImportError, encode_layers, import_url  # noqa: E402
 from puzzle.runner import DEFAULT_TIMEOUT_MS, solve_payload  # noqa: E402
 from puzzle.spec import implemented_keys, load_sample, load_spec  # noqa: E402
 
@@ -173,6 +174,34 @@ class Handler(SimpleHTTPRequestHandler):
                 traceback.print_exc()
                 return self._send_json({"error": str(exc)}, 500)
             return self._send_json(result)
+        if url.path == "/api/encode":
+            try:
+                payload = self._read_json()
+            except Exception as exc:
+                return self._send_json({"error": str(exc)}, 400)
+            try:
+                rows = int(payload.get("rows") or 0)
+                cols = int(payload.get("cols") or 0)
+                if rows < 1 or cols < 1 or rows > 40 or cols > 40:
+                    return self._send_json({"error": "rows/cols must be 1–40"}, 400)
+                tags = payload.get("tags")
+                if isinstance(tags, str):
+                    tags = [tags]
+                elif not isinstance(tags, list):
+                    tags = None
+                result_url = encode_layers(
+                    rows,
+                    cols,
+                    payload.get("layers") or [],
+                    title=str(payload.get("title") or ""),
+                    tags=tags,
+                )
+            except PuzzleImportError as exc:
+                return self._send_json({"error": str(exc)}, 400)
+            except Exception as exc:
+                traceback.print_exc()
+                return self._send_json({"error": str(exc)}, 500)
+            return self._send_json({"url": result_url, "kind": "penpa"})
         if url.path != "/api/solve":
             return self._send_json({"error": f"unknown endpoint {url.path}"}, 404)
         try:

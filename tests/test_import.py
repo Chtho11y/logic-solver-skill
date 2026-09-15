@@ -193,6 +193,23 @@ class PuzzlinkDecodeTests(unittest.TestCase):
         )
 
 
+class EncodeLayersTests(unittest.TestCase):
+    def test_from_layers_json_roundtrip(self) -> None:
+        from puzzle.importing import encode_layers, from_layers_json
+
+        board = LayerBoard(rows=3, cols=3)
+        board.cell(0, 1).number = 5
+        board.cell(2, 2).shade = 1
+        rebuilt = from_layers_json(3, 3, board.to_layers_json())
+        self.assertEqual(rebuilt.cell(0, 1).number, 5)
+        self.assertEqual(rebuilt.cell(2, 2).shade, 1)
+        url = encode_layers(3, 3, board.to_layers_json(), title="probe", tags=["nurikabe"])
+        payload = import_url(url)
+        layers = {layer["id"]: layer["values"] for layer in payload["layers"]}
+        self.assertEqual(layers["number"]["0,1"], 5)
+        self.assertEqual(layers["surface"]["2,2"], 1)
+
+
 class DirRayOrderTests(unittest.TestCase):
     """``dir()`` must walk outward; RegionValue.of used to sort and reverse LEFT/UP."""
 
