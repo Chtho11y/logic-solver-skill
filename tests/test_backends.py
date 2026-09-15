@@ -182,6 +182,30 @@ class CspuzIntegrationTests(unittest.TestCase):
         )
         self.assertTrue(result.ok, result.message)
 
+    def test_constant_booleans_are_folded_before_reaching_the_converter(self) -> None:
+        # cspuz collapses an absorbing constant into a BoolConstant node that the
+        # pinned Z3 converter lowers to ``None``; the adapter must fold it first.
+        model = create_model()
+        value = model.Int("value", 0, 1)
+        self.assertIs(model.Or(True, value == 1), True)
+        self.assertIs(model.And(False, value == 1), False)
+        self.assertIs(model.And(), True)
+        self.assertIs(model.Or(), False)
+
+        builders = {
+            "or-absorbing": lambda m, v: m.Or(True, v == 1),
+            "and-absorbing": lambda m, v: m.Not(m.And(False, v == 1)),
+            "or-neutral": lambda m, v: m.Or(False, v == 1),
+            "and-neutral": lambda m, v: m.And(True, v == 1),
+            "nested-list": lambda m, v: m.And([True, m.Or([False, v == 1])]),
+        }
+        for label, build in builders.items():
+            with self.subTest(label=label):
+                probe = create_model()
+                var = probe.Int("probe", 0, 1)
+                probe.add_constraints(build(probe, var))
+                self.assertTrue(probe.find_answer("z3", 2000))
+
     def test_sparse_constant_component_ids_use_grid_linear_indices(self) -> None:
         result = solve(
             Grid(3, 3),

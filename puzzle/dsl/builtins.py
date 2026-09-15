@@ -1143,20 +1143,33 @@ def _fn_loop(ctx, args, pos):
     return _loop_common(ctx, var, graph, "loop", (0, 2), True)
 
 
+def _outer_links_unused(var: VarValue, outer) -> list:
+    """The board-rim edges of the cell lattice carry no link.
+
+    Returned as ordinary constraint terms (never ``add_aux``) so the caller can
+    place them under an ``if`` guard, negate them or combine them with ``or``.
+    """
+
+    return [var.quantities[edge] == 0 for edge in outer]
+
+
 def _fn_cloop(ctx, args, pos):
     if len(args) != 1:
         raise CompileError("cloop(var) takes exactly one argument", pos.line, pos.col)
     var = _expect_edge_var(args[0], "cloop", pos)
     graph, outer = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
-    for edge in outer:
-        ctx.add_aux(var.quantities[edge] == 0)
+    parts = _outer_links_unused(var, outer)
     if ctx.features.graph_vertex_connected:
         n, pairs, flags = _indexed_link_edges(graph, var)
-        return ctx.memo(
-            ("cloop#prim", var.name),
-            lambda: ctx.ops.edges_single_cycle(flags, pairs, n, nonempty=True),
+        parts.append(
+            ctx.memo(
+                ("cloop#prim", var.name),
+                lambda: ctx.ops.edges_single_cycle(flags, pairs, n, nonempty=True),
+            )
         )
-    return _loop_common(ctx, var, graph, "cloop", (0, 2), True)
+    else:
+        parts.append(_loop_common(ctx, var, graph, "cloop", (0, 2), True))
+    return ctx.ops.And(parts)
 
 
 def _fn_connect_edges(ctx, args, pos):
@@ -1179,16 +1192,19 @@ def _fn_connect_links(ctx, args, pos):
         raise CompileError("connect_links(var) takes exactly one argument", pos.line, pos.col)
     var = _expect_edge_var(args[0], "connect_links", pos)
     graph, outer = ctx.memo(("cellgraph",), lambda: _cell_graph(ctx.grid))
-    for edge in outer:
-        ctx.add_aux(var.quantities[edge] == 0)
+    parts = _outer_links_unused(var, outer)
     if ctx.features.graph_vertex_connected:
         n, pairs, flags = _indexed_link_edges(graph, var)
-        return ctx.memo(
-            ("clinks#prim", var.name),
-            lambda: ctx.ops.edges_connected(flags, pairs, n, nonempty=True),
+        parts.append(
+            ctx.memo(
+                ("clinks#prim", var.name),
+                lambda: ctx.ops.edges_connected(flags, pairs, n, nonempty=True),
+            )
         )
-    roots, _ = ctx.memo(("cloop", var.name), lambda: _link_connect(ctx, var, graph, ctx.grid.cols, "cloop"))
-    return roots == 1
+    else:
+        roots, _ = ctx.memo(("cloop", var.name), lambda: _link_connect(ctx, var, graph, ctx.grid.cols, "cloop"))
+        parts.append(roots == 1)
+    return ctx.ops.And(parts)
 
 
 def _fn_island_rule(ctx, args, pos):
