@@ -589,7 +589,7 @@ def same_pair(p, q, p2, q2):
             return true
     return false
 ''',
-     [cc_var(), const("n", "盘面数字")],
+     [cc_var(), {**const("n", "盘面数字"), "dense": True}],
      [num_layer("n", "盘面数字"), partition_layer()],
      rows=6, cols=6,
      notes="数字应填满盘面。相同无序数对不能出现在两个骨牌上。",

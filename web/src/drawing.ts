@@ -179,13 +179,17 @@ export type Drawing = {
   outside: OutsideMap;
   /** Active Penpa surface color when drawing shade. */
   surfaceColor: number;
+  /** Parameters belong to this puzzle; switching rules must not reuse them. */
+  puzzle?: string;
+  params: Record<string, unknown>;
+  title: string;
 };
 
 export const DEFAULT_SIZE = 10;
 export const SIDES = ["top", "bottom", "left", "right"] as const;
 
 export function emptyDrawing(rows = DEFAULT_SIZE, cols = DEFAULT_SIZE): Drawing {
-  return { rows, cols, marks: {}, regions: {}, outside: {}, surfaceColor: 1 };
+  return { rows, cols, marks: {}, regions: {}, outside: {}, surfaceColor: 1, params: {}, title: "" };
 }
 
 export function isEmptyDrawing(d: Drawing): boolean {

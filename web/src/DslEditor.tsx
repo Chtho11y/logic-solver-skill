@@ -84,6 +84,7 @@ export function DslEditor(props: DslEditorProps) {
           })}
         </pre>
         <textarea
+          aria-label="规则 DSL"
           ref={textareaRef}
           className="dsl-textarea"
           spellCheck={false}

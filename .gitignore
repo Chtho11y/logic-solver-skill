@@ -8,4 +8,6 @@ puzzle/importing/node_modules/
 editors/vscode/node_modules/
 editors/vscode/out/
 *.vsix
+*.tsbuildinfo
+web/.artifacts/
 puzzle/importing/package-lock.json

@@ -17,6 +17,7 @@
     },
     {
       "name": "n",
+      "dense": true,
       "kind": "cell",
       "type": "constant",
       "doc": "盘面数字"

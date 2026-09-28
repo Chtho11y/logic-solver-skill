@@ -1,11 +1,12 @@
 """Verification harness for newly authored rules.
 
 Three checks per rule:
-  1. compile   — DSL type-checks against a synthetic board.
+  1. compile   — DSL type-checks against the shipped sample.
   2. solve     — the shipped sample is satisfiable.
   3. bite      — every declared CONSTANT clue variable actually changes the
-                 constraint set when given a value. This catches dead code such
-                 as calling a pure helper and discarding its result.
+                 constraint count when given a value, with companion clues.
+                 This is a heuristic, not proof of individual clue influence,
+                 rule completeness or solution uniqueness.
 
     python verify.py <key> [<key> ...]
 """
@@ -90,21 +91,28 @@ def check(key, backend="auto"):
     if dead:
         out.append(f"FAIL {key:16} clue has no effect / errors: {', '.join(dead)}")
         return out
-    tag = "partial" if expected_dead else "full"
+    tag = "partial" if expected_dead or "部分实现" in spec.notes else "sample-checked"
     note = f"  (unencoded: {','.join(sorted(expected_dead))})" if expected_dead else ""
     out.append(f"ok   {key:16} {n0} constraints, sample sat  [{tag}]{note}")
     return out
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser(description="verify puzzle implementations")
     parser.add_argument("keys", nargs="+")
     parser.add_argument("--backend", default="auto")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     bad = 0
     for k in args.keys:
+        failed = False
         for line in check(k, args.backend):
             print(line)
             if line.startswith(("FAIL", "WARN")):
-                bad += 1
+                failed = True
+        bad += int(failed)
     print(f"\n{len(args.keys) - bad}/{len(args.keys)} clean")
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

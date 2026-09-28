@@ -16,7 +16,7 @@ def empty_outside(rows: int, cols: int) -> dict[str, list[int]]:
         "top": [-1] * cols,
         "bottom": [-1] * cols,
         "left": [-1] * rows,
-        "right": [-1] * cols,
+        "right": [-1] * rows,
     }
 
 
@@ -38,10 +38,8 @@ def bind_instance(
     params.update(defaults)
     params.setdefault("rows", board.rows)
     params.setdefault("cols", board.cols)
-    if spec.key in {"skyscrapers", "easyasabc", "doppelblock", "fuzuli"}:
+    if spec.key == "skyscrapers":
         params["k"] = board.cols
-    elif "k" in defaults:
-        params["k"] = int(params.get("k") or board.cols)
 
     used_numbers_for: str | None = None
 

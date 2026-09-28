@@ -19,6 +19,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   min-height: 0;
 }
 
@@ -27,45 +28,73 @@ body {
 .workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 148px minmax(0, 1fr) minmax(260px, 36%);
+  grid-template-columns: 148px minmax(0, 1fr) minmax(260px, 30%);
   min-height: 0;
   background: var(--bg);
 }
 
 @media (max-width: 900px) {
+  .app { height: auto; min-height: 100dvh; }
   .workspace {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(240px, 1fr) minmax(200px, 40vh);
+    grid-template-columns: 152px minmax(0, 1fr);
+    grid-template-rows: minmax(560px, auto) 360px;
   }
+  .dsl-pane { grid-column: 1 / -1; }
 }
 
-/* -- top toolbar ----------------------------------------------------------- */
+@media (max-width: 560px) {
+  .workspace { display: flex; flex-direction: column; }
+  .workspace > .layers { max-height: 210px; border-bottom: 1px solid var(--border); }
+  .workspace > .penpa-ui { height: 760px; }
+  .workspace > .dsl-pane { min-height: 320px; }
+}
 
-.topbar {
+/* -- controls belong to the central Penpa workspace ----------------------- */
+
+.penpa-ui {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.board-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  max-height: 45vh;
+  overflow: auto;
+  flex-shrink: 0;
+}
+
+.board-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 14px;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
 
-.topbar h1 {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0 8px 0 0;
-  color: #3a4750;
-  letter-spacing: 0.02em;
-}
-
-.topbar select {
+.board-controls select {
   font: inherit;
   padding: 5px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #fff;
-  max-width: 260px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.parameter { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.parameter input { width: 56px; padding: 5px; border: 1px solid var(--border); border-radius: 6px; }
+.board-status { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; overflow-wrap: anywhere; }
+.board-status:empty { display: none; }
+.result-message { width: 100%; color: #9a5700; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .size-box {
@@ -88,9 +117,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex: 1 1 280px;
-  min-width: 220px;
-  max-width: 520px;
+  width: 100%;
+  min-width: 0;
 }
 
 .url-import input {
@@ -105,13 +133,10 @@ body {
 .import-note {
   font-size: 12px;
   color: #6a737d;
-  max-width: 520px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
-.topbar button {
+.board-controls button {
   font: inherit;
   padding: 5px 14px;
   border-radius: 6px;
@@ -120,23 +145,21 @@ body {
   cursor: pointer;
 }
 
-.topbar button.ghost:hover { background: #f0f3f6; }
+.board-controls button.ghost:hover { background: #f0f3f6; }
 
-.topbar button.solve {
+.board-controls button.solve {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
   font-weight: 600;
 }
 
-.topbar button.solve:disabled { opacity: 0.5; cursor: default; }
+.board-controls button:disabled { opacity: 0.5; cursor: default; }
 
 .status { font-size: 13px; font-weight: 600; }
 .status-sat { color: #2e7d32; }
 .status-unsat { color: #c0392b; }
 .status-error, .status-unknown { color: #b26a00; }
-
-/* -- layers (left, VS Code explorer) --------------------------------------- */
 
 .layers {
   background: #f3f3f3;
@@ -228,14 +251,17 @@ body {
 /* -- Penpa+ middle pane ---------------------------------------------------- */
 
 .penpa-pane {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 0;
+  min-height: 300px;
+  overflow: hidden;
   background: #eee;
 }
 
 .penpa-frame {
+  display: block;
   flex: 1;
   width: 100%;
   height: 100%;
@@ -243,32 +269,6 @@ body {
   border: 0;
   background: #eee;
 }
-
-/* -- board (unused when Penpa iframe is the canvas; kept for Board.tsx) --- */
-
-.board-area {
-  flex: 1;
-  overflow: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  min-width: 0;
-  min-height: 0;
-  background: #eee;
-}
-
-.board-svg {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  background: transparent;
-  touch-action: none;
-  user-select: none;
-}
-
-.empty { color: #8a929a; font-size: 15px; }
 
 /* -- DSL editor -------------------------------------------------------------- */
 
@@ -358,7 +358,6 @@ body {
   flex: 1;
   border: none;
   resize: none;
-  outline: none;
   padding: 8px 10px;
   font: 12px/18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   tab-size: 2;
@@ -385,6 +384,9 @@ body {
   border-top: 1px solid var(--border);
   padding: 6px 14px;
   font-size: 13px;
+  max-height: 25vh;
+  overflow: auto;
+  flex-shrink: 0;
 }
 
 .rulebar summary { cursor: pointer; font-weight: 600; color: #3a4750; }

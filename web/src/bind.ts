@@ -11,17 +11,21 @@ import {
 import type { Instance, LayerSpec, PuzzleSpec } from "./types";
 import { REGION_VAR } from "./types";
 
-const K_PUZZLES = new Set(["skyscrapers", "easyasabc", "doppelblock", "fuzuli"]);
-
-export function bindDrawing(drawing: Drawing, spec: PuzzleSpec): Instance {
-  const clues: Record<string, Record<string, number>> = {};
+export function drawingParams(drawing: Drawing, spec: PuzzleSpec): Record<string, unknown> {
   const params: Record<string, unknown> = {};
   const defaults = (spec.params?.defaults as Record<string, unknown>) ?? {};
   Object.assign(params, defaults);
+  // Standard skyscrapers uses the board width unless the instance overrides k.
+  if (spec.key === "skyscrapers") params.k = drawing.cols;
+  if (drawing.puzzle === spec.key) Object.assign(params, drawing.params);
   params.rows = drawing.rows;
   params.cols = drawing.cols;
-  if (K_PUZZLES.has(spec.key)) params.k = drawing.cols;
-  else if ("k" in defaults) params.k = Number(params.k ?? drawing.cols);
+  return params;
+}
+
+export function bindDrawing(drawing: Drawing, spec: PuzzleSpec): Instance {
+  const clues: Record<string, Record<string, number>> = {};
+  const params = drawingParams(drawing, spec);
 
   let regions = { ...drawing.regions };
   if (spec.usesRegions && Object.keys(regions).length === 0) {
@@ -75,7 +79,7 @@ export function bindDrawing(drawing: Drawing, spec: PuzzleSpec): Instance {
     clues,
     regions,
     params,
-    title: "",
+    title: drawing.title,
   };
 }
 
@@ -131,6 +135,9 @@ export function instanceToDrawing(instance: Instance, spec: PuzzleSpec): Drawing
     regions: { ...instance.regions },
     outside: {},
     surfaceColor: 1,
+    puzzle: spec.key,
+    params: structuredClone(instance.params ?? {}),
+    title: instance.title ?? "",
   };
   for (const layer of spec.layers) {
     if (layer.role !== "input") continue;

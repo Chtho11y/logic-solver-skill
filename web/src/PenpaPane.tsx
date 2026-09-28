@@ -12,12 +12,14 @@ export type PenpaOccupancy = {
   cols: number;
   counts: LayerCounts;
   mode: string;
+  revision: number;
 };
 
 export type PenpaHandle = {
-  loadUrl: (url: string) => void;
   stamp: (drawing: Drawing) => boolean;
-  setSize: (rows: number, cols: number) => void;
+  resize: (rows: number, cols: number) => boolean;
+  getRevision: () => number;
+  isEmpty: () => boolean;
   setTool: (tool: DrawTool) => void;
   setHidden: (keys: string[], hide: boolean) => void;
   applySolution: (element: string, values: Record<string, number>) => void;
@@ -25,23 +27,11 @@ export type PenpaHandle = {
   exportUrl: () => string;
 };
 
-function penpaParam(url: string): string {
-  let raw = url.trim();
-  const hash = raw.indexOf("#");
-  if (hash >= 0) raw = raw.slice(hash + 1);
-  else {
-    const q = raw.indexOf("?");
-    if (q >= 0 && /(?:^|[?&])p=/.test(raw.slice(q))) raw = raw.slice(q + 1);
-  }
-  raw = raw.replace(/^#/, "").replace(/^\?/, "");
-  if (raw && !raw.includes("p=")) raw = `m=edit&p=${raw}`;
-  return raw;
-}
-
 type Bridge = {
-  loadUrl: (url: string) => boolean;
   stamp: (drawing: Drawing) => boolean;
-  setSize: (rows: number, cols: number) => boolean | void;
+  resize: (rows: number, cols: number) => boolean;
+  getRevision: () => number;
+  isEmpty: () => boolean;
   setTool: (tool: string) => void;
   setHidden: (keys: string[], hide: boolean) => void;
   applySolution: (element: string, values: Record<string, number>) => void;
@@ -67,19 +57,12 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
   }
 
   useImperativeHandle(ref, () => ({
-    loadUrl(url) {
-      const param = penpaParam(url);
-      const frame = frameRef.current;
-      if (param && frame) {
-        frame.src = `/penpa-edit/index.html#${param}`;
-      }
-    },
     stamp(drawing) {
       return bridge()?.stamp(drawing) ?? false;
     },
-    setSize(rows, cols) {
-      bridge()?.setSize(rows, cols);
-    },
+    resize(rows, cols) { return bridge()?.resize(rows, cols) ?? false; },
+    getRevision() { return bridge()?.getRevision() ?? -1; },
+    isEmpty() { return bridge()?.isEmpty() ?? true; },
     setTool(tool) {
       bridge()?.setTool(tool);
     },
@@ -99,14 +82,15 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {
-      if (event.source !== frameRef.current?.contentWindow) return;
-      const data = event.data as { type?: string; rows?: number; cols?: number; counts?: LayerCounts; mode?: string };
+      if (event.source !== frameRef.current?.contentWindow || event.origin !== location.origin) return;
+      const data = event.data as { type?: string; rows?: number; cols?: number; counts?: LayerCounts; mode?: string; revision?: number };
       if (data?.type === "penpa-ready" || data?.type === "penpa-occupancy") {
         occupancyRef.current({
           rows: data.rows ?? 10,
           cols: data.cols ?? 10,
           counts: data.counts ?? {},
           mode: data.mode ?? "surface",
+          revision: data.revision ?? -1,
         });
       }
     }
@@ -115,13 +99,13 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
   }, []);
 
   return (
-    <main className="penpa-pane">
+    <div className="penpa-pane">
       <iframe
         ref={frameRef}
         className="penpa-frame"
         title="Penpa+"
         src="/penpa-edit/index.html"
       />
-    </main>
+    </div>
   );
 });

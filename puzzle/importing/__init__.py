@@ -82,7 +82,7 @@ the ``puzzle`` hint).
     elif guessed:
         warnings.append(f"puzzle {guessed!r} is not implemented; showing generic layers only")
     else:
-        warnings.append("could not infer a puzzle type; pick one and import again")
+        warnings.append("could not infer a puzzle type; select one to bind the imported drawing")
 
     return {
         "kind": kind,

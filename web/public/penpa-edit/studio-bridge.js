@@ -54,6 +54,34 @@
   };
 
   const hidden = {};
+  let revision = 0;
+  let lastQuestion = "";
+
+  function fullQuestion() {
+    const question = cloneMarks(window.pu && pu.pu_q);
+    Object.keys(hidden).forEach(function (key) {
+      if (key.indexOf("pu_q.") === 0) {
+        const field = key.slice(5);
+        question[field] = Object.assign({}, hidden[key], question[field] || {});
+      }
+    });
+    return question;
+  }
+
+  // Counts alone miss a changed number or a moved mark. Do not include answer
+  // layers, selection, mode, or undo history in the content revision.
+  function getRevision() {
+    if (!window.pu) return -1;
+    const signature = JSON.stringify([pu.gridtype, pu.nx, pu.ny, pu.space, pu.centerlist, fullQuestion()]);
+    if (signature !== lastQuestion) { lastQuestion = signature; revision += 1; }
+    return revision;
+  }
+
+  function isEmpty() {
+    return Object.values(fullQuestion()).every(function (value) {
+      return !value || (typeof value === "object" && Object.keys(value).length === 0);
+    });
+  }
 
   function innerSize() {
     const pu = window.pu;
@@ -170,7 +198,7 @@
 
   function notify() {
     const payload = occupancy();
-    window.parent.postMessage({ type: "penpa-occupancy", ...payload }, "*");
+    window.parent.postMessage({ type: "penpa-occupancy", ...payload, revision: getRevision() }, location.origin);
   }
 
   function paramFromUrl(url) {
@@ -268,7 +296,38 @@
 
   function exportUrl() {
     if (!window.pu || typeof pu.maketext !== "function") return "";
-    return pu.maketext();
+    // Visibility is presentation only: hidden clues must still be exported.
+    const saved = {};
+    const question = fullQuestion();
+    Object.keys(hidden).forEach(function (key) {
+      if (key.indexOf("pu_q.") !== 0) return;
+      const field = key.slice(5);
+      saved[field] = pu.pu_q[field];
+      pu.pu_q[field] = question[field];
+    });
+    try { return pu.maketext(); }
+    finally { Object.keys(saved).forEach(function (field) { pu.pu_q[field] = saved[field]; }); }
+  }
+
+  function resize(rows, cols) {
+    if (!window.pu || pu.gridtype !== "square" || !Number.isInteger(rows) || !Number.isInteger(cols) ||
+        rows < 1 || cols < 1 || rows > 40 || cols > 40) return false;
+    // Use Penpa's own coordinate migration, retaining live/native marks that
+    // are not represented in the solver's limited generic drawing format.
+    Object.keys(hidden).forEach(function (key) {
+      const parts = key.split(".");
+      pu[parts[0]][parts[1]] = Object.assign({}, hidden[key], pu[parts[0]][parts[1]]);
+      delete hidden[key];
+    });
+    for (let step = 0; step < 80; step++) {
+      const size = innerSize();
+      if (size.rows === rows && size.cols === cols) { notify(); return true; }
+      if (size.rows !== rows) pu.resize_bottom(rows > size.rows ? 1 : -1, "white");
+      else pu.resize_right(cols > size.cols ? 1 : -1, "white");
+      const after = innerSize();
+      if (after.rows === size.rows && after.cols === size.cols) return false;
+    }
+    return false;
   }
 
   function setSize(rows, cols, quiet) {
@@ -488,10 +547,10 @@
       if (!bucket) return;
       const storeKey = spec.qa + "." + spec.field;
       if (hide) {
-        if (!hidden[storeKey]) hidden[storeKey] = Object.assign({}, bucket[spec.field] || {});
+        hidden[storeKey] = Object.assign({}, hidden[storeKey], bucket[spec.field] || {});
         bucket[spec.field] = {};
       } else if (hidden[storeKey]) {
-        bucket[spec.field] = hidden[storeKey];
+        bucket[spec.field] = Object.assign({}, hidden[storeKey], bucket[spec.field] || {});
         delete hidden[storeKey];
       }
     });
@@ -526,6 +585,9 @@
 
   function clearSolution() {
     if (!window.pu) return;
+    Object.keys(hidden).forEach(function (key) {
+      if (key.indexOf("pu_a.") === 0) delete hidden[key];
+    });
     ["surface", "number", "symbol", "line", "lineE"].forEach(function (field) {
       if (pu.pu_a && pu.pu_a[field] && typeof pu.pu_a[field] === "object" && !Array.isArray(pu.pu_a[field])) {
         Object.keys(pu.pu_a[field]).forEach(function (k) { delete pu.pu_a[field][k]; });
@@ -535,6 +597,9 @@
   }
 
   window.StudioBridge = {
+    getRevision: getRevision,
+    isEmpty: isEmpty,
+    resize: resize,
     occupancy: occupancy,
     loadUrl: loadUrl,
     stamp: stamp,
@@ -556,7 +621,7 @@
       } catch (err) {
         console.error("penpa boot", err);
       }
-      window.parent.postMessage({ type: "penpa-ready", ...occupancy() }, "*");
+      window.parent.postMessage({ type: "penpa-ready", ...occupancy(), revision: getRevision() }, location.origin);
     };
   }
 
@@ -564,6 +629,12 @@
     window.onbeforeunload = null;
     document.addEventListener("beforeunload", function (e) {
       e.stopImmediatePropagation();
+    }, true);
+    document.addEventListener("pointerdown", function (event) {
+      if (event.target.id === "canvas") {
+        event.target.tabIndex = 0;
+        event.target.focus({ preventScroll: true });
+      }
     }, true);
     const canvas = document.getElementById("canvas");
     if (canvas) {
@@ -573,11 +644,12 @@
     }
     document.addEventListener("mouseup", function () { setTimeout(notify, 30); }, { passive: true });
     document.addEventListener("keyup", function () { setTimeout(notify, 30); }, { passive: true });
-    window.parent.postMessage({ type: "penpa-ready", ...occupancy() }, "*");
+    window.parent.postMessage({ type: "penpa-ready", ...occupancy(), revision: getRevision() }, location.origin);
     setInterval(notify, 800);
   });
 
   window.addEventListener("message", function (event) {
+    if (event.source !== window.parent || event.origin !== location.origin) return;
     const data = event.data || {};
     const api = window.StudioBridge;
     if (!api || !data || !data.type) return;
