@@ -77,8 +77,9 @@
     return q;
   }
 
-  function selectVariable(id) {
+  function selectVariable(id, beginDrawing = false) {
     if (!window.pu) return false;
+    const tool = currentTool();
     saveActive();
     if (!documents[id]) {
       if (activeVariable === '__unbound' && id !== '__unbound') {
@@ -92,6 +93,7 @@
     activeVariable = id;
     pu.pu_q = documents[id];
     pu.pu_q_col = documentColors[id];
+    if (beginDrawing) { pu.mode_qa('pu_q'); setTool(tool); }
     pu.redraw();
     notify();
     return true;
@@ -115,6 +117,32 @@
     pu.redraw();
     notify();
     return true;
+  }
+
+  function renameVariable(from, to) {
+    if (!window.pu || from === to) return true;
+    saveActive();
+    if (documents[to]) return false;
+    if (documents[from]) { documents[to] = documents[from]; delete documents[from]; }
+    if (documentColors[from]) { documentColors[to] = documentColors[from]; delete documentColors[from]; }
+    if (solutions[from]) { solutions[to] = solutions[from]; delete solutions[from]; }
+    for (const prefix of ['var:', 'in:', 'out:']) { hidden[prefix + to] = hidden[prefix + from]; delete hidden[prefix + from]; }
+    if (activeVariable === from) activeVariable = to;
+    pu.redraw(); notify(); return true;
+  }
+
+  function deleteVariable(id) {
+    if (!window.pu) return false;
+    saveActive();
+    delete documents[id]; delete documentColors[id]; delete solutions[id];
+    for (const prefix of ['var:', 'in:', 'out:']) delete hidden[prefix + id];
+    if (activeVariable === id) {
+      activeVariable = Object.keys(documents)[0] || '__unbound';
+      documents[activeVariable] ||= emptyQuestion();
+      documentColors[activeVariable] ||= emptyQuestion(pu.pu_q_col);
+      pu.pu_q = documents[activeVariable]; pu.pu_q_col = documentColors[activeVariable];
+    }
+    pu.redraw(); notify(); return true;
   }
 
   function exportDocuments() {
@@ -174,13 +202,21 @@
   function presentation(question, answer) {
     const merged = {};
     if (!composing) for (const [id, other] of Object.entries(documents)) {
-      if (id === activeVariable) continue;
+      if (id === activeVariable || hidden['var:' + id] || hidden['in:' + id]) continue;
       for (const [field, marks] of Object.entries(other)) {
         if (!field.startsWith('command_')) merged[field] = Array.isArray(marks) ? marks : { ...merged[field], ...marks };
       }
     }
-    for (const [field, marks] of Object.entries(question)) merged[field] = Array.isArray(marks) ? marks : { ...merged[field], ...marks };
+    if (!hidden['var:' + activeVariable] && !hidden['in:' + activeVariable]) for (const [field, marks] of Object.entries(question)) merged[field] = Array.isArray(marks) ? marks : { ...merged[field], ...marks };
     const q = { ...question, ...merged }, a = { ...answer };
+    // Native modes also store marks in numberS, polygon, arrows, etc.
+    // Clear every hidden field, not only the solver's supported mark types.
+    for (const [field, value] of Object.entries(question)) {
+      if (!field.startsWith('command_') && !(field in merged)) q[field] = Array.isArray(value) ? [] : {};
+    }
+    if (hidden['var:__manual']) for (const [field, value] of Object.entries(a)) {
+      if (!field.startsWith('command_')) a[field] = Array.isArray(value) ? [] : {};
+    }
     for (const field of ['surface', 'number', 'symbol', 'line', 'lineE', 'wall', 'killercages']) {
       const entries = merged[field] || {};
       q[field] = Array.isArray(entries)
@@ -189,7 +225,7 @@
     }
     // Solver marks exist only while drawing. Never mutate native answers/history.
     for (const [id, { element, fields }] of Object.entries(solutions).sort(([a], [b]) => Number(a === activeVariable) - Number(b === activeVariable))) {
-      if (hidden['out:' + id] || hidden['out:' + element]) continue;
+      if (hidden['var:' + id] || hidden['out:' + id] || hidden['out:' + element]) continue;
       for (const [field, marks] of Object.entries(fields)) a[field] = { ...a[field], ...marks };
     }
     return { q, a };
@@ -482,7 +518,6 @@
   function stamp(drawing) {
     if (!drawing || !window.pu || typeof create_newboard !== "function") return false;
     try {
-      Object.keys(hidden).forEach(function (k) { delete hidden[k]; });
       const rows = Math.max(1, Math.min(40, Number(drawing.rows) || 10));
       const cols = Math.max(1, Math.min(40, Number(drawing.cols) || 10));
       if (!setSize(rows, cols, true)) return false;
@@ -675,6 +710,11 @@
   }
 
   window.StudioBridge = {
+    renameVariable, deleteVariable,
+    variableCounts: () => {
+      saveActive();
+      return Object.fromEntries(Object.entries(documents).map(([id, q]) => [id, Object.entries(cloneMarks(q)).reduce((sum, [, marks]) => sum + (marks && typeof marks === 'object' ? Object.keys(marks).length : 0), 0)]));
+    },
     loadDocuments,
     replaceDrawing,
     getSelection: () => ({ tool: currentTool(), activeVariable }),

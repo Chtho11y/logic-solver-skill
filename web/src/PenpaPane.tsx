@@ -19,12 +19,15 @@ export type PenpaOccupancy = {
 };
 
 export type PenpaHandle = {
+  renameVariable: (from: string, to: string) => boolean;
+  deleteVariable: (id: string) => boolean;
+  variableCounts: () => Record<string, number>;
   stamp: (drawing: Drawing) => boolean;
   replaceDrawing: (id: string, drawing: Drawing) => boolean;
   loadDocuments: (items: { id: string; drawing: Drawing }[]) => boolean;
   getSelection: () => { tool: DrawTool; activeVariable: string };
   exportDocuments: () => { id: string; url: string }[];
-  selectVariable: (id: string) => boolean;
+  selectVariable: (id: string, beginDrawing?: boolean) => boolean;
   resize: (rows: number, cols: number) => boolean;
   getRevision: () => number;
   isEmpty: () => boolean;
@@ -36,12 +39,15 @@ export type PenpaHandle = {
 };
 
 type Bridge = {
+  renameVariable: (from: string, to: string) => boolean;
+  deleteVariable: (id: string) => boolean;
+  variableCounts: () => Record<string, number>;
   stamp: (drawing: Drawing) => boolean;
   replaceDrawing: (id: string, drawing: Drawing) => boolean;
   loadDocuments: (items: { id: string; drawing: Drawing }[]) => boolean;
   getSelection: () => { tool: DrawTool; activeVariable: string };
   exportDocuments: () => { id: string; url: string }[];
-  selectVariable: (id: string) => boolean;
+  selectVariable: (id: string, beginDrawing?: boolean) => boolean;
   resize: (rows: number, cols: number) => boolean;
   getRevision: () => number;
   isEmpty: () => boolean;
@@ -84,11 +90,14 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
   }
 
   useImperativeHandle(ref, () => ({
+    renameVariable(from, to) { return bridge()?.renameVariable(from, to) ?? false; },
+    deleteVariable(id) { return bridge()?.deleteVariable(id) ?? false; },
+    variableCounts() { return bridge()?.variableCounts?.() ?? {}; },
     replaceDrawing(id, drawing) { return bridge()?.replaceDrawing(id, drawing) ?? false; },
     loadDocuments(items) { return bridge()?.loadDocuments(items) ?? false; },
     getSelection() { return bridge()?.getSelection() ?? { tool: "number", activeVariable: "__unbound" }; },
     exportDocuments() { return bridge()?.exportDocuments() ?? []; },
-    selectVariable(id) { return bridge()?.selectVariable(id) ?? false; },
+    selectVariable(id, beginDrawing) { return bridge()?.selectVariable(id, beginDrawing) ?? false; },
     stamp(drawing) {
       return bridge()?.stamp(drawing) ?? false;
     },

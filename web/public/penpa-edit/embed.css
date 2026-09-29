@@ -82,26 +82,104 @@ html.studio-embed #constraints_settings_opt + .select2-container {
   html.studio-embed .mode_button { white-space: normal; }
 }
 
-/* Host controls share the native toolbar and native button styles. */
-#studio-controls { margin-bottom: 5px; }
-.studio-actions, .studio-variable-row, .studio-variable-form, .studio-settings { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-.studio-actions select { max-width: 250px; }
-.studio-actions details { position: relative; }
-.studio-actions summary { cursor: pointer; padding: 2px 6px; }
-.studio-settings { padding: 6px; }
-.studio-settings input, .studio-variable-form input[type=number] { width: 54px; }
-.studio-variable-form input[aria-label="变量名"] { width: 130px; }
-.studio-status { font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+/* Centered actions on the first row; direct import and parameters on the second. */
+html.studio-embed #top_button {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 5px; padding: 6px 0 8px; text-align: center;
+  font: 12px "Segoe UI", system-ui, "Microsoft YaHei", sans-serif;
+}
+html.studio-embed #download_link { position: absolute; }
+#studio-controls { display: contents; }
+.studio-group { order: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; }
+#top_button > button { order: 1; }
+.studio-secondary { order: 2; flex: 0 0 100%; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
+.studio-status { order: 3; flex: 0 0 100%; font-size: 12px; line-height: 18px; color: #4f5b66; overflow-wrap: anywhere; }
 .studio-status:empty { display: none; }
+.studio-status > span { margin-left: 8px; font-weight: 600; }
 .studio-status .status-sat { color: #20752b; }
 .studio-status .status-error, .studio-status .status-unsat { color: #ad2525; }
-#studio-variables { font-size: 14px; margin: 6px 10px; padding: 5px 0; border-top: 1px solid #aaa; border-bottom: 1px solid #aaa; }
-.studio-variable-row button[aria-pressed=true] { background: #d5e4fa; outline: 2px solid #3167ae; }
-.studio-variable-form { margin-top: 7px; }
-.studio-hint { color: #555; font-size: 12px; }
-.studio-variable-row { flex-wrap: nowrap; overflow-x: auto; padding: 3px; }
-.studio-variable-row > * { flex-shrink: 0; }
 
-#studio-variables .studio-variable-row > span { display: inline !important; }
-.studio-variable-label { font-weight: normal; }
-#studio-controls input[aria-label="导入链接"] { width: 210px; }
+html.studio-embed #top_button button,
+html.studio-embed #top_button select,
+html.studio-embed #top_button input,
+html.studio-embed #top_button summary {
+  box-sizing: border-box;
+  height: 26px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid #b8c2cc;
+  border-radius: 4px;
+  background: #fff;
+  color: #24303c;
+  font: 13px/24px "Segoe UI", system-ui, "Microsoft YaHei", sans-serif;
+  vertical-align: middle;
+}
+html.studio-embed #top_button button,
+html.studio-embed #top_button select,
+html.studio-embed #top_button summary { cursor: pointer; }
+html.studio-embed #top_button select { padding: 0 4px; max-width: 240px; }
+html.studio-embed #top_button input { padding: 0 6px; cursor: text; }
+html.studio-embed #top_button input:focus,
+html.studio-embed #top_button select:focus { outline: none; border-color: #2f6fb4; box-shadow: 0 0 0 2px #2f6fb433; }
+html.studio-embed #top_button button:hover:not(:disabled),
+html.studio-embed #top_button summary:hover { background: #eef2f6; border-color: #8fa3b8; }
+html.studio-embed #top_button button:disabled { opacity: .45; cursor: default; }
+html.studio-embed #top_button button.solve { min-width: 64px; padding: 0 16px; border-color: #2f6fb4; background: #2f6fb4; color: #fff; font-weight: 600; }
+html.studio-embed #top_button button.solve:hover:not(:disabled) { border-color: #25598f; background: #25598f; }
+html.studio-embed #top_button #page_settings { padding: 0 7px; }
+
+.studio-settings { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 5px; margin: 0; }
+.studio-settings label { display: inline-flex; align-items: center; gap: 3px; color: #4f5b66; white-space: nowrap; }
+html.studio-embed .studio-settings input[type=number] { width: 45px; }
+html.studio-embed .studio-settings input[aria-label="导入链接"] { width: 155px; }
+html.studio-embed .studio-settings select { max-width: 90px; }
+html.studio-embed #top_button select[aria-label="预设"] { max-width: 170px; }
+html.studio-embed #top_button button { padding: 0 7px; }
+
+/* -- "绘制到" row: mirrors Penpa's Mode row (label_mode + .label buttons) ---- */
+#studio-variables { font-size: 12px; text-align: left; margin: 0 0 4px; padding: 6px 0 0; border-top: 1px dashed #b5b5b5; }
+.studio-variable-row { display: block; }
+#studio-variables .studio-variable-row > span { display: inline-block !important; vertical-align: middle; }
+#studio-variables .studio-variable-label { width: auto; margin-bottom: 5px; }
+#studio-variables button.label {
+  box-sizing: content-box;
+  height: 25px;
+  padding: 0 7px;
+  margin-top: 1px;
+  vertical-align: middle;
+  background: transparent;
+  font: 14px/25px Arial, Helvetica, "Microsoft YaHei", sans-serif;
+  cursor: pointer;
+}
+#studio-variables button.label[aria-pressed=true] { background: var(--greyLight); box-shadow: 0 0 0 1px var(--orange); }
+#studio-variables button.label.studio-add { border-style: dashed; color: var(--blueDark); }
+#studio-variables button.label.studio-add[aria-expanded=true] { background: var(--bgMain); border-style: solid; }
+#studio-variables button.label.primary { background: var(--blueDark); color: var(--white); }
+#studio-variables button.label.primary:hover { background: var(--blueLight); }
+.studio-chip {
+  height: 20px;
+  margin: 0 0 5px 8px;
+  padding: 0 7px;
+  border-radius: 10px;
+  background: var(--bgMain);
+  color: var(--greyDark);
+  font: 12px/20px Arial, Helvetica, "Microsoft YaHei", sans-serif;
+}
+.studio-chip.warn { background: #fff4dc; color: #9a5b00; }
+.studio-variable-form { display: flex; flex-wrap: wrap; align-items: center; gap: 0; padding: 2px 0 4px 5px; font-size: 14px; }
+.studio-variable-form > span { margin-left: 5px; }
+.studio-variable-form input,
+.studio-variable-form select {
+  box-sizing: border-box;
+  height: 27px;
+  margin: 1px 0 5px 5px;
+  padding: 0 6px;
+  border: 1px solid var(--blueDark);
+  border-radius: 3px;
+  background: var(--bgMain);
+  font: 14px Arial, Helvetica, "Microsoft YaHei", sans-serif;
+}
+.studio-variable-form input:first-child { margin-left: 0; }
+.studio-variable-form input[type=number] { width: 60px; }
+.studio-variable-form input[aria-label="变量名"] { width: 130px; }
+.studio-variable-form button.label { margin-bottom: 5px; }

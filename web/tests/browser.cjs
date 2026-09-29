@@ -27,6 +27,7 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
     const json = (body) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); };
     if (req.url === '/api/health') return json({ solver: { available: true, backends: [{ name: 'auto', label: '自动', available: true, supportsTimeout: true }] } });
     if (req.url === '/api/puzzles') return json({ puzzles: Object.values(specs) });
+    if (req.url === '/api/builtins') return json(JSON.parse(execFileSync(process.env.PUZZLE_PYTHON || 'python', ['-X', 'utf8', '-c', 'import json; from puzzle.dsl.builtins import function_table; print(json.dumps({"entries":[e.__dict__ for e in function_table()]}))'], { cwd: root, encoding: 'utf8' })));
     if (req.url.startsWith('/api/puzzles/')) {
       const key = req.url.split('/').pop();
       return json({ puzzle: specs[key], sample: JSON.parse(read(`impls/samples/${key}.json`)), rule: specs[key] });
@@ -83,13 +84,13 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await button('添加变量').click();
       await frame.getByRole('button', { name, exact: true }).waitFor();
     };
-    const drawNumber = async (name, value) => {
+    const drawNumber = async (name, value, row = 0, col = 0) => {
       await frame.locator('#mo_number_lb').click();
       await button(name).click();
-      const point = await frame.evaluate(() => {
-        const p = pu.point[(2 + pu.space[0]) * pu.nx0 + 2 + pu.space[2]];
+      const point = await frame.evaluate(({row, col}) => {
+        const p = pu.point[(2 + pu.space[0] + row) * pu.nx0 + 2 + pu.space[2] + col];
         return { x: p.x, y: p.y };
-      });
+      }, {row, col});
       await frame.locator('#canvas').click({ position: point });
       await page.keyboard.type(value);
     };
@@ -108,7 +109,8 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await frame.locator('#studio-controls details').evaluateAll(items => items.forEach(el => el.open = false));
     };
 
-    await t.test('all actions and variable targets are inside native Penpa, without a separate sidebar', async () => {
+    await t.test('actions stay in native Penpa alongside the variable overview', async () => {
+      assert.equal(await page.getByRole('complementary', { name: '变量总览' }).count(), 1);
       assert.equal(await page.locator('.board-controls, .layers').count(), 0);
       assert.equal(await page.getByRole('button', { name: '求解', exact: true }).count(), 0);
       assert.equal(await button('求解').count(), 1);
@@ -121,8 +123,15 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await frame.locator('#mo_number_lb').click();
       await addVariable('x');
       await drawNumber('x', '1');
+      await frame.locator('#pu_a_label').click();
+      await frame.locator('#mo_number_lb').click();
       await addVariable('y');
-      await drawNumber('y', '2');
+      assert.equal(await frame.evaluate(() => pu.mode.qa), 'pu_q');
+      assert.equal(await frame.evaluate(() => StudioBridge.getSelection().activeVariable), 'y');
+      const newVariablePoint = await frame.evaluate(() => { const p = pu.point[(2 + pu.space[0]) * pu.nx0 + 2 + pu.space[2]]; return { x: p.x, y: p.y }; });
+      await frame.locator('#canvas').click({ position: newVariablePoint });
+      await page.keyboard.type('2');
+      assert.equal(await frame.evaluate(() => Object.keys(pu.pu_a.number).length), 0);
       await button('x').click();
       assert.equal(await frame.evaluate(() => Object.values(pu.pu_q.number)[0][0]), '1');
       await button('y').click();
@@ -139,6 +148,45 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       assert.equal(await frame.evaluate(() => Object.keys(pu.pu_a.number).length), 0);
     });
 
+    await t.test('overview hides variables independently without changing data or solve results', async () => {
+      const before = await frame.evaluate(() => StudioBridge.exportDocuments());
+      const revision = await frame.evaluate(() => StudioBridge.getRevision());
+      await page.getByRole('button', { name: '隐藏变量 y', exact: true }).click();
+      assert.equal(await frame.evaluate(() => Object.values(rendered.q.number)[0][0]), '1');
+      assert.equal(await frame.evaluate(() => Object.values(rendered.a.number)[0][0]), '1');
+      await page.getByRole('button', { name: '全部隐藏', exact: true }).click();
+      assert.equal(await frame.evaluate(() => Object.keys(rendered.q.number).length), 0);
+      assert.equal(await frame.evaluate(() => Object.keys(rendered.a.number).length), 0);
+      assert.equal(await frame.evaluate(() => StudioBridge.getRevision()), revision);
+      assert.deepEqual(await frame.evaluate(() => StudioBridge.exportDocuments()), before);
+      assert.equal(await frame.locator('.status-sat').count(), 1);
+      await page.getByRole('button', { name: '全部显示', exact: true }).click();
+      const answerToggle = page.getByRole('button', { name: 'y 求解答案', exact: true });
+      assert.equal(await answerToggle.getAttribute('aria-pressed'), 'true');
+      await answerToggle.click();
+      assert.equal(await answerToggle.getAttribute('aria-pressed'), 'false');
+      assert.equal(await frame.evaluate(() => Object.values(rendered.a.number)[0][0]), '1');
+      assert.equal(await frame.evaluate(() => Object.values(rendered.q.number)[0][0]), '2');
+      await page.getByRole('button', { name: 'y 题目线索', exact: true }).click();
+      assert.equal(await frame.evaluate(() => Object.values(rendered.q.number)[0][0]), '1');
+      await page.getByRole('button', { name: '全部显示', exact: true }).click();
+      await page.locator('.variable-main').filter({ hasText: 'x' }).click();
+      assert.equal(await frame.evaluate(() => StudioBridge.getSelection().activeVariable), 'x');
+    });
+
+    await t.test('hidden active variable stays hidden at separate cells and after keyboard edits', async () => {
+      await drawNumber('y', '3', 1, 1);
+      await page.getByRole('button', { name: '隐藏变量 y', exact: true }).click();
+      assert.equal(await frame.evaluate(() => Object.keys(rendered.q.number).length), 1);
+      await frame.evaluate(() => { pu.pu_q.numberS['22'] = ['7', 1]; pu.redraw(); });
+      assert.equal(await frame.evaluate(() => Object.keys(rendered.q.numberS).length), 0);
+      await frame.evaluate(() => { delete pu.pu_q.numberS['22']; });
+      await page.getByRole('button', { name: '仅显示 y', exact: true }).click();
+      assert.equal(await frame.evaluate(() => Object.keys(rendered.q.number).length), 2);
+      await frame.locator('#tb_undo').click();
+      await page.getByRole('button', { name: '全部显示', exact: true }).click();
+    });
+
     await t.test('variable undo histories and resizing preserve both same-cell clues', async () => {
       await button('x').click();
       await frame.locator('#tb_undo').click();
@@ -147,7 +195,7 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       assert.equal(await frame.evaluate(() => Object.values(pu.pu_q.number)[0][0]), '2');
       await button('x').click();
       await frame.locator('#tb_redo').click();
-      await frame.getByText('尺寸与参数', { exact: true }).click();
+      assert.equal(await frame.getByLabel('行数', { exact: true }).isVisible(), true);
       await frame.getByLabel('行数', { exact: true }).fill('7');
       await frame.waitForFunction(() => pu.ny === 7);
       assert.equal(await frame.evaluate(() => Object.values(pu.pu_q.number)[0][0]), '1');
@@ -175,7 +223,7 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await button('y').click();
       const url = await frame.evaluate(() => StudioBridge.exportUrl());
       await button('x').click();
-      await frame.getByText('导入链接', { exact: true }).click();
+      assert.equal(await frame.getByLabel('导入链接', { exact: true }).isVisible(), true);
       await frame.getByLabel('导入链接', { exact: true }).fill(url);
       await button('导入到当前变量').click();
       await frame.getByText(/已导入到 x/).waitFor();
@@ -190,6 +238,10 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await frame.locator('#pu_a_label').click();
       await drawNumber('x', '9');
       const answer = await frame.evaluate(() => JSON.stringify(pu.pu_a));
+      await page.getByRole('button', { name: '隐藏变量 手工答案', exact: true }).click();
+      assert.equal(await frame.evaluate(() => Object.keys(rendered.a.number).length), 0);
+      assert.equal(await frame.evaluate(() => JSON.stringify(pu.pu_a)), answer);
+      await page.getByRole('button', { name: '显示变量 手工答案', exact: true }).click();
       await runSolve();
       assert.equal(await frame.evaluate(() => JSON.stringify(pu.pu_a)), answer);
       const editor = page.getByLabel('规则 DSL', { exact: true });
@@ -211,6 +263,40 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
         assert.equal(await frame.evaluate(() => Object.keys(pu.pu_a.number).length), 0);
       });
     }
+    await t.test('DSL highlighting, completion and searchable reference docs', async () => {
+      const editor = page.getByLabel('规则 DSL', { exact: true });
+      await editor.fill('cel');
+      await editor.press('Control+Space');
+      const editorRect = await editor.boundingBox();
+      const completionRect = await page.getByRole('listbox', { name: 'DSL 补全' }).boundingBox();
+      assert.ok(completionRect.y > editorRect.y && completionRect.y < editorRect.y + 50, 'completion is next to first-line caret');
+      await page.getByRole('option', { name: /^cells\(/ }).click();
+      assert.equal(await editor.inputValue(), 'cells');
+      await editor.fill('import "fill"\nsubset_lat');
+      await editor.press('Control+Space');
+      await editor.press('Tab');
+      assert.match(await editor.inputValue(), /subset_latin$/);
+      await editor.fill('\n'.repeat(10) + '    cel');
+      await editor.press('Control+Space');
+      const lowerCompletion = await page.getByRole('listbox', { name: 'DSL 补全' }).boundingBox();
+      assert.ok(lowerCompletion.y > completionRect.y + 150, 'completion follows caret line');
+      assert.ok(lowerCompletion.x >= completionRect.x, 'completion follows column until clamped at viewport edge');
+      assert.ok(lowerCompletion.x + lowerCompletion.width <= 1440, 'completion stays inside viewport');
+      fs.mkdirSync(artifacts, { recursive: true });
+      await page.screenshot({ path: path.join(artifacts, 'completion.png') });
+      await editor.press('Escape');
+      await editor.fill('import "fill"\nsubset_latin');
+      assert.ok(await page.locator('.dsl-highlight .tok-keyword').count());
+      await page.getByRole('button', { name: 'Doc 文档', exact: true }).click();
+      await page.getByRole('button', { name: 'Builtin 函数', exact: true }).click();
+      await page.getByLabel('搜索文档').fill('cells');
+      assert.ok(await page.locator('.dsl-doc-content article').count());
+      await page.getByRole('button', { name: '规则库', exact: true }).click();
+      await page.getByLabel('搜索文档').fill('subset_latin');
+      assert.ok(await page.locator('.dsl-doc-content details').count());
+      await page.getByRole('button', { name: '关闭文档', exact: true }).click();
+    });
+
     await t.test('imported presets remain editable and accept additional variables', async () => {
       await preset('easyasabc');
       await frame.locator('#mo_number_lb').click();
@@ -232,6 +318,43 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       }
       await page.screenshot({ path: path.join(artifacts, 'mobile.png'), fullPage: true });
       assert.deepEqual(errors, []);
+    });
+
+    await t.test('variable editing preserves drawings and history, updates rules, and deletes bindings', async () => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const editor = page.getByLabel('规则 DSL', { exact: true });
+      await editor.fill((await editor.inputValue()) + '\n# extra remains a comment');
+      await button('extra').click();
+      const before = await frame.evaluate(() => JSON.stringify(pu.pu_q));
+      await page.getByRole('button', { name: '编辑变量 extra', exact: true }).click();
+      await page.getByLabel('编辑变量名', { exact: true }).fill('x');
+      await page.getByRole('button', { name: '保存变量', exact: true }).click();
+      assert.equal(await page.getByRole('alert').count(), 1);
+      await page.getByLabel('编辑变量名', { exact: true }).fill('bonus');
+      await page.getByLabel('编辑最大值', { exact: true }).fill('8');
+      await page.getByLabel('变量说明', { exact: true }).fill('additional numbers');
+      await page.screenshot({ path: path.join(artifacts, 'variable-editor.png') });
+      await page.getByRole('button', { name: '保存变量', exact: true }).click();
+      assert.equal(await page.getByRole('dialog').count(), 0);
+      assert.equal(await frame.evaluate(() => JSON.stringify(pu.pu_q)), before);
+      assert.match(await editor.inputValue(), /bonus\[p\] == 4/);
+      assert.match(await editor.inputValue(), /# extra remains a comment/);
+      assert.equal(await button('bonus').getAttribute('aria-pressed'), 'true');
+      await runSolve();
+      assert.equal(lastSolved.values.bonus['0,0'], 4);
+      assert.equal(lastPayload.spec.variables.find(v => v.name === 'bonus').domain[1], 8);
+      assert.equal(lastPayload.spec.variables.find(v => v.name === 'bonus').doc, 'additional numbers');
+      await frame.locator('#tb_undo').click();
+      assert.equal(await frame.evaluate(() => Object.keys(pu.pu_q.number).length), 0);
+      await frame.locator('#tb_redo').click();
+      await page.getByRole('button', { name: '编辑变量 bonus', exact: true }).click();
+      await page.getByRole('button', { name: '删除变量', exact: true }).click();
+      await page.getByRole('button', { name: '确认删除', exact: true }).click();
+      assert.equal(await page.getByRole('button', { name: '编辑变量 bonus', exact: true }).count(), 0);
+      assert.ok((await frame.evaluate(() => StudioBridge.exportDocuments())).every(doc => doc.id !== 'bonus'));
+      await editor.fill(specs.easyasabc.source);
+      await runSolve();
+      assert.deepEqual(lastPayload.spec.variables.map(v => v.name), ['x']);
     });
 
   } finally {
