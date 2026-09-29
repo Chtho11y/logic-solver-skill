@@ -3,9 +3,10 @@
  * The iframe is the middle pane; occupancy / load / export go through StudioBridge.
  */
 
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { DrawTool, Drawing } from "./drawing";
-import type { LayerCounts } from "./layers";
+type LayerCounts = Partial<Record<DrawTool, number>>;
 
 export type PenpaOccupancy = {
   rows: number;
@@ -13,41 +14,67 @@ export type PenpaOccupancy = {
   counts: LayerCounts;
   mode: string;
   revision: number;
+  tool?: DrawTool;
+  activeVariable?: string;
 };
 
 export type PenpaHandle = {
   stamp: (drawing: Drawing) => boolean;
+  replaceDrawing: (id: string, drawing: Drawing) => boolean;
+  loadDocuments: (items: { id: string; drawing: Drawing }[]) => boolean;
+  getSelection: () => { tool: DrawTool; activeVariable: string };
+  exportDocuments: () => { id: string; url: string }[];
+  selectVariable: (id: string) => boolean;
   resize: (rows: number, cols: number) => boolean;
   getRevision: () => number;
   isEmpty: () => boolean;
   setTool: (tool: DrawTool) => void;
   setHidden: (keys: string[], hide: boolean) => void;
-  applySolution: (element: string, values: Record<string, number>) => void;
+  applySolution: (element: string, values: Record<string, number>, palette?: Record<string, string>, id?: string) => void;
   clearSolution: () => void;
   exportUrl: () => string;
 };
 
 type Bridge = {
   stamp: (drawing: Drawing) => boolean;
+  replaceDrawing: (id: string, drawing: Drawing) => boolean;
+  loadDocuments: (items: { id: string; drawing: Drawing }[]) => boolean;
+  getSelection: () => { tool: DrawTool; activeVariable: string };
+  exportDocuments: () => { id: string; url: string }[];
+  selectVariable: (id: string) => boolean;
   resize: (rows: number, cols: number) => boolean;
   getRevision: () => number;
   isEmpty: () => boolean;
   setTool: (tool: string) => void;
   setHidden: (keys: string[], hide: boolean) => void;
-  applySolution: (element: string, values: Record<string, number>) => void;
+  applySolution: (element: string, values: Record<string, number>, palette?: Record<string, string>, id?: string) => void;
   clearSolution: () => void;
   exportUrl: () => string;
 };
 
 interface PenpaPaneProps {
   onOccupancy: (occupancy: PenpaOccupancy) => void;
+  controls: ReactNode;
+  variableControls: ReactNode;
 }
 
 export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaPane(
-  { onOccupancy },
+  { onOccupancy, controls, variableControls },
   ref,
 ) {
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const [slots, setSlots] = useState<{ controls: HTMLElement; variables: HTMLElement } | null>(null);
+  function mountControls() {
+    const doc = frameRef.current?.contentDocument;
+    if (!doc || !doc.getElementById('top_button')) return;
+    const controls = doc.getElementById('studio-controls') || doc.createElement('div');
+    controls.id = 'studio-controls';
+    doc.getElementById('top_button')!.prepend(controls);
+    const variables = doc.getElementById('studio-variables') || doc.createElement('div');
+    variables.id = 'studio-variables';
+    doc.getElementById('mode_button')!.after(variables);
+    setSlots({ controls, variables });
+  }
   const occupancyRef = useRef(onOccupancy);
   occupancyRef.current = onOccupancy;
 
@@ -57,6 +84,11 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
   }
 
   useImperativeHandle(ref, () => ({
+    replaceDrawing(id, drawing) { return bridge()?.replaceDrawing(id, drawing) ?? false; },
+    loadDocuments(items) { return bridge()?.loadDocuments(items) ?? false; },
+    getSelection() { return bridge()?.getSelection() ?? { tool: "number", activeVariable: "__unbound" }; },
+    exportDocuments() { return bridge()?.exportDocuments() ?? []; },
+    selectVariable(id) { return bridge()?.selectVariable(id) ?? false; },
     stamp(drawing) {
       return bridge()?.stamp(drawing) ?? false;
     },
@@ -69,8 +101,8 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
     setHidden(keys, hide) {
       bridge()?.setHidden(keys, hide);
     },
-    applySolution(element, values) {
-      bridge()?.applySolution(element, values);
+    applySolution(element, values, palette, id) {
+      bridge()?.applySolution(element, values, palette, id);
     },
     clearSolution() {
       bridge()?.clearSolution();
@@ -83,7 +115,7 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (event.source !== frameRef.current?.contentWindow || event.origin !== location.origin) return;
-      const data = event.data as { type?: string; rows?: number; cols?: number; counts?: LayerCounts; mode?: string; revision?: number };
+      const data = event.data as { type?: string; rows?: number; cols?: number; counts?: LayerCounts; mode?: string; revision?: number; tool?: DrawTool; activeVariable?: string };
       if (data?.type === "penpa-ready" || data?.type === "penpa-occupancy") {
         occupancyRef.current({
           rows: data.rows ?? 10,
@@ -91,6 +123,7 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
           counts: data.counts ?? {},
           mode: data.mode ?? "surface",
           revision: data.revision ?? -1,
+          tool: data.tool, activeVariable: data.activeVariable,
         });
       }
     }
@@ -102,10 +135,13 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
     <div className="penpa-pane">
       <iframe
         ref={frameRef}
+        onLoad={mountControls}
         className="penpa-frame"
         title="Penpa+"
         src="/penpa-edit/index.html"
       />
+      {slots && createPortal(controls, slots.controls)}
+      {slots && createPortal(variableControls, slots.variables)}
     </div>
   );
 });

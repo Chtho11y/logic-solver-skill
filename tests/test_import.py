@@ -56,6 +56,20 @@ class PuzzlinkParseTests(unittest.TestCase):
 
 
 class PenpaRoundtripTests(unittest.TestCase):
+    def test_outside_runs_survive_layer_encode_decode_and_binding(self) -> None:
+        from puzzle.importing.board import from_layers_json
+        from puzzle.importing.bind import bind_instance
+        board = from_layers_json(3, 3, [{"element": "outside", "values": {
+            "top": [[1, 1], [3], []], "left": {"0": [1, 1], "1": [3]},
+        }}])
+        decoded = decode_penpa(encode_penpa(board))
+        self.assertEqual(decoded.outside["top"][0], [1, 1])
+        self.assertEqual(decoded.outside["left"][0], [1, 1])
+        instance = bind_instance(decoded, load_spec("nonogram"))
+        self.assertEqual(instance["params"]["top"][:2], [[1, 1], [3]])
+        scalar = bind_instance(decoded, load_spec("easyasabc"))
+        self.assertTrue(any("multiple clues" in warning for warning in scalar["_warnings"]))
+
     def test_numbers_and_shade_roundtrip(self) -> None:
         board = LayerBoard(rows=3, cols=3, title="probe")
         board.cell(0, 0).number = 4

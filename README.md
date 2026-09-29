@@ -16,8 +16,8 @@ python -m puzzle.server --port 8000
 
 浏览器打开 `http://127.0.0.1:8000`。开发时可在另一个终端运行 `npm --prefix web run dev`，使用 Vite 提供的地址。
 
-左侧管理已用图层；中央使用 Penpa+ 原生工具绘制，并选择题型、调整尺寸和参数、导入及求解；右侧修改规则。
-没有独立顶栏。未选择题型也能画图，选择规则后才绑定求解。
+Penpa+ 内部提供导入预设、清空、求解和参数操作；选择绘制元素后，用水平按钮选择目标变量或新增变量。
+右侧编辑 DSL。无需选题即可建立自定义工作区；导入预设后仍能新增变量和修改规则。
 
 ## 验证
 
@@ -39,7 +39,7 @@ python -m tools.status --check
 
 浏览器集成测试：安装 Playwright 并准备浏览器后运行 `npm --prefix web run test:browser`。
 Windows 使用已安装的 Edge，其他平台使用 Playwright Chromium。可通过 `PUZZLE_PLAYWRIGHT`
-指定已有 Playwright 包的绝对路径。测试加载真正的 Penpa+ 并调用实际 Python 链接解码，以模拟求解响应检查输入、竞态、快捷键与布局；
+指定已有 Playwright 包的绝对路径。测试加载真正的 Penpa+，调用实际 Python 解码及代表题求解，并用延迟响应检查竞态、快捷键与布局；
 截图输出到忽略版本管理的 `web/.artifacts/`，求解正确性由 Python 测试负责。
 
 ## 文档与维护

@@ -65,6 +65,8 @@ export const api = {
     instance: Instance,
     options: {
       source?: string;
+      spec?: PuzzleSpec;
+      documents?: { id: string; url: string }[];
       timeoutMs?: number | null;
       backend?: string;
     } = {},
@@ -72,6 +74,8 @@ export const api = {
     post<SolveResult>("/solve", {
       instance,
       source: options.source,
+      spec: options.spec,
+      documents: options.documents,
       timeoutMs: options.timeoutMs === undefined ? 60000 : options.timeoutMs,
       backend: options.backend ?? "auto",
     }),

@@ -36,7 +36,7 @@
     edgeline: "lineE",
     diagonal: "line",
     dot: "lineE",
-    region: "combi",
+    region: "lineE",
   };
 
   const SYMBOL_SUB = {
@@ -57,28 +57,174 @@
   let revision = 0;
   let lastQuestion = "";
 
-  function fullQuestion() {
-    const question = cloneMarks(window.pu && pu.pu_q);
-    Object.keys(hidden).forEach(function (key) {
-      if (key.indexOf("pu_q.") === 0) {
-        const field = key.slice(5);
-        question[field] = Object.assign({}, hidden[key], question[field] || {});
-      }
-    });
-    return question;
+  const solutions = {};
+  let hookedBoard = null;
+
+  let documents = {};
+  let documentColors = {};
+  let activeVariable = '__unbound';
+  let composing = false;
+
+  function saveActive() {
+    if (window.pu && !composing) { documents[activeVariable] = pu.pu_q; documentColors[activeVariable] = pu.pu_q_col; }
   }
 
+  function emptyQuestion(source = pu.pu_q) {
+    const q = {};
+    for (const [key, value] of Object.entries(source)) {
+      q[key] = key.startsWith('command_') ? new value.constructor() : Array.isArray(value) ? [] : {};
+    }
+    return q;
+  }
+
+  function selectVariable(id) {
+    if (!window.pu) return false;
+    saveActive();
+    if (!documents[id]) {
+      if (activeVariable === '__unbound' && id !== '__unbound') {
+        documents[id] = documents.__unbound;
+        documentColors[id] = documentColors.__unbound;
+        delete documents.__unbound;
+        delete documentColors.__unbound;
+      } else documents[id] = emptyQuestion();
+    }
+    documentColors[id] ||= emptyQuestion(pu.pu_q_col);
+    activeVariable = id;
+    pu.pu_q = documents[id];
+    pu.pu_q_col = documentColors[id];
+    pu.redraw();
+    notify();
+    return true;
+  }
+
+  function loadDocuments(items) {
+    if (!window.pu) return false;
+    composing = true;
+    documents = {};
+    documentColors = {};
+    for (const item of items) {
+      if (!stamp(item.drawing)) { composing = false; return false; }
+      documents[item.id] = pu.pu_q;
+      documentColors[item.id] = pu.pu_q_col;
+    }
+    activeVariable = items[0]?.id || '__unbound';
+    if (!documents[activeVariable]) documents[activeVariable] = emptyQuestion();
+    pu.pu_q = documents[activeVariable];
+    pu.pu_q_col = documentColors[activeVariable] || emptyQuestion(pu.pu_q_col);
+    composing = false;
+    pu.redraw();
+    notify();
+    return true;
+  }
+
+  function exportDocuments() {
+    saveActive();
+    const q = pu.pu_q, colors = pu.pu_q_col;
+    try {
+      return Object.entries(documents).map(([id, question]) => {
+        pu.pu_q = question;
+        pu.pu_q_col = documentColors[id];
+        return { id, url: exportUrl() };
+      });
+    } finally { pu.pu_q = q; pu.pu_q_col = colors; }
+  }
+
+  function replaceDrawing(id, drawing) {
+    if (!window.pu) return false;
+    const tool = currentTool();
+    if (!resize(drawing.rows, drawing.cols)) return false;
+    const answer = pu.pu_a, answerColors = pu.pu_a_col;
+    composing = true;
+    const ok = stamp(drawing);
+    if (ok) { documents[id] = pu.pu_q; documentColors[id] = pu.pu_q_col; activeVariable = id; }
+    pu.pu_a = answer; pu.pu_a_col = answerColors;
+    composing = false;
+    setTool(tool); pu.redraw(); notify();
+    return ok;
+  }
+
+  function currentTool() {
+    const mode = pu.mode[pu.mode.qa].edit_mode;
+    if (mode === 'symbol') return symbolTool([1, pu.mode[pu.mode.qa].symbol[0]]);
+    return { surface: 'shade', number: 'number', sudoku: 'number', line: 'link', lineE: 'edgeline', wall: 'diagonal', cage: 'region' }[mode] || 'number';
+  }
+
+  function symbolTool(entry) {
+    const family = String(entry?.[1] || '').toLowerCase();
+    const sid = Number(entry?.[0]);
+    if (family.includes('circle') || (family.startsWith('ox') && sid <= 2)) return 'circle';
+    if (family.includes('square')) return 'square';
+    if (family.includes('tri')) return 'triangle';
+    if (family.includes('star')) return 'star';
+    if (family.includes('cross') || family.startsWith('ox')) return 'cross';
+    if (family === 'tents') return sid === 2 ? 'tree' : 'tent';
+    if (family.includes('ship')) return 'ship';
+    if (family.includes('water')) return 'wave';
+    if (family.includes('sun')) return 'bulb';
+    if (family.includes('arrow')) return 'arrow';
+    return 'symbol';
+  }
+
+  function markTool(field, key, value) {
+    if (field === 'number') return classifyIndex(key).kind === 'outside' ? 'outside' : 'number';
+    if (field === 'symbol') return symbolTool(value);
+    return { surface: 'shade', line: 'link', lineE: 'edgeline', wall: 'diagonal', killercages: 'region' }[field];
+  }
+
+  function presentation(question, answer) {
+    const merged = {};
+    if (!composing) for (const [id, other] of Object.entries(documents)) {
+      if (id === activeVariable) continue;
+      for (const [field, marks] of Object.entries(other)) {
+        if (!field.startsWith('command_')) merged[field] = Array.isArray(marks) ? marks : { ...merged[field], ...marks };
+      }
+    }
+    for (const [field, marks] of Object.entries(question)) merged[field] = Array.isArray(marks) ? marks : { ...merged[field], ...marks };
+    const q = { ...question, ...merged }, a = { ...answer };
+    for (const field of ['surface', 'number', 'symbol', 'line', 'lineE', 'wall', 'killercages']) {
+      const entries = merged[field] || {};
+      q[field] = Array.isArray(entries)
+        ? (hidden.region ? [] : entries)
+        : Object.fromEntries(Object.entries(entries).filter(([key, value]) => !hidden[markTool(field, key, value)]));
+    }
+    // Solver marks exist only while drawing. Never mutate native answers/history.
+    for (const [id, { element, fields }] of Object.entries(solutions).sort(([a], [b]) => Number(a === activeVariable) - Number(b === activeVariable))) {
+      if (hidden['out:' + id] || hidden['out:' + element]) continue;
+      for (const [field, marks] of Object.entries(fields)) a[field] = { ...a[field], ...marks };
+    }
+    return { q, a };
+  }
+
+  function installPresentation() {
+    if (!window.pu || hookedBoard === pu) return;
+    hookedBoard = pu;
+    Object.keys(solutions).forEach(key => delete solutions[key]);
+    const draw = pu.draw;
+    pu.draw = function () {
+      const q = this.pu_q, a = this.pu_a;
+      const view = presentation(q, a);
+      this.pu_q = view.q;
+      this.pu_a = view.a;
+      try { return draw.apply(this, arguments); }
+      finally { this.pu_q = q; this.pu_a = a; }
+    };
+  }
+
+  function fullQuestion() { return cloneMarks(window.pu && pu.pu_q); }
+
   // Counts alone miss a changed number or a moved mark. Do not include answer
-  // layers, selection, mode, or undo history in the content revision.
+  // overlays, selection, mode, or undo history in the content revision.
   function getRevision() {
     if (!window.pu) return -1;
-    const signature = JSON.stringify([pu.gridtype, pu.nx, pu.ny, pu.space, pu.centerlist, fullQuestion()]);
+    installPresentation();
+    saveActive();
+    const signature = JSON.stringify([pu.gridtype, pu.nx, pu.ny, pu.space, pu.centerlist, Object.entries(documents).sort(([a], [b]) => a.localeCompare(b)).map(([id, q]) => [id, cloneMarks(q)]), cloneMarks(pu.pu_a)]);
     if (signature !== lastQuestion) { lastQuestion = signature; revision += 1; }
     return revision;
   }
 
   function isEmpty() {
-    return Object.values(fullQuestion()).every(function (value) {
+    return [...Object.values(fullQuestion()), ...Object.values(cloneMarks(window.pu && pu.pu_a))].every(function (value) {
       return !value || (typeof value === "object" && Object.keys(value).length === 0);
     });
   }
@@ -128,8 +274,6 @@
   }
 
   function bag(qa, field) {
-    const hid = hidden[qa + "." + field];
-    if (hid) return hid;
     const pu = window.pu;
     return (pu && pu[qa] && pu[qa][field]) || {};
   }
@@ -177,57 +321,20 @@
       else counts.number += 1;
     }
     for (const entry of Object.values(symbols || {})) {
-      if (!Array.isArray(entry) || entry.length < 2) continue;
-      const family = String(entry[1]).toLowerCase();
-      if (family.includes("circle") || (family.startsWith("ox") && (entry[0] === 1 || entry[0] === 2))) counts.circle += 1;
-      else if (family.includes("square")) counts.square += 1;
-      else if (family.includes("tri")) counts.triangle += 1;
-      else if (family.includes("star")) counts.star += 1;
-      else if (family.includes("cross") || family.startsWith("ox")) counts.cross += 1;
-      else if (family.includes("tree")) counts.tree += 1;
-      else if (family.includes("tent")) counts.tent += 1;
-      else if (family.includes("ship") || family.includes("battleship")) counts.ship += 1;
-      else if (family.includes("water") || family.includes("wave")) counts.wave += 1;
-      else if (family.includes("sun") || family.includes("bulb") || family.includes("moon")) counts.bulb += 1;
-      else if (family.includes("arrow")) counts.arrow += 1;
-      else counts.circle += 1;
+      const tool = symbolTool(entry);
+      if (tool in counts) counts[tool] += 1;
     }
+    counts.region = (pu.pu_q.killercages || []).reduce((n, cells) => n + cells.length, 0);
     const mode = (pu.mode && pu.mode[pu.mode.qa] && pu.mode[pu.mode.qa].edit_mode) || "surface";
     return { rows: size.rows, cols: size.cols, counts: counts, mode: mode };
   }
 
   function notify() {
+    if (composing) return;
     const payload = occupancy();
+    payload.tool = window.pu ? currentTool() : 'number';
+    payload.activeVariable = activeVariable;
     window.parent.postMessage({ type: "penpa-occupancy", ...payload, revision: getRevision() }, location.origin);
-  }
-
-  function paramFromUrl(url) {
-    let raw = String(url || "").trim();
-    if (!raw) return "";
-    const hash = raw.indexOf("#");
-    if (hash >= 0) raw = raw.slice(hash + 1);
-    else {
-      const q = raw.indexOf("?");
-      if (q >= 0 && /(?:^|[?&])p=/.test(raw.slice(q))) raw = raw.slice(q + 1);
-    }
-    raw = raw.replace(/^#/, "").replace(/^\?/, "");
-    if (raw && raw.indexOf("p=") === -1) raw = "m=edit&p=" + raw;
-    return raw;
-  }
-
-  function ensureCenterlist() {
-    const pu = window.pu;
-    if (!pu || !pu.nx0) return;
-    pu.centerlist = [];
-    const top = (pu.space && pu.space[0]) || 0;
-    const bottom = (pu.space && pu.space[1]) || 0;
-    const left = (pu.space && pu.space[2]) || 0;
-    const right = (pu.space && pu.space[3]) || 0;
-    for (let j = 2 + top; j < pu.ny0 - 2 - bottom; j++) {
-      for (let i = 2 + left; i < pu.nx0 - 2 - right; i++) {
-        pu.centerlist.push(i + j * pu.nx0);
-      }
-    }
   }
 
   function cloneMarks(obj) {
@@ -243,82 +350,56 @@
     return out;
   }
 
-  function restoreMarks(dest, src) {
-    if (!dest || !src) return;
-    Object.keys(src).forEach(function (key) {
-      dest[key] = src[key];
-    });
-  }
-
-  function repairCanvas() {
-    const pu = window.pu;
-    if (!pu || typeof pu.reset_frame !== "function") {
-      ensureCenterlist();
-      return;
-    }
-    const q = cloneMarks(pu.pu_q);
-    const a = cloneMarks(pu.pu_a);
-    try {
-      pu.reset_frame();
-      restoreMarks(pu.pu_q, q);
-      restoreMarks(pu.pu_a, a);
-      if (typeof pu.redraw === "function") pu.redraw();
-    } catch (err) {
-      console.error("penpa repair", err);
-      ensureCenterlist();
-      if (typeof pu.redraw === "function") pu.redraw();
-    }
-  }
-
-  function loadUrl(url) {
-    const param = paramFromUrl(url);
-    if (!param || typeof load !== "function") return false;
-    function after() {
-      repairCanvas();
-      notify();
-    }
-    try {
-      const result = load(param);
-      if (result && typeof result.then === "function") {
-        result.then(after).catch(function (err) {
-          console.error("penpa load", err);
-          after();
-        });
-      } else {
-        after();
-      }
-    } catch (err) {
-      console.error("penpa load", err);
-      after();
-    }
-    return true;
-  }
-
   function exportUrl() {
-    if (!window.pu || typeof pu.maketext !== "function") return "";
-    // Visibility is presentation only: hidden clues must still be exported.
-    const saved = {};
-    const question = fullQuestion();
-    Object.keys(hidden).forEach(function (key) {
-      if (key.indexOf("pu_q.") !== 0) return;
-      const field = key.slice(5);
-      saved[field] = pu.pu_q[field];
-      pu.pu_q[field] = question[field];
-    });
+    if (!window.pu || typeof pu.maketext !== 'function') return '';
+    // Upstream maketext clears replay arrays and temporarily removes history.
+    // Solving must remain a read-only operation, including if export throws.
+    const history = [];
+    for (const name of ['pu_q', 'pu_a', 'pu_q_col', 'pu_a_col']) {
+      for (const field of ['command_undo', 'command_redo', 'command_replay']) {
+        const stack = pu[name]?.[field];
+        if (stack) history.push([stack, stack.__a]);
+      }
+    }
     try { return pu.maketext(); }
-    finally { Object.keys(saved).forEach(function (field) { pu.pu_q[field] = saved[field]; }); }
+    finally { for (const [stack, items] of history) stack.__a = items; }
   }
 
   function resize(rows, cols) {
+    if (!window.pu || !Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1 || rows > 40 || cols > 40) return false;
+    saveActive();
+    const old = innerSize();
+    const bank = Object.entries(documents);
+    const selected = activeVariable;
+    let answer = pu.pu_a, answerColors = pu.pu_a_col;
+    composing = true;
+    clearSolution();
+    for (let i = 0; i < bank.length; i++) {
+      const [id, question] = bank[i];
+      setSize(old.rows, old.cols, true);
+      pu.pu_q = question;
+      pu.pu_q_col = documentColors[id];
+      if (i === 0) { pu.pu_a = answer; pu.pu_a_col = answerColors; }
+      if (!resizeOne(rows, cols)) { composing = false; return false; }
+      if (i === 0) { answer = pu.pu_a; answerColors = pu.pu_a_col; }
+      documents[id] = pu.pu_q;
+      documentColors[id] = pu.pu_q_col;
+    }
+    pu.pu_q = documents[selected];
+    pu.pu_q_col = documentColors[selected];
+    pu.pu_a = answer; pu.pu_a_col = answerColors;
+    composing = false;
+    pu.redraw();
+    notify();
+    return true;
+  }
+
+  function resizeOne(rows, cols) {
     if (!window.pu || pu.gridtype !== "square" || !Number.isInteger(rows) || !Number.isInteger(cols) ||
         rows < 1 || cols < 1 || rows > 40 || cols > 40) return false;
     // Use Penpa's own coordinate migration, retaining live/native marks that
     // are not represented in the solver's limited generic drawing format.
-    Object.keys(hidden).forEach(function (key) {
-      const parts = key.split(".");
-      pu[parts[0]][parts[1]] = Object.assign({}, hidden[key], pu[parts[0]][parts[1]]);
-      delete hidden[key];
-    });
+    clearSolution();
     for (let step = 0; step < 80; step++) {
       const size = innerSize();
       if (size.rows === rows && size.cols === cols) { notify(); return true; }
@@ -348,6 +429,11 @@
       if (!(size >= 12 && size <= 90)) UserSettings.displaysize = 38;
     }
     create_newboard();
+    // The floating palette can obscure the host's variable row. Users can
+    // still open it explicitly with Penpa's Panel control.
+    pu.panelflag = true;
+    UserSettings.panel_shown = false;
+    installPresentation();
     if (!quiet) notify();
     return true;
   }
@@ -482,19 +568,19 @@
             pr = i + 2 + (pu.space[0] || 0);
             pc = 2 + cols + (pu.space[2] || 0);
           }
-          q.number[String(pr * pu.nx0 + pc)] = [String(Array.isArray(v) ? v[0] : v), 1, "1"];
+          q.number[String(pr * pu.nx0 + pc)] = [String(Array.isArray(v) ? v.join(" ") : v), 1, "1"];
         });
       });
 
-      const groups = {};
-      Object.entries(drawing.regions || {}).forEach(function (pair) {
-        const pos = parseRC(pair[0]);
-        if (!pos) return;
-        const id = String(pair[1]);
-        (groups[id] = groups[id] || []).push(cellIndex(pos.r, pos.c));
-      });
-      const cages = Object.keys(groups).map(function (id) { return groups[id]; });
-      if (cages.length) q.killercages = cages;
+      const regions = drawing.regions || {};
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const value = regions[r + ',' + c];
+        if (value === undefined) continue;
+        if (c + 1 < cols && regions[r + ',' + (c + 1)] !== undefined && value !== regions[r + ',' + (c + 1)])
+          q.lineE[edgePair('V,' + r + ',' + (c + 1), false)] = 2;
+        if (r + 1 < rows && regions[(r + 1) + ',' + c] !== undefined && value !== regions[(r + 1) + ',' + c])
+          q.lineE[edgePair('H,' + (r + 1) + ',' + c, false)] = 2;
+      }
 
       if (typeof pu.redraw === "function") pu.redraw();
       notify();
@@ -518,93 +604,88 @@
     }
   }
 
-  function fieldFor(key) {
-    if (key.indexOf("out:") === 0) {
-      const el = key.slice(4);
-      if (el === "number" || el === "text") return { qa: "pu_a", field: "number" };
-      if (el === "link") return { qa: "pu_a", field: "line" };
-      if (el === "edgeline" || el === "dot") return { qa: "pu_a", field: "lineE" };
-      return { qa: "pu_a", field: "surface" };
-    }
-    if (key === "shade") return { qa: "pu_q", field: "surface" };
-    if (key === "link") return { qa: "pu_q", field: "line" };
-    if (key === "edgeline" || key === "dot") return { qa: "pu_q", field: "lineE" };
-    if (key === "diagonal") return { qa: "pu_q", field: "wall" };
-    const symbols = [
-      "circle", "square", "triangle", "star", "cross", "tree", "tent", "ship", "wave", "bulb", "arrow",
-    ];
-    if (symbols.indexOf(key) >= 0) return { qa: "pu_q", field: "symbol" };
-    if (key === "number" || key === "text" || key === "outside") return { qa: "pu_q", field: "number" };
-    return null;
-  }
-
   function setHidden(keys, hide) {
     if (!window.pu) return;
-    (keys || []).forEach(function (key) {
-      const spec = fieldFor(key);
-      if (!spec) return;
-      const bucket = pu[spec.qa];
-      if (!bucket) return;
-      const storeKey = spec.qa + "." + spec.field;
-      if (hide) {
-        hidden[storeKey] = Object.assign({}, hidden[storeKey], bucket[spec.field] || {});
-        bucket[spec.field] = {};
-      } else if (hidden[storeKey]) {
-        bucket[spec.field] = Object.assign({}, hidden[storeKey], bucket[spec.field] || {});
-        delete hidden[storeKey];
-      }
-    });
+    installPresentation();
+    (keys || []).forEach(key => { if (hide) hidden[key] = true; else delete hidden[key]; });
     pu.redraw();
   }
 
-  function applySolution(element, values) {
-    if (!window.pu || !values) return;
-    const dest = element === "number" ? pu.pu_a.number : pu.pu_a.surface;
-    if (!dest) return;
-    Object.keys(dest).forEach(function (k) { delete dest[k]; });
-    Object.entries(values).forEach(function (pair) {
-      const key = pair[0];
-      const value = pair[1];
-      const parts = key.split(",");
-      if (parts.length !== 2) return;
-      const index = String(cellIndex(Number(parts[0]), Number(parts[1])));
-      if (element === "number") {
-        dest[index] = [String(value), 2, "1"];
-      } else if (value) {
-        dest[index] = value === 1 ? 4 : Number(value);
-      }
-    });
-    if (typeof UserSettings !== "undefined") {
-      /* keep solution overlay visible */
+  function edgePair(key, link) {
+    const e = parseEdge(key);
+    if (!e) return null;
+    const size = innerSize();
+    if (e.r < 0 || e.c < 0) return null;
+    if (e.orient === 'H' ? e.r > size.rows || e.c >= size.cols : e.r >= size.rows || e.c > size.cols) return null;
+    let a, b;
+    if (link) {
+      if (e.orient === 'H' ? e.r === 0 || e.r === size.rows : e.c === 0 || e.c === size.cols) return null;
+      a = e.orient === 'V' ? cellIndex(e.r, e.c - 1) : cellIndex(e.r - 1, e.c);
+      b = cellIndex(e.r, e.c);
+    } else {
+      a = cornerIndex(e.r, e.c);
+      b = e.orient === 'H' ? cornerIndex(e.r, e.c + 1) : cornerIndex(e.r + 1, e.c);
     }
-    const vis = document.getElementById("visibility_button");
-    if (vis && vis.textContent === "OFF") vis.click();
+    return Math.min(a, b) + ',' + Math.max(a, b);
+  }
+
+  function applySolution(element, values, palette = {}, id = element) {
+    if (!window.pu || !values) return false;
+    installPresentation();
+    const fields = {};
+    const put = (field, key, value) => { if (key !== null) (fields[field] ||= {})[key] = value; };
+    const size = innerSize();
+    if (element === 'region') {
+      for (let r = 0; r < size.rows; r++) for (let c = 0; c < size.cols; c++) {
+        const value = values[r + ',' + c];
+        if (value === undefined) continue;
+        if (c + 1 < size.cols && values[r + ',' + (c + 1)] !== undefined && value !== values[r + ',' + (c + 1)])
+          put('lineE', edgePair('V,' + r + ',' + (c + 1), false), 3);
+        if (r + 1 < size.rows && values[(r + 1) + ',' + c] !== undefined && value !== values[(r + 1) + ',' + c])
+          put('lineE', edgePair('H,' + (r + 1) + ',' + c, false), 3);
+      }
+    } else if (element === 'link' || element === 'edgeline') {
+      for (const [key, value] of Object.entries(values)) if (value)
+        put(element === 'link' ? 'line' : 'lineE', edgePair(key, element === 'link'), 3);
+    } else if (element === 'number' || element === 'shade' || SYMBOL_STAMP[element]) {
+      for (const [key, value] of Object.entries(values)) {
+        const pos = parseRC(key);
+        if (!pos || pos.r < 0 || pos.c < 0 || pos.r >= size.rows || pos.c >= size.cols) continue;
+        const index = String(cellIndex(pos.r, pos.c));
+        if (element === 'number') put('number', index, [String(value), 2, '1']);
+        else if (element === 'shade' && value) put('surface', index, 4);
+        else if (element === 'circle' && (value || Object.hasOwn(palette, value))) {
+          const color = String(palette[value] || '').toLowerCase();
+          const sid = color === '#ffffff' ? 1 : color === '#232733' ? 2 : Number(value) || 1;
+          put('symbol', index, [sid, 'circle_M', 1]);
+        } else if (value && SYMBOL_STAMP[element]) put('symbol', index, SYMBOL_STAMP[element](value));
+      }
+    } else return false;
+    solutions[id] = { element, fields };
+    const vis = document.getElementById('visibility_button');
+    if (vis && vis.textContent === 'OFF') vis.click();
     pu.redraw();
     notify();
+    return true;
   }
 
   function clearSolution() {
-    if (!window.pu) return;
-    Object.keys(hidden).forEach(function (key) {
-      if (key.indexOf("pu_a.") === 0) delete hidden[key];
-    });
-    ["surface", "number", "symbol", "line", "lineE"].forEach(function (field) {
-      if (pu.pu_a && pu.pu_a[field] && typeof pu.pu_a[field] === "object" && !Array.isArray(pu.pu_a[field])) {
-        Object.keys(pu.pu_a[field]).forEach(function (k) { delete pu.pu_a[field][k]; });
-      }
-    });
-    pu.redraw();
+    Object.keys(solutions).forEach(key => delete solutions[key]);
+    if (window.pu) pu.redraw();
   }
 
   window.StudioBridge = {
+    loadDocuments,
+    replaceDrawing,
+    getSelection: () => ({ tool: currentTool(), activeVariable }),
+    exportDocuments,
+    selectVariable,
     getRevision: getRevision,
     isEmpty: isEmpty,
     resize: resize,
     occupancy: occupancy,
-    loadUrl: loadUrl,
     stamp: stamp,
     exportUrl: exportUrl,
-    setSize: setSize,
     setTool: setTool,
     setHidden: setHidden,
     applySolution: applySolution,
@@ -636,32 +717,10 @@
         event.target.focus({ preventScroll: true });
       }
     }, true);
-    const canvas = document.getElementById("canvas");
-    if (canvas) {
-      ["mouseup", "touchend", "keyup"].forEach(function (ev) {
-        canvas.addEventListener(ev, function () { setTimeout(notify, 30); }, { passive: true });
-      });
-    }
     document.addEventListener("mouseup", function () { setTimeout(notify, 30); }, { passive: true });
     document.addEventListener("keyup", function () { setTimeout(notify, 30); }, { passive: true });
     window.parent.postMessage({ type: "penpa-ready", ...occupancy(), revision: getRevision() }, location.origin);
     setInterval(notify, 800);
   });
 
-  window.addEventListener("message", function (event) {
-    if (event.source !== window.parent || event.origin !== location.origin) return;
-    const data = event.data || {};
-    const api = window.StudioBridge;
-    if (!api || !data || !data.type) return;
-    if (data.type === "penpa-load") api.loadUrl(data.url);
-    if (data.type === "penpa-stamp") api.stamp(data.drawing);
-    if (data.type === "penpa-size") api.setSize(data.rows, data.cols);
-    if (data.type === "penpa-tool") api.setTool(data.tool);
-    if (data.type === "penpa-hide") api.setHidden(data.keys, data.hide);
-    if (data.type === "penpa-solution") api.applySolution(data.element, data.values);
-    if (data.type === "penpa-clear-solution") api.clearSolution();
-    if (data.type === "penpa-export") {
-      window.parent.postMessage({ type: "penpa-exported", url: api.exportUrl(), requestId: data.requestId }, "*");
-    }
-  });
 })();

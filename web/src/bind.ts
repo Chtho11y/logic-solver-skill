@@ -101,6 +101,9 @@ export function valuesForLayer(
     }
     return nums;
   }
+  if (element === "circle" && Object.hasOwn(layer.palette ?? {}, "0")) {
+    return Object.fromEntries(Object.entries(numericMarks(drawing.marks.circle)).map(([key, value]) => [key, value - 1]));
+  }
   if (element === "shade") {
     const out: Record<string, number> = {};
     for (const [key, value] of Object.entries(drawing.marks.shade ?? {})) {
@@ -161,7 +164,9 @@ export function instanceToDrawing(instance: Instance, spec: PuzzleSpec): Drawing
     if (!layer.var) continue;
     const tool = layer.element as DrawTool;
     if (!DRAW_TOOLS.includes(tool)) continue;
-    const values = instance.clues[layer.var] ?? {};
+    const raw = instance.clues[layer.var] ?? {};
+    const values = tool === "circle" && Object.hasOwn(layer.palette ?? {}, "0")
+      ? Object.fromEntries(Object.entries(raw).map(([key, value]) => [key, value + 1])) : raw;
     if (!Object.keys(values).length) continue;
     drawing.marks[tool] = { ...(drawing.marks[tool] ?? {}), ...values };
   }

@@ -59,7 +59,14 @@ def bind_instance(
                 length = board.cols if side in {"top", "bottom"} else board.rows
                 arr = [-1] * length
                 for i, value in enumerate(src):
-                    if i < length and value is not None and int(value) >= 0:
+                    if i >= length or value is None:
+                        continue
+                    if (layer.options or {}).get("mode") == "list":
+                        runs = value if isinstance(value, list) else [value]
+                        arr[i] = [int(v) for v in runs if int(v) >= 0]
+                    elif isinstance(value, list):
+                        warnings.append(f"{side}[{i}] expects one number, received multiple clues")
+                    elif int(value) >= 0:
                         arr[i] = int(value)
                 outside[side] = arr
                 params[side] = arr
@@ -132,7 +139,7 @@ def _values_for_layer(
     if element == "circle":
         for key, mark in board.cells.items():
             if mark.circle:
-                out[key] = int(mark.circle)
+                out[key] = int(mark.circle) - (1 if "0" in (layer.palette or {}) else 0)
             elif mark.number is not None and spec.key in {"kurodoko", "kurotto"}:
                 # Circled number drawn as a plain number in pzpr.
                 pass

@@ -355,13 +355,13 @@ def decode_penpa(url: str) -> LayerBoard:
     ]
     if leftover:
         board.warnings.append("unmapped Penpa keys: " + ", ".join(sorted(leftover)[:12]))
-    for key in ("thermo", "arrows", "killercages", "cage", "wall", "numberS"):
+    for key in ("thermo", "arrows", "killercages", "cage", "wall", "numberS", "freeline", "freelineE", "polygon", "direction", "squareframe", "special", "nobulbthermo", "deletelineE"):
         if pu_q.get(key):
             board.warnings.append(f"Penpa {key} is present but not bound to a solver layer")
     return board
 
 
-def _ensure_outside(board: LayerBoard, side: str, index: int, value: int) -> None:
+def _ensure_outside(board: LayerBoard, side: str, index: int, value: int | list[int]) -> None:
     length = board.cols if side in {"top", "bottom"} else board.rows
     arr = board.outside.setdefault(side, [-1] * length)
     while len(arr) < length:
@@ -429,9 +429,17 @@ def _decode_number(board: LayerBoard, grid: PenpaGrid, data: dict) -> None:
                 mark.number = value
             elif text:
                 mark.number_text = text
-        elif kind == "outside" and value is not None:
+        elif kind == "outside":
             side, idx = payload
-            _ensure_outside(board, side, idx, value)
+            if value is not None:
+                _ensure_outside(board, side, idx, value)
+            else:
+                tokens = text.replace(",", " ").split()
+                runs = [_parse_int(token) for token in tokens]
+                if runs and all(v is not None and v >= 0 for v in runs):
+                    _ensure_outside(board, side, idx, runs)
+                elif text:
+                    board.warnings.append(f"Unsupported outside clue: {text}")
 
 
 def _decode_symbol(board: LayerBoard, grid: PenpaGrid, data: dict) -> None:
@@ -469,6 +477,17 @@ def _decode_symbol(board: LayerBoard, grid: PenpaGrid, data: dict) -> None:
             mark.cross = 1
         elif "cross" in family_l:
             mark.cross = 1
+        elif family_l == "tents":
+            if sid == 2:
+                mark.tree = 1
+            elif sid == 1:
+                mark.tent = 1
+        elif "battleship" in family_l:
+            mark.ship = sid
+        elif family_l == "water":
+            mark.wave = 1
+        elif family_l == "sun_moon":
+            mark.bulb = 1
         elif "tree" in family_l:
             mark.tree = 1
         elif family_l.startswith("ox"):
@@ -479,6 +498,7 @@ def _decode_symbol(board: LayerBoard, grid: PenpaGrid, data: dict) -> None:
                 mark.cross = 1
         else:
             mark.extra[family] = sid
+            board.warnings.append(f"Unsupported Penpa symbol: {family}")
 
 
 def _corners_to_edge(c1: tuple[int, int], c2: tuple[int, int]) -> tuple[str, int, int] | None:
@@ -653,7 +673,7 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
 
     for side, values in board.outside.items():
         for idx, value in enumerate(values or []):
-            if value is None or int(value) < 0:
+            if value is None or (not isinstance(value, list) and int(value) < 0):
                 continue
             if side == "top":
                 pr, pc = 1, idx + 2
@@ -664,7 +684,7 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
             else:
                 pr, pc = idx + 2, 2 + board.cols
             index = str(pr * grid.real_cols + pc)
-            pu_q["number"][index] = [str(int(value)), 1, "1"]
+            pu_q["number"][index] = [" ".join(str(int(v)) for v in value) if isinstance(value, list) else str(int(value)), 1, "1"]
 
     def dump(obj: Any, compress: bool = True) -> str:
         text = json.dumps(obj, separators=(",", ":"), ensure_ascii=False)

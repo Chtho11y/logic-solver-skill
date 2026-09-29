@@ -92,7 +92,7 @@ export function DslEditor(props: DslEditorProps) {
           onChange={(e) => onChange(e.target.value)}
           onScroll={syncScroll}
           onKeyDown={onKeyDown}
-          placeholder="选择谜题后会载入 impls/<key>.dsl"
+          placeholder="在此编写规则，或导入预设作为起点"
         />
       </div>
       {errorMessage && (

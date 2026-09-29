@@ -26,7 +26,7 @@ html.studio-embed #app-container {
 
 html.studio-embed #tool-container {
   flex: 0 0 auto;
-  max-height: 46%;
+  max-height: 65%;
   overflow: auto;
 }
 
@@ -62,3 +62,46 @@ html.studio-embed #bottom_button {
   padding-top: 4px;
   padding-bottom: 8px;
 }
+
+/* Host owns board setup/import; DSL owns constraints. Keep native drawing,
+   manual answers, undo/redo, transform, screenshot and share. Elements stay in
+   the vendor DOM because upstream initialization still references their IDs. */
+html.studio-embed #newboard,
+html.studio-embed #duplicate,
+html.studio-embed #edit_bg_image,
+html.studio-embed #input_sudoku,
+html.studio-embed #input_url,
+html.studio-embed #constraints,
+html.studio-embed #constraints_settings_opt,
+html.studio-embed #constraints_settings_opt + .select2-container {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  html.studio-embed #buttons { width: auto; min-width: 0; margin: 4px; }
+  html.studio-embed .mode_button { white-space: normal; }
+}
+
+/* Host controls share the native toolbar and native button styles. */
+#studio-controls { margin-bottom: 5px; }
+.studio-actions, .studio-variable-row, .studio-variable-form, .studio-settings { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.studio-actions select { max-width: 250px; }
+.studio-actions details { position: relative; }
+.studio-actions summary { cursor: pointer; padding: 2px 6px; }
+.studio-settings { padding: 6px; }
+.studio-settings input, .studio-variable-form input[type=number] { width: 54px; }
+.studio-variable-form input[aria-label="变量名"] { width: 130px; }
+.studio-status { font-size: 12px; margin-top: 4px; overflow-wrap: anywhere; }
+.studio-status:empty { display: none; }
+.studio-status .status-sat { color: #20752b; }
+.studio-status .status-error, .studio-status .status-unsat { color: #ad2525; }
+#studio-variables { font-size: 14px; margin: 6px 10px; padding: 5px 0; border-top: 1px solid #aaa; border-bottom: 1px solid #aaa; }
+.studio-variable-row button[aria-pressed=true] { background: #d5e4fa; outline: 2px solid #3167ae; }
+.studio-variable-form { margin-top: 7px; }
+.studio-hint { color: #555; font-size: 12px; }
+.studio-variable-row { flex-wrap: nowrap; overflow-x: auto; padding: 3px; }
+.studio-variable-row > * { flex-shrink: 0; }
+
+#studio-variables .studio-variable-row > span { display: inline !important; }
+.studio-variable-label { font-weight: normal; }
+#studio-controls input[aria-label="导入链接"] { width: 210px; }

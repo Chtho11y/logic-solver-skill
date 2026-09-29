@@ -62,7 +62,7 @@ class LayerBoard:
     cells: dict[str, CellMarks] = field(default_factory=dict)
     edges: dict[str, EdgeMarks] = field(default_factory=dict)
     regions: dict[str, int] = field(default_factory=dict)
-    outside: dict[str, list[int]] = field(default_factory=dict)
+    outside: dict[str, list[int | list[int]]] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
@@ -207,7 +207,7 @@ def from_layers_json(rows: int, cols: int, layers: list[dict[str, Any]]) -> Laye
                     for idx, value in raw.items():
                         try:
                             i = int(idx)
-                            n = int(value) if not isinstance(value, list) else int(value[0])
+                            n = int(value) if not isinstance(value, list) else [int(v) for v in value]
                         except (TypeError, ValueError):
                             continue
                         if 0 <= i < length:
@@ -215,7 +215,7 @@ def from_layers_json(rows: int, cols: int, layers: list[dict[str, Any]]) -> Laye
                     board.outside[side] = arr
                 elif isinstance(raw, list):
                     board.outside[side] = [
-                        int(v) if v is not None and v != "" else -1 for v in raw
+                        ([int(n) for n in v] if isinstance(v, list) else int(v)) if v is not None and v != "" else -1 for v in raw
                     ]
             continue
         if element in _CELL_ATTR:
