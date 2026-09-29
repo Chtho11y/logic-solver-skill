@@ -84,6 +84,8 @@ export interface PuzzleSpec {
   layers: LayerSpec[];
   params: Record<string, unknown>;
   notes: string;
+  partial?: boolean;
+  unencodedClues?: string[];
   /** Only present on the single-puzzle endpoint. */
   source?: string;
 }
@@ -93,7 +95,7 @@ export interface Instance {
   rows: number;
   cols: number;
   /** variable name -> point key -> value */
-  clues: Record<string, Record<PointKey, number>>;
+  clues: Record<string, Record<PointKey, number | number[]>>;
   /** cell key -> region id */
   regions: Record<PointKey, number>;
   params: Record<string, unknown>;

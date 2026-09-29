@@ -63,6 +63,10 @@ def solve_instance(
         "constraints": result.constraint_count,
         "debug": result.debug,
         "backend": result.backend,
+        "partial": spec.partial,
+        "ruleNotes": spec.notes,
+        "unencodedClues": list(spec.unencoded_clues),
+        "sourceModified": source is not None and source != spec.source,
     }
     if result.error_line is not None:
         payload["errorLine"] = result.error_line
@@ -81,7 +85,7 @@ def solve_payload(payload: dict) -> dict[str, Any]:
     instance = Instance.from_json(payload["instance"])
     drawing_constraints = []
     if payload.get("spec") is not None:
-        spec = PuzzleSpec.from_json(payload["spec"], source=payload.get("source") or "")
+        spec = PuzzleSpec.from_json(payload["spec"], source=payload["spec"].get("source") or "")
         names = [variable.name for variable in spec.variables]
         if len(names) != len(set(names)) or any(name.startswith("__") or not re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", name) for name in names):
             raise ValueError("Variable names must be unique identifiers")

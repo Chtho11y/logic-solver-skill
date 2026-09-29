@@ -405,6 +405,11 @@ def _decode_number(board: LayerBoard, grid: PenpaGrid, data: dict) -> None:
         raw, _style, submode = (list(entry) + ["", 1, "1"])[:3]
         kind, payload = _apply_cell(board, grid, int(index))
         text = "" if raw is None else str(raw)
+        if str(submode) == "4" and kind == "cell":
+            # Penpa's Tapa submode stores one digit/question mark per entry.
+            row, col = payload
+            board.cell(row, col).number_text = " ".join(text)
+            continue
         if submode == "2" or "_" in text:
             number_part, sep, dir_part = text.rpartition("_")
             if not sep:
@@ -646,6 +651,8 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
             pu_q["number"][index] = [f"{prefix}_{suffix}", 1, "2"]
         elif mark.number is not None:
             pu_q["number"][index] = [str(mark.number), 1, "1"]
+        elif mark.number_text:
+            pu_q["number"][index] = [mark.number_text, 1, "1"]
         if mark.circle:
             pu_q["symbol"][index] = [int(mark.circle), "circle_M", 1]
         elif mark.star:

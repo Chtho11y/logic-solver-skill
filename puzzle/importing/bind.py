@@ -29,7 +29,7 @@ def bind_instance(
     """Return an instance JSON dict ready for :class:`Instance.from_json`."""
 
     key = puzzle_key or spec.key
-    clues: dict[str, dict[str, int]] = {}
+    clues: dict[str, dict[str, int | list[int]]] = {}
     regions: dict[str, int] = {}
     params: dict[str, Any] = {}
     warnings: list[str] = list(board.warnings)
@@ -113,13 +113,18 @@ def _values_for_layer(
     board: LayerBoard,
     spec: PuzzleSpec,
     used_numbers_for: str | None,
-) -> dict[str, int]:
+) -> dict[str, int | list[int]]:
     element = layer.element
     var_spec = spec.var_spec(layer.var)
     kind = layer.target
     out: dict[str, int] = {}
 
     if element == "number":
+        if layer.options.get("mode") == "list":
+            from .clues import parse_run_clue
+            return {key: parse_run_clue(mark.number_text or str(mark.number))
+                    for key, mark in board.cells.items()
+                    if mark.number_text or mark.number is not None}
         if used_numbers_for and used_numbers_for != layer.var:
             # Second number layer: only keep cells that already have an arrow
             # (Yajilin) or that have not been consumed. Prefer unused cells.

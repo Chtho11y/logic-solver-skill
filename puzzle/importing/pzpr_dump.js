@@ -89,6 +89,7 @@ async function main() {
       c: (c.bx - 1) / 2,
       qnum: c.qnum,
       qnum2: c.qnum2,
+      qnums: c.qnums,
       qdir: c.qdir,
       ques: c.ques,
       qans: c.qans,

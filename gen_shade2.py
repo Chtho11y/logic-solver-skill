@@ -157,8 +157,7 @@ add("circlesquare",
 import "shading"
 
 wall_rule(x)
-# 正方形的必要条件：留白连通组是长方形（无 L 形拐角）。
-is_rect_group(x, 0)
+square_groups(x, 0)
 
 for p in clue_cells(o):
     if o[p] == 2:
@@ -167,9 +166,7 @@ for p in clue_cells(o):
         is_white(x, p)
 ''',
     [S, const("o", "1 = 白圈, 2 = 黑圈")], [circle_layer("o"), SHADE_LAYER],
-    notes="部分实现：涂黑连通 + 无全黑2x2 + 圆圈颜色 + 留白连通组为长方形。"
-          "「长方形必须是正方形（长=宽）」未编码。",
-    status="partial",
+    notes="已编码黑格连通、无黑色 2x2、圆圈颜色及白色连通块为正方形。",
     sample=sample("circlesquare", 6, 6, clues={"o": {"0,0": 2, "2,2": 1}}))
 
 # ------------------------------------------------------- tetrochain (arrows)

@@ -224,7 +224,7 @@ export function App() {
     <div className="studio-group">
       <select aria-label="预设" value={preset} onChange={e => setPreset(e.target.value)}>
         <option value="">选择预设…</option>
-        {puzzles.map(p => <option key={p.key} value={p.key}>{p.zh || p.en} · {p.key}</option>)}
+        {puzzles.map(p => <option key={p.key} value={p.key}>{p.zh || p.en} · {p.key}{p.partial ? " · 部分实现" : ""}</option>)}
       </select>
       <button title="载入预设的变量、规则和样例，替换当前工作区" disabled={!preset || loading || !ready} onClick={importPreset}>导入预设</button>
       {sample && <button title="重新载入该预设的样例题目" disabled={loading} onClick={() => loadInstance(spec, sample)}>载入样例</button>}
@@ -241,8 +241,13 @@ export function App() {
       </div>
     </div>
     <div className="studio-status" role="status" aria-live="polite">
+      {spec.key !== "custom" && <span className={`preset-note${spec.partial ? " partial" : ""}`} title={spec.notes}>
+        {spec.partial ? `部分实现：${spec.notes.replace(/^部分实现[：:]?\s*/, "")}` : "预设规则已编码，未代表完整验收。"}
+        {!!spec.unencodedClues?.length && ` 未编码线索：${spec.unencodedClues.join("、")}。`}
+        {dslSource !== originalSource && " 规则已修改。"}
+      </span>}
       {note}
-      {result && <span className={`status-${result.status}`}>{result.status === "sat" ? "✓ 有解" : result.status === "unsat" ? "✗ 无解" : result.message || result.status}{result.constraints ? ` · ${result.constraints} 约束` : ""}</span>}
+      {result && <span className={`status-${result.status}`}>{result.status === "sat" ? "✓ 满足当前已编码规则；未检查唯一性" : result.status === "unsat" ? "✗ 当前规则无解" : result.message || result.status}{result.constraints ? ` · ${result.constraints} 约束` : ""}</span>}
     </div>
   </>;
   const variableControls = <>

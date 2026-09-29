@@ -66,9 +66,9 @@ class Variable:
     kind: PointKind = PointKind.CELL
     var_type: VarType = VarType.NORMAL
     domain: tuple[int, int] | None = None
-    givens: dict[Point, int] = field(default_factory=dict)
+    givens: dict[Point, int | list[int]] = field(default_factory=dict)
 
-    def with_givens(self, givens: dict[Point, int]) -> "Variable":
+    def with_givens(self, givens: dict[Point, int | list[int]]) -> "Variable":
         return Variable(self.name, self.kind, self.var_type, self.domain, dict(givens))
 
 

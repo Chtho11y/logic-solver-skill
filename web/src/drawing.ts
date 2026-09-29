@@ -316,7 +316,9 @@ export function drawingFromGenericLayers(
     }
     const tool = (layer.element === "shade" ? "shade" : layer.element) as DrawTool;
     if (!DRAW_TOOLS.includes(tool) || tool === "region" || tool === "outside") continue;
-    const values = asPointValues(layer.values);
+    const values: Record<string, number | string> = tool === "number" || tool === "text"
+      ? Object.fromEntries(Object.entries(layer.values).filter(([, value]) => typeof value === "number" || typeof value === "string")) as Record<string, number | string>
+      : asPointValues(layer.values);
     if (!Object.keys(values).length) continue;
     d.marks[tool] = { ...(d.marks[tool] ?? {}), ...values };
   }

@@ -4,8 +4,7 @@ import "shading"
 
 def circlesquare(x, o):
     wall_rule(x)
-    # 正方形的必要条件：留白连通组是长方形（无 L 形拐角）。
-    is_rect_group(x, 0)
+    square_groups(x, 0)
 
     for p in clue_cells(o):
         if o[p] == 2:

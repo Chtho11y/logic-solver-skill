@@ -156,6 +156,14 @@ def width_one(x, v):
         eq(x, p, v) => n_adj4(x, p, v) <= 2
 
 
+def square_groups(x, v):
+    # First force rectangles, then compare width and height of each component.
+    is_rect_group(x, v)
+    let ids = cc_id(x)
+    for p in cells():
+        eq(x, p, v) => num_eq(ids[row(row_of(p))], ids[p]) == num_eq(ids[col(col_of(p))], ids[p])
+
+
 # -- shapes made of same-coloured cells ---------------------------------------
 
 def endpoint_count(x, v):

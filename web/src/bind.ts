@@ -24,7 +24,7 @@ export function drawingParams(drawing: Drawing, spec: PuzzleSpec): Record<string
 }
 
 export function bindDrawing(drawing: Drawing, spec: PuzzleSpec): Instance {
-  const clues: Record<string, Record<string, number>> = {};
+  const clues: Instance["clues"] = {};
   const params = drawingParams(drawing, spec);
 
   let regions = { ...drawing.regions };
@@ -87,9 +87,17 @@ export function valuesForLayer(
   layer: LayerSpec,
   drawing: Drawing,
   usedNumbersFor: string | null,
-): Record<string, number> {
+): Record<string, number | number[]> {
   const element = layer.element as DrawTool;
   if (element === "number") {
+    if (layer.options?.mode === "list") {
+      return Object.fromEntries(Object.entries(drawing.marks.number ?? {}).map(([key, value]) => {
+        const tokens = String(value).trim().split(/[\s,]+/);
+        if (tokens.length > 4 || tokens.some(t => !/^(\?|[0-8])$/.test(t)) || (tokens.includes("0") && tokens.length !== 1))
+          throw new Error("段长线索请输入 0…8 或 ?，多个线索用空格分隔；0 必须单独使用");
+        return [key, tokens.map(t => t === "?" ? -1 : Number(t))];
+      }));
+    }
     const nums = numericMarks(drawing.marks.number);
     if (usedNumbersFor && usedNumbersFor !== layer.var) {
       const arrows = drawing.marks.arrow ?? {};
@@ -166,7 +174,9 @@ export function instanceToDrawing(instance: Instance, spec: PuzzleSpec): Drawing
     if (!DRAW_TOOLS.includes(tool)) continue;
     const raw = instance.clues[layer.var] ?? {};
     const values = tool === "circle" && Object.hasOwn(layer.palette ?? {}, "0")
-      ? Object.fromEntries(Object.entries(raw).map(([key, value]) => [key, value + 1])) : raw;
+      ? Object.fromEntries(Object.entries(raw).map(([key, value]) => [key, Number(value) + 1]))
+      : Object.fromEntries(Object.entries(raw).map(([key, value]) => [key,
+          Array.isArray(value) ? value.map(n => n === -1 ? "?" : n).join(" ") : value]));
     if (!Object.keys(values).length) continue;
     drawing.marks[tool] = { ...(drawing.marks[tool] ?? {}), ...values };
   }

@@ -402,73 +402,49 @@ class CspuzModel(ConstraintModel):
             return self._vertices_connected_primitive(flags, edge_list)
         return self._vertices_connected_expanded(flags, edge_list)
 
-    def _vertices_connected_primitive(
-        self, flags: list, edges: list[tuple[int, int]]
-    ) -> Any:
-        from cspuz.expr import BoolExpr, Op
-
-        operands: list[Any] = [len(flags), len(edges)]
-        operands.extend(flags)
+    @staticmethod
+    def _graph(n: int, edges: list[tuple[int, int]]):
+        from cspuz.graph import Graph
+        graph = Graph(n)
         for u, v in edges:
-            operands.extend((u, v))
-        return BoolExpr(Op.GRAPH_ACTIVE_VERTICES_CONNECTED, operands)
+            graph.add_edge(u, v)
+        return graph
 
-    def _vertices_connected_expanded(
-        self, flags: list, edges: list[tuple[int, int]]
-    ) -> Any:
-        n = len(flags)
-        adj: list[list[int]] = [[] for _ in range(n)]
-        for u, v in edges:
-            adj[u].append(v)
-            adj[v].append(u)
-        rank = [self.Int(f"avc#rank#{i}", 0, max(0, n - 1)) for i in range(n)]
-        is_root = [self.Int(f"avc#root#{i}", 0, 1) for i in range(n)]
-        parts = []
-        for i in range(n):
-            active = flags[i]
-            root = is_root[i] == 1
-            parts.append(self.Implies(root, active))
-            choices = [root]
-            for j in adj[i]:
-                choices.append(self.And(flags[j], rank[j] < rank[i]))
-            parts.append(self.Implies(active, self.Or(*choices)))
-        parts.append(self.Sum([self.If(is_root[i] == 1, 1, 0) for i in range(n)]) <= 1)
-        return self.And(*parts)
+    def _graph_constraint(self, fn, *args, **kwargs):
+        """Capture public cspuz helpers as an expression, without posting it early.
 
-    def edges_single_cycle(
-        self,
-        is_active: Any,
-        pairs: Any,
-        n_vertices: int,
-        *,
-        nonempty: bool = True,
-    ) -> Any:
-        """Selected edges form exactly one simple cycle (or none, if allowed)."""
+        Auxiliary variables belong to the same solver. Positive guards remain
+        with the caller. This does NOT reify a graph predicate: negating witness
+        constraints is not its logical complement. DSL edge predicates retain
+        their separate reifiable encoding on Z3 for that reason.
+        """
+        start = len(self.solver.constraints)
+        try:
+            fn(self.solver, *args, **kwargs)
+            return self.And(self.solver.constraints[start:])
+        finally:
+            del self.solver.constraints[start:]
 
+    def _vertices_connected_primitive(self, flags, edges):
+        return self._connected_constraint(flags, edges, True)
+
+    def _vertices_connected_expanded(self, flags, edges):
+        return self._connected_constraint(flags, edges, False)
+
+    def _connected_constraint(self, flags, edges, native):
+        from cspuz.graph import active_vertices_connected
+        return self._graph_constraint(active_vertices_connected, flags,
+                                      self._graph(len(flags), edges), use_graph_primitive=native)
+
+    def edges_single_cycle(self, is_active, pairs, n_vertices, *, nonempty=True):
+        from cspuz.graph import active_edges_single_cycle
         flags = [self._bool_like(flag) for flag in is_active]
-        edge_pairs = [(int(u), int(v)) for u, v in pairs]
-        n = int(n_vertices)
-        if n == 0:
-            return self.BoolVal(not nonempty)
-        incident: list[list[int]] = [[] for _ in range(n)]
-        for eid, (u, v) in enumerate(edge_pairs):
-            incident[u].append(eid)
-            incident[v].append(eid)
-        degree_ok = []
-        passed = []
-        for vertex in range(n):
-            if incident[vertex]:
-                deg = self.Sum([self.If(flags[eid], 1, 0) for eid in incident[vertex]])
-            else:
-                deg = 0
-            degree_ok.append(self.Or(deg == 0, deg == 2))
-            passed.append(deg == 2)
-        connected = self.vertices_connected(flags, _line_graph_pairs(incident))
-        parts = list(degree_ok)
-        parts.append(connected)
-        if nonempty:
-            parts.append(self.Sum([self.If(flag, 1, 0) for flag in passed]) >= 1)
-        return self.And(*parts)
+        if not flags:
+            return not nonempty
+        constraint = self._graph_constraint(
+            active_edges_single_cycle, flags, self._graph(n_vertices, list(pairs)),
+            use_graph_primitive=self.features.graph_vertex_connected)
+        return self.And(constraint, self.Or(flags)) if nonempty else constraint
 
     def edges_connected(
         self,
@@ -516,7 +492,7 @@ class CspuzModel(ConstraintModel):
         if self.features.graph_vertex_connected or shape is None:
             complement = [self.Not(flag) for flag in flags]
             return self.And(isolated, self.vertices_connected(complement, edge_pairs))
-        return self.And(isolated, self._blacks_do_not_segment(flags, shape))
+        return self._blacks_do_not_segment(flags, shape)
 
     def graph_division(
         self,
@@ -548,67 +524,18 @@ class CspuzModel(ConstraintModel):
             return self._graph_division_primitive(sizes, edge_list, borders)
         return self._graph_division_expanded(sizes, edge_list, borders)
 
-    def _graph_division_primitive(
-        self,
-        sizes: list,
-        edges: list[tuple[int, int]],
-        borders: list,
-    ) -> Any:
-        from cspuz.expr import BoolExpr, Op
+    def _graph_division_primitive(self, sizes, edges, borders):
+        return self._division_constraint(sizes, edges, borders, True)
 
-        operands: list[Any] = [len(sizes), len(edges)]
-        operands.extend(sizes)
-        for u, v in edges:
-            operands.extend((u, v))
-        operands.extend(borders)
-        return BoolExpr(Op.GRAPH_DIVISION, operands)
+    def _graph_division_expanded(self, sizes, edges, borders):
+        return self._division_constraint(sizes, edges, borders, False)
 
-    def _graph_division_expanded(
-        self,
-        sizes: list,
-        edges: list[tuple[int, int]],
-        borders: list,
-    ) -> Any:
-        """Port of cspuz ``_division_connected_variable_groups`` plus borders."""
-
-        n = len(sizes)
-        m = len(edges)
-        incident: list[list[tuple[int, int]]] = [[] for _ in range(n)]
-        for eid, (u, v) in enumerate(edges):
-            incident[u].append((v, eid))
-            incident[v].append((u, eid))
-        group_id = [self.Int(f"div#id#{i}", 0, n - 1) for i in range(n)]
-        rank = [self.Int(f"div#rank#{i}", 0, n - 1) for i in range(n)]
-        active = [self.solver.bool_var() for _ in range(m)]
-        downstream = [self.Int(f"div#down#{i}", 1, n) for i in range(n)]
-        total = [self.Int(f"div#tot#{i}", 1, n) for i in range(n)]
-        parts: list[Any] = []
-        for i in range(n):
-            is_root = rank[i] == 0
-            parts.append(self.Implies(is_root, group_id[i] == i))
-            incoming = []
-            for neighbour, eid in incident[i]:
-                parts.append(self.Implies(active[eid], rank[neighbour] != rank[i]))
-                incoming.append(self.And(active[eid], rank[neighbour] < rank[i]))
-            parts.append(self._count_true(incoming) == self.If(is_root, 0, 1))
-            child_sizes = [
-                self.If(self.And(active[eid], rank[neighbour] > rank[i]), downstream[neighbour], 0)
-                for neighbour, eid in incident[i]
-            ]
-            parts.append(self.Sum(child_sizes) + 1 == downstream[i])
-            parts.append(downstream[i] <= total[i])
-            parts.append(self.Implies(is_root, downstream[i] == total[i]))
-            parts.append(total[i] == sizes[i])
-        for eid, (u, v) in enumerate(edges):
-            parts.append(self.Implies(active[eid], group_id[u] == group_id[v]))
-            parts.append(self.Implies(active[eid], total[u] == total[v]))
-            parts.append(borders[eid] == (group_id[u] != group_id[v]))
-        return self.And(*parts) if parts else self.BoolVal(True)
-
-    def _count_true(self, flags: list) -> Any:
-        if not flags:
-            return 0
-        return self.Sum([self.If(flag, 1, 0) for flag in flags])
+    def _division_constraint(self, sizes, edges, borders, native):
+        from cspuz.graph import division_connected_variable_groups_with_borders
+        return self._graph_constraint(
+            division_connected_variable_groups_with_borders,
+            group_size=sizes, is_border=borders,
+            graph=self._graph(len(sizes), edges), use_graph_primitive=native)
 
     def _vertices_not_adjacent(self, flags: list, pairs: list[tuple[int, int]]) -> Any:
         if not pairs:
@@ -617,39 +544,13 @@ class CspuzModel(ConstraintModel):
             *[self.Not(self.And(flags[u], flags[v])) for u, v in pairs]
         )
 
-    def _blacks_do_not_segment(self, flags: list, shape: tuple[int, int]) -> Any:
-        """Port of cspuz ``active_vertices_not_adjacent_and_not_segmenting``."""
-
-        height, width = int(shape[0]), int(shape[1])
-        if height * width != len(flags):
-            raise BackendError(
-                "island encoding needs one flag per cell in row-major order"
-            )
-        n = height * width
-        rank = [self.Int(f"island#rank#{i}", 0, max(0, (n - 1) // 2)) for i in range(n)]
-        parts = []
-        for y in range(height):
-            for x in range(width):
-                i = y * width + x
-                less = []
-                touches_outside = False
-                for dy in (-1, 1):
-                    for dx in (-1, 1):
-                        y2, x2 = y + dy, x + dx
-                        if 0 <= y2 < height and 0 <= x2 < width:
-                            j = y2 * width + x2
-                            less.append(self.And(rank[j] < rank[i], flags[j]))
-                            if (y2, x2) < (y, x):
-                                parts.append(rank[j] != rank[i])
-                        else:
-                            touches_outside = True
-                limit = 0 if touches_outside else 1
-                if less:
-                    count = self.Sum([self.If(term, 1, 0) for term in less])
-                else:
-                    count = 0
-                parts.append(self.Implies(flags[i], count <= limit))
-        return self.And(*parts) if parts else self.BoolVal(True)
+    def _blacks_do_not_segment(self, flags, shape):
+        from cspuz.array import BoolArray2D
+        from cspuz.graph import active_vertices_not_adjacent_and_not_segmenting
+        if shape[0] * shape[1] != len(flags):
+            raise BackendError("island encoding needs one flag per cell in row-major order")
+        return self._graph_constraint(active_vertices_not_adjacent_and_not_segmenting,
+                                      BoolArray2D(flags, shape))
 
 
 def _flatten_bool_constraints(constraints: Any) -> list:

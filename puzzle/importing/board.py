@@ -119,7 +119,10 @@ class LayerBoard:
             for key, mark in self.cells.items()
             if mark.number is not None
         }
-        add("number", "number", "cell", {k: int(v) for k, v in numbers.items()})
+        add("number", "number", "cell", {
+            **{k: int(v) for k, v in numbers.items()},
+            **{k: mark.number_text for k, mark in self.cells.items() if mark.number_text},
+        })
         add("circle", "circle", "cell", collect("circle"))
         add("square", "square", "cell", collect("square"))
         add("triangle", "triangle", "cell", collect("triangle"))

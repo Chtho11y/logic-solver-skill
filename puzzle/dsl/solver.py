@@ -47,8 +47,8 @@ class SolveResult:
     status: str
     message: str = ""
     constraint_count: int = 0
-    # name -> {point: int}
-    values: dict[str, dict[Point, int]] = field(default_factory=dict)
+    # Constant list clues are echoed unchanged alongside scalar solutions.
+    values: dict[str, dict[Point, int | list[int]]] = field(default_factory=dict)
     # name -> PointKind, for echoing onto the board.
     kinds: dict[str, PointKind] = field(default_factory=dict)
     error_line: int | None = None
@@ -171,13 +171,16 @@ def solve(
     count = len(compiled.constraints)
 
     if satisfiable:
-        values: dict[str, dict[Point, int]] = {}
+        values: dict[str, dict[Point, int | list[int]]] = {}
         kinds: dict[str, PointKind] = {}
         missing: list[str] = []
 
-        def read(name: str, quantities: dict) -> dict[Point, int]:
-            out: dict[Point, int] = {}
+        def read(name: str, quantities: dict) -> dict[Point, int | list[int]]:
+            out: dict[Point, int | list[int]] = {}
             for point, term in quantities.items():
+                if isinstance(term, list):
+                    out[point] = list(term)
+                    continue
                 value = compiled.model.value(term)
                 if value is None:
                     missing.append(f"{name}[{point}]")

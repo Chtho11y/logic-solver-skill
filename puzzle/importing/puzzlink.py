@@ -171,6 +171,9 @@ def layerboard_from_pzpr(dumped: dict) -> LayerBoard:
             continue
         mark = board.cell(row, col)
         qnum = cell.get("qnum")
+        if key == "tapa" and cell.get("qnums"):
+            mark.number_text = " ".join("?" if int(v) == -2 else str(int(v)) for v in cell["qnums"])
+            continue
         qdir = int(cell.get("qdir") or 0)
         ques = int(cell.get("ques") or 0)
         if qdir in {1, 2, 3, 4}:

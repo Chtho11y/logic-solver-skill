@@ -125,6 +125,11 @@ class PuzzleSpec:
     params: dict[str, Any] = field(default_factory=dict)
     source: str = ""
     notes: str = ""
+    unencoded_clues: tuple[str, ...] = ()
+
+    @property
+    def partial(self) -> bool:
+        return bool(self.unencoded_clues) or "部分实现" in self.notes
 
     @classmethod
     def from_json(cls, data: dict, source: str = "") -> "PuzzleSpec":
@@ -144,6 +149,7 @@ class PuzzleSpec:
             params=dict(data.get("params", {})),
             source=source,
             notes=data.get("notes", ""),
+            unencoded_clues=tuple(data.get("unencodedClues", ())),
         )
 
     def to_json(self, include_source: bool = False) -> dict:
@@ -162,6 +168,8 @@ class PuzzleSpec:
             "layers": [layer.to_json() for layer in self.layers],
             "params": self.params,
             "notes": self.notes,
+            "unencodedClues": list(self.unencoded_clues),
+            "partial": self.partial,
         }
         if include_source:
             out["source"] = self.source
@@ -181,8 +189,8 @@ class Instance:
     puzzle: str
     rows: int
     cols: int
-    # variable name -> {point key -> integer value}
-    clues: dict[str, dict[str, int]] = field(default_factory=dict)
+    # Constant clues may contain lists; solver variable givens remain integers.
+    clues: dict[str, dict[str, int | list[int]]] = field(default_factory=dict)
     # per-cell region id ("r,c" -> id)
     regions: dict[str, int] = field(default_factory=dict)
     params: dict[str, Any] = field(default_factory=dict)
@@ -221,13 +229,18 @@ def build_variables(spec: PuzzleSpec, instance: Instance, grid: Grid) -> list[Va
 
     out: list[Variable] = []
     for var_spec in spec.variables:
-        givens: dict[Point, int] = {}
+        givens: dict[Point, int | list[int]] = {}
         for raw, value in instance.clues.get(var_spec.name, {}).items():
             if value is None:
                 continue
             point = parse_point(raw, var_spec.kind)
             if grid.contains(var_spec.kind, point):
-                givens[point] = int(value)
+                if isinstance(value, list):
+                    if var_spec.var_type is not VarType.CONSTANT:
+                        raise ValueError("Only constant clues can contain a list")
+                    givens[point] = [int(item) for item in value]
+                else:
+                    givens[point] = int(value)
         out.append(Variable(var_spec.name, var_spec.kind, var_spec.var_type, var_spec.domain, givens))
     return out
 

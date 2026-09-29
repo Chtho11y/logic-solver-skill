@@ -97,6 +97,8 @@ html.studio-embed #download_link { position: absolute; }
 .studio-status:empty { display: none; }
 .studio-status > span { margin-left: 8px; font-weight: 600; }
 .studio-status .status-sat { color: #20752b; }
+.studio-status .preset-note { font-weight: normal; }
+.studio-status .preset-note.partial { color: #805000; }
 .studio-status .status-error, .studio-status .status-unsat { color: #ad2525; }
 
 html.studio-embed #top_button button,

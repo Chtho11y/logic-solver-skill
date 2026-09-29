@@ -713,6 +713,118 @@ def _make_connected(deltas, label: str):
     return fn
 
 
+def _fn_connected_in(ctx, args, pos):
+    if len(args) != 3 or not isinstance(args[2], RegionValue) or args[2].kind != PointKind.CELL:
+        raise CompileError("connected_in(var, value, region) expects a cell region", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "connected_in", pos)
+    value = _as_int(args[1], "connected_in")
+    cells = sort_points(args[2].points)
+    if any(p not in var.quantities for p in cells):
+        raise CompileError("connected_in: region contains undefined cells", pos.line, pos.col)
+    return ctx.memo(("connected_in", var.name, value, cells), lambda: ctx.ops.vertices_connected(
+        [var.quantities[p] == value for p in cells], _grid_edges(cells, _CC4)))
+
+
+def _fn_ring8(ctx, args, pos):
+    if len(args) != 2:
+        raise CompileError("ring8(var, cell) takes two arguments", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "ring8", pos)
+    r, c = _expect_cell(args[1], "ring8", pos)
+    # Keep out-of-board positions as zeros: dropping them would join runs.
+    return [var.quantities.get((r + dr, c + dc), 0) for dr, dc in
+            [(-1, -1), (-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1)]]
+
+
+def _fn_cyclic_runs(ctx, args, pos, cyclic=True):
+    from .patterns import cyclic_run_masks
+
+    if len(args) != 2:
+        raise CompileError("cyclic_runs(list, lengths) takes two arguments", pos.line, pos.col)
+    values = flatten_scalars(args[0])
+    lengths = tuple(_as_int(v, "cyclic_runs") for v in flatten_scalars(args[1]))
+    try:
+        masks = cyclic_run_masks(len(values), lengths, cyclic)
+    except ValueError as exc:
+        raise CompileError(str(exc), pos.line, pos.col) from exc
+    return ctx.ops.Or([ctx.ops.And([v == ((mask >> i) & 1) for i, v in enumerate(values)]) for mask in masks])
+
+
+def _fn_unordered_runs(ctx, args, pos):
+    return _fn_cyclic_runs(ctx, args, pos, cyclic=False)
+
+
+def _fn_same_shape(ctx, args, pos):
+    if not 3 <= len(args) <= 5:
+        raise CompileError("same_shape(var, cell, cell, rotate=true, reflect=true)", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "same_shape", pos)
+    p = _expect_cell(args[1], "same_shape", pos)
+    q = _expect_cell(args[2], "same_shape", pos)
+    options = args[3:] + [True] * (5 - len(args))
+    if any(not isinstance(v, bool) for v in options):
+        raise CompileError("same_shape options must be literal booleans", pos.line, pos.col)
+    rotate, reflect = options
+    cc = _value_cc(ctx, var, _CC4)
+    ids, cells = cc["id"], cc["cells"]
+    if p not in ids or q not in ids:
+        raise CompileError("same_shape requires defined cells", pos.line, pos.col)
+    if p == q:
+        return True
+
+    def build():
+        transforms = []
+        for mirror in ((1, -1) if reflect else (1,)):
+            for turns in range(4 if rotate else 1):
+                offsets = []
+                for r, c in cells:
+                    dr, dc = r - p[0], (c - p[1]) * mirror
+                    for _ in range(turns):
+                        dr, dc = dc, -dr
+                    offsets.append((dr, dc))
+                transforms.append(offsets)
+        matches = []
+        # Map p to each possible cell of q's component. Comparing the complete
+        # masks (including cells outside the transformed board) prevents subset matches.
+        for anchor in cells:
+            for offsets in transforms:
+                image = {(anchor[0] + dr, anchor[1] + dc): a for a, (dr, dc) in zip(cells, offsets)}
+                terms = [ids[anchor] == ids[q]]
+                for b in set(cells) | image.keys():
+                    a = image.get(b)
+                    left = ids[a] == ids[p] if a is not None else False
+                    right = ids[b] == ids[q] if b in ids else False
+                    terms.append(ctx.ops.Not(ctx.ops.Xor(left, right)))
+                matches.append(ctx.ops.And(terms))
+        return ctx.ops.Or(matches)
+    return ctx.memo(("same_shape", var.name, p, q, rotate, reflect), build)
+
+
+def _fn_cc_contacts(ctx, args, pos):
+    if not 3 <= len(args) <= 4:
+        raise CompileError("cc_contacts(var, cell, value, diagonal=true)", pos.line, pos.col)
+    var = _expect_cell_var(args[0], "cc_contacts", pos)
+    p = _expect_cell(args[1], "cc_contacts", pos)
+    value = _as_int(args[2], "cc_contacts")
+    diagonal = args[3] if len(args) == 4 else True
+    if not isinstance(diagonal, bool):
+        raise CompileError("cc_contacts diagonal must be a literal boolean", pos.line, pos.col)
+    cc = _value_cc(ctx, var, _CC4)
+    ids, cells = cc["id"], cc["cells"]
+    if p not in ids:
+        raise CompileError("cc_contacts requires a defined cell", pos.line, pos.col)
+    def build():
+        pairs = _grid_edges(cells, _CC8 if diagonal else _CC4)
+        counts = []
+        for root in cells:
+            touches = ctx.ops.Or([ctx.ops.Or(
+                ctx.ops.And(ids[cells[a]] == ids[p], ids[cells[b]] == ids[root]),
+                ctx.ops.And(ids[cells[b]] == ids[p], ids[cells[a]] == ids[root])) for a, b in pairs])
+            counts.append(ctx.ops.If(ctx.ops.And(
+                ids[root] == root[0] * ctx.grid.cols + root[1],
+                ids[root] != ids[p], var.quantities[root] == value, touches), 1, 0))
+        return ctx.ops.Sum(counts)
+    return ctx.memo(("cc_contacts", var.name, p, value, diagonal), build)
+
+
 def _build_value_cc(ctx, var: VarValue, deltas) -> dict:
     """Encode maximal same-valued connected components of a cell variable.
 
@@ -1422,6 +1534,30 @@ AGGREGATE_BUILTINS: dict[str, BuiltinFunction] = {
         "exactly", _fn_exactly, signature="exactly(list, k)", doc="Exactly k booleans hold."
     ),
     # -- connectivity of equal-valued cells -----------------------------
+    "connected_in": BuiltinFunction(
+        "connected_in", _fn_connected_in, signature="connected_in(var, value, region)",
+        doc="Cells holding value are connected within the given region; outside paths do not count. Empty allowed.",
+    ),
+    "ring8": BuiltinFunction(
+        "ring8", _fn_ring8, signature="ring8(var, cell)",
+        doc="Eight clockwise neighbours from NW, with zero for positions outside the variable.",
+    ),
+    "cyclic_runs": BuiltinFunction(
+        "cyclic_runs", _fn_cyclic_runs, signature="cyclic_runs(list, lengths)",
+        doc="Unordered cyclic runs of ones; -1 is a wildcard. [0] means empty, [-1] also permits empty. At most 12 positions.",
+    ),
+    "unordered_runs": BuiltinFunction(
+        "unordered_runs", _fn_unordered_runs, signature="unordered_runs(list, lengths)",
+        doc="Unordered linear runs, with the same wildcard rules as cyclic_runs. At most 12 positions.",
+    ),
+    "same_shape": BuiltinFunction(
+        "same_shape", _fn_same_shape, signature="same_shape(var, cell, cell, rotate=true, reflect=true)",
+        doc="Whether the two 4-connected components are congruent. Optional rotations/reflections; translation always allowed. Intended for small boards.",
+    ),
+    "cc_contacts": BuiltinFunction(
+        "cc_contacts", _fn_cc_contacts, signature="cc_contacts(var, cell, value, diagonal=true)",
+        doc="Number of distinct other 4-connected components of value touching this cell's component. Counts groups, not contact points.",
+    ),
     "connected": BuiltinFunction(
         "connected", _make_connected(_CC4, "connected"), signature="connected(var, value)",
         doc="Cells holding value form at most one 4-connected group (empty is "

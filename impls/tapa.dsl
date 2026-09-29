@@ -6,5 +6,7 @@ def tapa(x, n):
     wall_rule(x)
     # 提示格自身永远不涂黑。
     clue_cells_white(x, n)
+    for p in clue_cells(n):
+        cyclic_runs(ring8(x, p), n[p])
 
 tapa(x, n)

@@ -287,6 +287,8 @@ import "regions"
 
 island_rule(x)
 region_black_count(x, n)
+for reg in regions:
+    connected_in(x, 0, reg)
 
 for ra in regions:
     for rb in regions:
@@ -304,9 +306,7 @@ def doors_between(x, ra, rb):
 ''',
     [S, const("n", "区域内涂黑格数")],
     [num_layer("n", "区域内涂黑格数"), SHADE_LAYER, REGION_LAYER], uses_regions=True,
-    notes="部分实现：island_rule + 区域涂黑数 + 相邻区域至多一扇门。"
-          "「每个区域内部的留白也连通」需按区域求连通分量，未编码。",
-    status="partial")
+    notes="已编码黑格不相邻、白格全局及区域内连通、区域黑格数和区域间至多一扇门。")
 
 # ---------------------------------------------------------------- cts
 add("cts",
@@ -354,12 +354,12 @@ import "shading"
 wall_rule(x)
 # 提示格自身永远不涂黑。
 clue_cells_white(x, n)
+for p in clue_cells(n):
+    cyclic_runs(ring8(x, p), n[p])
 ''',
     [S, const("n", "八邻域连续涂黑段长度（可多个）")],
-    [num_layer("n", "八邻域段长"), SHADE_LAYER],
-    notes="部分实现：涂黑连通 + 无全黑2x2 + 提示格留白。"
-          "Tapa 的环形八邻域多段长度（无序、支持问号）未编码。",
-    status="partial")
+    [{**num_layer("n", "八邻域段长"), "options": {"min": 0, "mode": "list"}}, SHADE_LAYER],
+    notes="已编码连通、无黑色 2x2、提示留白及无序环形段长。多个数字用空格分隔，? 表示未知段长；支持 Penpa Tapa 数字模式。")
 
 # ---------------------------------------------------------------- nurimaze
 add("nurimaze",

@@ -251,6 +251,13 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `num_eq(list, value)` | 列表中等于 value 的量的个数 |
 | `at_most(list, k)` / `at_least(list, k)` / `exactly(list, k)` | 计数约束 |
 | `runs(list, lengths)` | 0/1 序列的极大连续 1 段长度依次等于 `lengths` |
+| `cyclic_runs(list, lengths)` | 无序环形段长，首尾相连；最多 12 个位置。`-1` 表示问号；`[0]` 表示全零，单独 `[-1]` 也允许全零 |
+| `unordered_runs(list, lengths)` | 同上，但首尾不相连，适用于短线性序列 |
+| `ring8(var, cell)` | 从左上角顺时针返回八邻域值，盘外位置补 0；不可删除盘外位置，否则会错误连接两段 |
+
+常量线索可以是整数列表，例如实例 `clues.n["1,1"] = [1,2,-1]`，DSL 使用 `n[p]` 读取。
+Tapa 在 Penpa 的 Number → Tapa 子模式输入 `12?`，或 Normal 模式输入 `1 2 ?`；列表中 `-1` 显示为 `?`。
+JSON 中 `0` 只能单独构成提示。普通待求解变量仍是单个整数，不接受列表作为给定值。
 
 ### 6.6 同值连通分量（Connectivity）
 
@@ -261,6 +268,9 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 |------|------|
 | `connected(var, value)` | 取值为 value 的格子至多形成一个 4-连通组（空盘合法）。所选后端支持 `graph_vertex_connected` 时用原生图算子，否则用只针对该取值的生成树，**不会**构建 `cc_id`/`cc_size` |
 | `connected8(var, value)` | 同上，8-连通（含对角） |
+| `connected_in(var, value, region)` | 仅使用指定区域内的正交边判断连通，不能借道外部；允许空集。OneRoom 逐个区域调用它 |
+| `same_shape(var, cell, cell, rotate=true, reflect=true)` | 比较两个格子所在的四连通同值块的几何形状；平移始终允许，旋转／镜像可分别禁用。与颜色无关，比较整块而非子集。位置参数传入布尔开关 |
+| `cc_contacts(var, cell, value, diagonal=true)` | 与该格所在四连通块接触的、值为 value 的其他四连通块数量；默认含对角接触，同一块接触多次只计一次 |
 | `island_rule(var)` | 涂黑格互不相邻 + 留白连通。`cspuz_core`/`csugar` 上是 `connected(white)` + 正交禁邻；Z3 上用 cspuz 的对角 rank「不分割」编码，不要在原生后端上套那套展开 |
 | `wall_rule(var)` | 涂黑格连通 + 无全黑 2x2；连通部分与 `connected(var, 1)` 相同 |
 | `cc_id(var)` | 每格所在 4-连通同值分量的 id（分量内最小线性下标） |
@@ -268,6 +278,9 @@ primary     := INT | STR | 'true' | 'false' | NAME | '(' expr ')' | '[' [items] 
 | `cc_count(var, value)` | 取值为 value 的分量个数；需要精确组数时用这个，不要用它来写 `connected` |
 | `cc_root(var, cell)` | 该格是否为其分量的代表元 |
 | `cc8_id` / `cc8_size` / `cc8_count` / `cc8_root` | 上述的 8-连通（含对角）版本 |
+
+`same_shape` 枚举变换和对应锚点，`cc_contacts` 枚举接触关系，均适合先在小盘面验证，避免在大盘面每一对格子上调用。
+`import "shading"` 后可调用 `square_groups(x, 0)`，要求所有白色连通块都是正方形。
 
 ### 6.7 回路与路径（Loops）
 

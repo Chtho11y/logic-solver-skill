@@ -15,6 +15,8 @@ def doors_between(x, ra, rb):
 def oneroom(x, n):
     island_rule(x)
     region_black_count(x, n)
+    for reg in regions:
+        connected_in(x, 0, reg)
 
     for ra in regions:
         for rb in regions:

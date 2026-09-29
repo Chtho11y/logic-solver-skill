@@ -240,7 +240,7 @@ class Compiler:
             vtype = getattr(var, "var_type", VarType.NORMAL)
             if vtype is VarType.CONSTANT:
                 quantities = {
-                    p: int(v)
+                    p: [int(item) for item in v] if isinstance(v, list) else int(v)
                     for p, v in getattr(var, "givens", {}).items()
                     if grid.contains(var.kind, p)
                 }

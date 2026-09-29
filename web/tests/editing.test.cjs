@@ -12,8 +12,20 @@ const { text } = buildSync({
 }).outputFiles[0];
 const compiled = { exports: {} };
 new Function('module', 'exports', text)(compiled, compiled.exports);
-const { bindDrawing, instanceToDrawing, emptyDrawing } = compiled.exports;
+const { bindDrawing, instanceToDrawing, emptyDrawing, drawingFromGenericLayers } = compiled.exports;
 const read = (name) => JSON.parse(fs.readFileSync(path.join(root, name), 'utf8'));
+
+test('Tapa: list clues and question marks survive drawing roundtrip', () => {
+  const spec = read('impls/tapa.json');
+  const instance = { puzzle: 'tapa', rows: 3, cols: 3, clues: { n: { '1,1': [1, 2, -1] } }, regions: {}, params: {}, title: '' };
+  const drawing = instanceToDrawing(instance, spec);
+  assert.equal(drawing.marks.number['1,1'], '1 2 ?');
+  assert.deepEqual(bindDrawing(drawing, spec).clues.n, instance.clues.n);
+  const imported = drawingFromGenericLayers([{ id: 'number', element: 'number', target: 'cell', values: { '1,1': '1 2 ?' } }], 3, 3);
+  assert.deepEqual(bindDrawing(imported, spec).clues.n, instance.clues.n);
+  drawing.marks.number['1,1'] = '0 1';
+  assert.throws(() => bindDrawing(drawing, spec), /0/);
+});
 
 for (const key of ['easyasabc', 'fuzuli', 'skyscrapers', 'starbattle']) {
   test(`${key}: preserve sample parameters through drawing and resize`, () => {

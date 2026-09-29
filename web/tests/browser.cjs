@@ -10,11 +10,12 @@ const root = path.resolve(__dirname, '../..');
 const dist = path.join(root, 'web/dist');
 const artifacts = path.join(root, 'web/.artifacts');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const keys = ['easyasabc', 'fuzuli', 'slither', 'simpleloop', 'heyawake', 'fillomino', 'domino-search', 'nonogram', 'akari', 'starbattle', 'yinyang', 'mines'];
+const keys = ['easyasabc', 'fuzuli', 'slither', 'simpleloop', 'heyawake', 'fillomino', 'domino-search', 'nonogram', 'akari', 'starbattle', 'yinyang', 'mines', 'tapa', 'shakashaka'];
 const specs = Object.fromEntries(keys.map((key) => {
   const spec = JSON.parse(read(`impls/${key}.json`));
   spec.layers = spec.layers.map((layer) => ({ palette: {}, options: {}, ...layer }));
   spec.source = read(`impls/${key}.dsl`);
+  spec.partial = Boolean(spec.unencodedClues?.length || spec.notes?.includes('部分实现'));
   return [key, spec];
 }));
 
@@ -355,6 +356,23 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await editor.fill(specs.easyasabc.source);
       await runSolve();
       assert.deepEqual(lastPayload.spec.variables.map(v => v.name), ['x']);
+    });
+
+    await t.test('partial presets explain gaps and Tapa native clues reach the solver', async () => {
+      await preset('shakashaka');
+      assert.ok(await frame.getByText(/部分实现：/).isVisible());
+      await preset('tapa');
+      await button('清空盘面').click();
+      await frame.locator('#mo_number_lb').click();
+      await button('n').click();
+      await frame.evaluate(() => {
+        const k = pu.centerlist.find(i => pu.point[i].use === 1);
+        pu.pu_q.number[k] = ['?', 1, '4'];
+        pu.redraw();
+      });
+      await runSolve();
+      assert.ok(await frame.getByText(/满足当前已编码规则；未检查唯一性/).isVisible());
+      assert.ok(Object.values(lastSolved.values.n).some(value => Array.isArray(value) && value[0] === -1));
     });
 
   } finally {

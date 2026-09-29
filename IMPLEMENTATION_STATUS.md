@@ -10,7 +10,7 @@
 | 规则目录 | 236 | rules.txt |
 | 已有实现 | 130 | 同时有 JSON 与 DSL，占 55.1% |
 | 尚未实现 | 106 | 目录内缺少实现 |
-| 标注部分实现 | 35 | notes 或 unencodedClues 声明缺口 |
+| 标注部分实现 | 32 | notes 或 unencodedClues 声明缺口 |
 | 随附样例 | 109 | 已实现题型中有 sample 的数量 |
 | 缺少随附样例 | 21 | 不等同于没有任何测试案例 |
 | 答案回归案例 | 34 | 覆盖 33 个题型 |
@@ -21,7 +21,7 @@
 
 ## 部分实现
 
-`akichi` `antmill` `circlesquare` `clouds` `coral` `cornerch` `cts` `diamond` `disco` `evolmino` `go` `guidearrow` `hinge` `kuroclone` `lookair` `mochinyoro` `mrtile` `nuribou` `nurimaze` `nuritwin` `oasis` `oneroom` `parquet` `ququ` `sashikabe` `scrin` `shakashaka` `shugaku` `snakeegg` `tapa` `tasquare` `teri` `tetrochain` `tetrochaink` `wittgen`
+`akichi` `antmill` `clouds` `coral` `cornerch` `cts` `diamond` `disco` `evolmino` `go` `guidearrow` `hinge` `kuroclone` `lookair` `mochinyoro` `mrtile` `nuribou` `nurimaze` `nuritwin` `oasis` `parquet` `ququ` `sashikabe` `scrin` `shakashaka` `shugaku` `snakeegg` `tasquare` `teri` `tetrochain` `tetrochaink` `wittgen`
 
 具体缺口以 `impls/<key>.json` 为准，能力规划见 [规则缺口](docs/RULE_GAPS.md)。
 
@@ -42,10 +42,10 @@
 
 ## 待办顺序
 
-1. 补齐 Penpa 特殊标记映射及多变量共享同类工具时的独立显隐；基础答案回填与手工历史保护已具备。
+1. 补齐 Penpa 特殊标记映射；变量独立显隐、答案回填、手工历史保护及 Tapa 多数字线索已具备。
 2. 为已有规则补充真实题答案、非法解反例和唯一性检查，补齐缺失样例。
 3. 将同步 HTTP 求解迁移为可取消的独立进程任务；当前长任务仍阻塞服务。
-4. 统一前后端绑定规则与测试案例，再扩展形状、区域内连通和路径能力。
+4. 验证形状、接触计数与区域内连通的共用能力，再接入剩余部分实现题型；长段长和专用几何模型仍待扩展。
 5. 接入 Web 语言服务，扩充尚未实现的题型。
 
 具体实施顺序及验收标准见 [下一步计划](docs/NEXT_STEPS.md)。
