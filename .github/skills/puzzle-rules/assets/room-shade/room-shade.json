@@ -1,0 +1,21 @@
+{
+  "key": "room-shade",
+  "en": "Room Shade",
+  "zh": "区域涂黑（组合示例）",
+  "category": "自定义",
+  "rule": "涂黑格不能正交相邻，所有白格正交连通。每个给定区域恰有 k 个黑格。数字格留白，数字表示四个正交相邻格中的黑格数。",
+  "defaultRows": 2,
+  "defaultCols": 3,
+  "usesRegions": true,
+  "variables": [
+    {"name": "x", "kind": "cell", "type": "normal", "domain": [0, 1], "doc": "0 = 白格，1 = 黑格"},
+    {"name": "n", "kind": "cell", "type": "constant", "doc": "四邻黑格数；没有数字的格子不填写"}
+  ],
+  "layers": [
+    {"id": "clue_n", "label": "相邻黑格数", "element": "number", "target": "cell", "role": "input", "var": "n", "options": {"min": 0, "max": 4}},
+    {"id": "rooms", "label": "给定区域", "element": "region", "target": "cell", "role": "input", "var": "__regions"},
+    {"id": "answer_x", "label": "涂黑结果", "element": "shade", "target": "cell", "role": "output", "var": "x", "palette": {"1": "#232733"}}
+  ],
+  "params": {"defaults": {"k": 1}},
+  "notes": "自定义组合示例，非标准题型别名。两行各为一个区域；改变 k 后题目可能无解。"
+}

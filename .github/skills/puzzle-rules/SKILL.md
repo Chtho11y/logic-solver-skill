@@ -1,145 +1,87 @@
 ---
 name: puzzle-rules
-description: 'Look up grid-puzzle rules by name (中文/English/pzplus key) or identify a puzzle from a rule description, and implement new rules end-to-end — cspuz-backed solver in the puzzle DSL plus the front-end editor/solution layers. Use whenever the user mentions a logic-puzzle name (数独/数墙/Nurikabe/Masyu/…), asks what a rule means, asks to add or fix a solver under impls/, or asks for a custom/new puzzle rule.'
+description: 在本项目的 Penpa+、变量/图层配置与约束 DSL 框架上，组合、实现并交付自定义或混合逻辑谜题。用于新增规则、扩展预设、把规则描述做成可绘制可求解的工作区，以及修复规则到前端的绑定；单纯询问题规时只做查询，不启动开发流程。
 ---
 
-# Puzzle rules: identify, implement, render
+# 从规则描述交付可用的谜题工作区
 
-This repository solves ~236 grid-puzzle rules (catalogued in `rules.txt`) with a
-constraint DSL lowered through cspuz, and renders them with a puzzle-agnostic layer
-front-end. **Always start with the `puzzle-rules` tool** — never grep
-`rules.txt` by hand and never guess a rule's wording.
+交付目标是用户能**打开页面 → 导入预设 → 选择变量绘制 → 编辑 DSL → 求解 → 查看答案**，并能从文件恢复这套配置。
+默认复用现有前端，通过 spec 定义变量、输入与输出图层；只在缺少通用绘制能力时扩展桥接层。用户仅要求 DSL 或规则解释时，按其范围交付。
 
-All commands run from the repository root and accept `--json`.
+所有项目路径以仓库根目录为基准；先定位含 `puzzle/spec.py`、`web/package.json` 的目录。这个 skill 位于 `.github/skills/puzzle-rules/`。保留正在进行的修改，不为新增题型重建应用。
 
-## 1. Name ⇄ rule
+## 选择最短交付路径
 
-```bash
-python -m tools.puzzle_rules find 数墙            # name (any language) -> rule
-python -m tools.puzzle_rules find nurikabe
-python -m tools.puzzle_rules identify "涂黑格互不相邻且留白连通"   # rule text -> candidates
-python -m tools.puzzle_rules show nurikabe        # rule + spec + variables + layers + DSL
-python -m tools.puzzle_rules list --category 回路I
-python -m tools.puzzle_rules categories           # coverage per category
-python -m tools.puzzle_rules todo                 # rules with no solver yet
-```
-
-`find` matches key / English / Chinese and falls back to rule text; `identify`
-ranks by shared rule wording, so a paraphrase still resolves. A leading `✓`
-means a solver already exists.
-
-## 2. Architecture in one screen
-
-| Path | Role |
+| 请求 | 处理方式 |
 | --- | --- |
-| `rules.txt` | The rule catalogue (tab separated, 8 columns). Source of truth for names. |
-| `puzzle/models.py`, `puzzle/grid.py` | Board geometry: `cell (r,c)`, `corner (r,c)`, `edge ("H"\|"V", r, c)`. |
-| `puzzle/dsl/` | Lexer → parser → compiler → cspuz multi-backend solver. Grammar in `puzzle/dsl/GRAMMAR.md`. `use <backend>` selects the solver; omit it for the best available. |
-| `puzzle/lib/*.dsl` | Shared templates: `core`, `shading`, `regions`, `loops`, `fill`, `outside`. |
-| `puzzle/elements.py` | The generic drawing elements (number/shade/circle/arrow/link/…). |
-| `puzzle/spec.py` | `PuzzleSpec` (variables + layers) and `Instance` (board data). |
-| `puzzle/runner.py`, `puzzle/server.py` | Solve one instance; JSON HTTP API. |
-| `impls/<key>.json` + `<key>.dsl` | One rule: spec + constraints. |
-| `impls/samples/<key>.json` | Sample instance used as the regression test. |
-| `web/src/` | React + Vite front-end; renders **layers**, never puzzles. |
+| 解释现有题规 | 按需运行 `python -m tools.puzzle_rules find <名称>` / `show <key>`；区分目录原规则与当前实现 |
+| 新增可重复使用的自定义/混合规则 | 默认交付 `impls/<key>.json`、同名 `.dsl`、`impls/samples/<key>.json` 和针对性测试；前端自动发现预设 |
+| 临时尝试规则、不加入预设列表 | 提交完整 `spec + source + instance` 给求解 API；交付可保存的文件或请求载荷，不仅把代码留在编辑器中 |
+| 修改既有规则 | 保持兼容的变量含义和图层映射，修改实际 DSL；若由 `gen*.py` 管理，同步生成源 |
+| 当前画布无法表达所需线索/答案 | 先核对原生 Penpa 是否已能绘制，再补通用解码、绑定或回填；详见 [前端契约](references/frontend-contract.md) |
 
-Edge convention: `("H", r, c)` is the edge **above** cell `(r,c)`; `("V", r, c)`
-is the edge **left of** cell `(r,c)`. On the cell lattice an edge stands for the
-link between the two cells it separates, so `"H"` is a *vertical* link.
+## 1. 把自然语言变成可检查的契约
 
-## 3. Implementing a new rule
+用简短说明或表格列出：每条规则、作用范围、输入线索、待求解量、可复用函数、反例。
+特别确认会改变答案的歧义：四邻/八邻、全局/区域内部、恰好/至多、空集、单环/树/单路径、旋转/镜像、提示计数是否包括自身。
+从用户描述与既有数据可确定的部分直接实现；仅询问会改变建模结果的缺失信息，同时继续不依赖它的工作。
 
-```bash
-python -m tools.puzzle_rules show <key>        # 1. read the exact rule text
-python -m tools.puzzle_rules lib               # 2. see which templates already exist
-python -m tools.puzzle_rules builtins          #    ... and the DSL builtins
-python -m tools.scaffold new <key> --rows 8 --cols 8   # 3. create the three stub files
-# 4. edit impls/<key>.json (variables + layers) and impls/<key>.dsl
-#    wrap the rule as def <key>(vars): ... then call it; import only loads defs
-python -m tools.check compile <key>            # 5. fast syntax/shape check
-# 6. add a hand-checked board to tools/samples.py, then
-python -m tools.samples && python -m tools.check solve <key>
+自定义规则以用户定义为准，不强行套入某个标准题型。混合规则应逐条组合；导入两个预设不会自动合并，整套题型函数也可能附带用户没有要求的约束。
+
+## 2. 先组合，再扩展
+
+按需读取 [规则组合与 DSL](references/composition.md)。先查实际可用接口：
+
+```sh
+python -m tools.puzzle_rules lib
+python -m tools.puzzle_rules builtins
 ```
 
-### Choosing variables
+- 优先级：已有 builtin/库函数 → 一个小的共享 DSL helper → 必要的编译器/后端扩展。
+- 只阅读相关库及一两个接近的实现；确认它们的 `notes` / `unencodedClues` 和实际代码，不把“已有文件”当作完整实现。
+- 复用图连通、分区、不同数值等现有能力；不要为单个预设手写第二套求解器、连通树或前端。
+- 每条题规必须有约束落实或明确缺口。声明题型函数后，在主 DSL 末尾调用；`import` 不执行被导入文件的顶层规则。
 
-| Rule shape | Variables |
-| --- | --- |
-| 涂黑 (shading) | `x` cell normal `domain [0,1]`, 1 = 涂黑 |
-| 填数 | `x` cell normal with the value range |
-| 提示数字/圆圈/箭头 | a **constant** cell variable per clue kind (`n`, `o`, `d`, …) |
-| 分区 (solve a partition) | a `cc` cell variable; use `c.id` / `c.size` / `c.border` |
-| 回路 / 路径 | `e` edge normal `domain [0,1]` |
-| 已画好的区域 | set `"usesRegions": true`; read them with `regions` / `region_of` |
+## 3. 同时交付规则与绘制配置
 
-Auxiliary variables are fine (LITS uses `t` for the tetromino type, Nanro uses a
-0/1 `f` "is filled" flag). Mark a constant that must exist on *every* cell with
-`"dense": true` (Hitori's printed numbers).
+按 [前端契约](references/frontend-contract.md) 编写 spec、DSL 和样例。先检查目标文件是否存在；需要空骨架时可用：
 
-### DSL rules of thumb
-
-* `x[p]` is the scalar at a single point; `x[row(0)]` is still a list and broadcasts. `and` concatenates two lists, so write `x[p] != 0 and x[q] != 0` (not two length-1 lists). `at(x, p)` is the same as `x[p]` for one point.
-* Compile-time values (`region_id`, `row_of`, `has_value`, constants, `.size`)
-  are plain Python — `if` over them constant-folds and costs nothing.
-* Accumulate with `let total = total + …` inside `for`; `let` rebinds the
-  nearest enclosing binding, so accumulators survive loop iterations.
-* Connectivity: `cc_count(x, v) <= 1` (one group), `cc_id` / `cc_size` /
-  `cc_root`, and the `cc8_*` diagonal variants.
-* Loops: `loop(e)` on the corner lattice (Slitherlink), `cloop(e)` through cell
-  centres (Masyu); then `on_loop`, `turns`, `goes_straight`, `cdeg`,
-  `region_crossings`.
-* Outside clues live in `params`: `param("top")[c]`; use the `outside` lib’s
-  `row_count` / `col_runs` etc. — they tolerate missing/short lists (−1 = 无提示).
-* `import "shading"` etc. pulls in a template module; `def` helpers are hoisted,
-  so order does not matter. `import "sudoku"` likewise only loads `def`s — call
-  `sudoku(x)` to apply the rule. Each `impls/<key>.dsl` exports `key` with
-  hyphens turned into underscores.
-
-### Verify before claiming success
-
-`python -m tools.check compile` must stay at 45/45 (or higher) and
-`python -m tools.check solve` at 25/25 (or higher). A sample that solves proves
-the encoding is *satisfiable*; also eyeball the printed board against the rule.
-
-## 4. Front-end: layers, not puzzles
-
-A puzzle spec lists **layers**; each layer binds a generic element to a variable:
-
-```json
-{ "id": "clue", "label": "岛屿数字", "element": "number",
-  "target": "cell", "role": "input", "var": "n" }
+```sh
+python -m tools.scaffold new <key> --rows 6 --cols 6
 ```
 
-* `element` — one of `python -m tools.puzzle_rules elements`
-  (`number`, `text`, `shade`, `circle`, `square`, `triangle`, `star`, `cross`,
-  `dot`, `arrow`, `edgeline`, `link`, `diagonal`, `region`, `outside`, plus the
-  special pictures `tree`, `tent`, `ship`, `wave`, `bulb`).
-* `target` — `cell` / `corner` / `edge` / `outside`.
-* `role` — `input` (part of the statement, editable) or `output` (the solution).
-* `palette` maps integer values to colours, so the same element serves many rules.
-* Layers toggle independently in the UI, which is how the board is inspected
-  layer by layer.
+新 key 不必加入 `rules.txt`。补全 spec 中的名称和完整 `rule`，不要保留骨架的空规则/空样例。已有实现不使用 `--force` 覆盖。
 
-**Never add puzzle-specific code to `web/src`.** To support a new rule, reuse an
-existing element; only if a genuinely new visual primitive is needed, add it to
-`puzzle/elements.py`, draw it in `web/src/glyphs.tsx` (`glyph()`), and — if it
-is not a per-point marker — give it a case in `web/src/render.tsx` and an
-editor kind in `web/src/editors.ts` (`EDITOR_OF` / `cycleValues`). Cell-marker
-glyphs get board+palette support automatically.
+通常仅需定义：整数值域的待求解变量、稀疏常量线索、各变量的输入/输出图层、区域与参数。前端已有变量选择、显隐、编辑和 DSL 文档，无须另造题型侧栏。
 
-Run the stack with:
+需要完整范例时，读取 [混合规则示例](references/example.md)。它组合“黑格不相邻、白格连通、每区域定额、相邻黑格数字”，包含可复制的三个配置文件及真实验证脚本。
 
-```bash
-python -m puzzle.server --port 8000     # JSON API (+ web/dist when built)
-cd web && npm install && npm run dev    # Vite dev server, proxies /api
-```
+## 4. 验证语义，再验证交互
 
-## 5. Custom rules the user invents
+按 [验证与交付](references/validation.md) 选择检查范围：
 
-Same flow, with two shortcuts:
+1. 编译新规则；用显式可用后端求解非空样例。
+2. 已知合法盘面可满足；违反关键规则的盘面被拒绝。涉及组合/边界时增加相应反例。
+3. 只有排除已知输出后再次求解为 UNSAT，才声称该样例唯一；不以 SAT、约束条数或一次答案相同替代。
+4. 在真实 Penpa 上核对对应变量的输入、求解回填与结果失效。只改 spec 也可能绑定错误；Python 求解成功不能证明前端可用。
+5. 扩展公共能力时运行相关回归；后端不可用要记录跳过，不能让自动回退冒充该后端通过。
 
-* Pick a `key` that is not in `rules.txt`; `tools.scaffold new` warns but works,
-  and the spec's own `en` / `zh` / `rule` fields carry the description.
-* The API accepts `{"instance": …, "source": "<dsl>"}`, so a rule can be tried
-  from the UI without touching `impls/` — copy it into `impls/<key>.dsl` once it
-  works.
+缺口未完成时用 `notes` 明确写“部分实现：…”；忽略的线索变量列入 `unencodedClues`。如果缺口阻断用户核心玩法，继续解决或明确阻塞，不能用部分实现标签替代交付。
+
+## 5. 给用户一个能打开、能复现的结果
+
+完成所需文件和验证后：
+
+- 提供已实际启动的页面地址，或准确的启动命令；说明导入哪个预设、选哪个变量、输入什么线索。
+- 链接 spec、DSL、样例与测试，概述新增规则及测试结果；按实际情况标明多解、未验证后端或规模限制。
+- 说明持久化边界：原生 Penpa 分享链接不保存完整多变量工作区和 DSL。可复现交付依赖预设文件和样例；不要让用户只依靠当前浏览器状态。
+- 更新受影响的文档、生成源；预设覆盖变动时重新生成 `IMPLEMENTATION_STATUS.md`。不在 skill 中写死测试数量或完成率。
+- 按用户已有授权提交、推送或发布；未执行时不声称已执行。
+
+## 按需参考
+
+- [规则组合与 DSL](references/composition.md)：函数选择、数据语义与扩展边界。
+- [前端契约](references/frontend-contract.md)：变量、图层、API 与 Penpa 映射。
+- [验证与交付](references/validation.md)：反例、唯一性、后端与浏览器检查。
+- [可运行混合规则示例](references/example.md)：三个交付文件及验证入口。
+- 项目权威来源：[DSL 语法](../../../puzzle/dsl/GRAMMAR.md)、[前端说明](../../../docs/FRONTEND.md)、[后端配置](../../../docs/CSPUZ_BACKENDS.md)、[已知缺口](../../../docs/RULE_GAPS.md)。接口有变化时以当前源码为准。

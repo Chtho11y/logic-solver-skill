@@ -44,6 +44,7 @@ Windows 使用已安装的 Edge，其他平台使用 Playwright Chromium。可�
 
 ## 文档与维护
 
+- [Agent 自定义规则交付指南](.github/skills/puzzle-rules/SKILL.md)：组合现有约束、配置 Penpa 前端、验证并交付；附可运行示例。
 - [下一步实施计划](docs/NEXT_STEPS.md)：按优先级列出任务及验收标准。
 - [实现状态](IMPLEMENTATION_STATUS.md)：自动统计覆盖、部分实现及缺失样例；更新用 `python -m tools.status --write`。
 - [前端交互与边界](docs/FRONTEND.md)
