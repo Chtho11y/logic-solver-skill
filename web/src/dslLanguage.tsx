@@ -9,7 +9,7 @@ export function completionKind(item: Completion): CompletionKind {
   if (item.category === 'Constant') return 'constant';
   return item.signature.includes('(') ? 'function' : 'variable';
 }
-export const keywords = ['let', 'for', 'in', 'if', 'else', 'def', 'return', 'import', 'use', 'and', 'or', 'not', 'xor', 'true', 'false'];
+export const keywords = ['let', 'for', 'in', 'if', 'elif', 'else', 'def', 'return', 'import', 'use', 'and', 'or', 'not', 'xor', 'true', 'false'];
 export function highlight(source: string) {
   const tokens = source.split(/(#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z_0-9]*\b)/g);
   return tokens.map((token, i) => <span key={i} className={token.startsWith('#') ? 'tok-comment' : /^['"]/.test(token) ? 'tok-string' : /^\d/.test(token) ? 'tok-number' : keywords.includes(token) ? 'tok-keyword' : /^\s*\(/.test(tokens[i + 1] ?? '') ? 'tok-function' : undefined}>{token}</span>);

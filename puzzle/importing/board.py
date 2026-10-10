@@ -62,6 +62,10 @@ class LayerBoard:
     cells: dict[str, CellMarks] = field(default_factory=dict)
     edges: dict[str, EdgeMarks] = field(default_factory=dict)
     regions: dict[str, int] = field(default_factory=dict)
+    # Native cage membership is independent of ordinary room/grid borders.
+    # It can be sparse: cells outside every cage must stay outside every cage.
+    cages: dict[str, int] = field(default_factory=dict)
+    corner_numbers: dict[str, int] = field(default_factory=dict)
     outside: dict[str, list[int | list[int]]] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
@@ -131,6 +135,8 @@ class LayerBoard:
         add("arrow", "arrow", "cell", collect("arrow", keep_zero=True))
         add("diagonal", "diagonal", "cell", collect("diagonal"))
         add("tree", "tree", "cell", collect("tree"))
+        for symbol in ("tent", "ship", "wave", "bulb"):
+            add(symbol, symbol, "cell", collect(symbol))
         add("edgeline", "edgeline", "edge", collect("line", from_cells=False))
         add("link", "link", "edge", collect("link", from_cells=False))
         add("dot", "dot", "edge", collect("dot", from_cells=False))
@@ -143,6 +149,13 @@ class LayerBoard:
                     "values": dict(self.regions),
                 }
             )
+        if self.cages:
+            layers.append({"id": "cage_regions", "element": "region", "target": "cell",
+                           "values": dict(self.cages), "options": {"semantic": "cage-region"}})
+        if self.corner_numbers:
+            layers.append({"id": "cage_totals" if self.cages else "corner_numbers",
+                           "element": "number", "target": "cell", "values": dict(self.corner_numbers),
+                           "options": {"placement": "corner", "semantic": "cage-total"}})
         if any(self.outside.get(side) for side in ("top", "bottom", "left", "right")):
             layers.append(
                 {
@@ -194,6 +207,18 @@ def from_layers_json(rows: int, cols: int, layers: list[dict[str, Any]]) -> Laye
         if element == "surface":
             element = "shade"
         values = layer.get("values") or {}
+        semantic = (layer.get("options") or {}).get("semantic")
+        if semantic in {"cage-region", "cage-total"} or layer.get("id") in {"cage_regions", "cage_totals", "corner_numbers"}:
+            dest = board.cages if semantic == "cage-region" or layer.get("id") == "cage_regions" else board.corner_numbers
+            for key, value in values.items():
+                try:
+                    row, col = map(int, str(key).split(","))
+                    number = int(value)
+                except (TypeError, ValueError):
+                    continue
+                if board.in_bounds(row, col):
+                    dest[cell_key(row, col)] = number
+            continue
         if element in {"region", "regions"}:
             for key, value in values.items():
                 try:
@@ -231,10 +256,15 @@ def from_layers_json(rows: int, cols: int, layers: list[dict[str, Any]]) -> Laye
                     continue
                 try:
                     row, col = int(parts[0]), int(parts[1])
-                    number = int(value)  # type: ignore[arg-type]
                 except (TypeError, ValueError):
                     continue
                 if not board.in_bounds(row, col):
+                    continue
+                try:
+                    number = int(value)  # type: ignore[arg-type]
+                except (TypeError, ValueError):
+                    if element == "number" and isinstance(value, str):
+                        board.cell(row, col).number_text = value
                     continue
                 setattr(board.cell(row, col), attr, number)
             continue

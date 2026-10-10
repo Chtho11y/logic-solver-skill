@@ -179,6 +179,9 @@ export type Drawing = {
   outside: OutsideMap;
   /** Active Penpa surface color when drawing shade. */
   surfaceColor: number;
+  /** Native killer-cage membership and corner totals stay separate from givens. */
+  cages?: Record<string, number>;
+  cornerNumbers?: Record<string, MarkValue>;
   /** Parameters belong to this puzzle; switching rules must not reuse them. */
   puzzle?: string;
   params: Record<string, unknown>;
@@ -193,7 +196,7 @@ export function emptyDrawing(rows = DEFAULT_SIZE, cols = DEFAULT_SIZE): Drawing 
 }
 
 export function isEmptyDrawing(d: Drawing): boolean {
-  if (Object.keys(d.regions).length) return false;
+  if (Object.keys(d.regions).length || Object.keys(d.cages ?? {}).length || Object.keys(d.cornerNumbers ?? {}).length) return false;
   if (Object.values(d.outside).some((side) => Object.keys(side).length)) return false;
   return Object.values(d.marks).every((layer) => !layer || Object.keys(layer).length === 0);
 }
@@ -279,7 +282,8 @@ export function resizeDrawing(d: Drawing, rows: number, cols: number): Drawing {
     }
     if (Object.keys(clipped).length) outside[side] = clipped;
   }
-  return { ...d, rows, cols, marks, regions, outside };
+  const keepCells = <T,>(values: Record<string, T>) => Object.fromEntries(Object.entries(values).filter(([key]) => keepKey("number", key, rows, cols)));
+  return { ...d, rows, cols, marks, regions, outside, ...(d.cages ? { cages: keepCells(d.cages) } : {}), ...(d.cornerNumbers ? { cornerNumbers: keepCells(d.cornerNumbers) } : {}) };
 }
 
 function asPointValues(values: GenericLayer["values"]): Record<string, number> {
@@ -297,6 +301,8 @@ export function drawingFromGenericLayers(
 ): Drawing {
   const d = emptyDrawing(rows, cols);
   for (const layer of layers) {
+    if (layer.id === "cage_regions" || layer.options?.semantic === "cage-region") { d.cages = asPointValues(layer.values); continue; }
+    if (layer.id === "cage_totals" || layer.options?.placement === "corner") { d.cornerNumbers = asPointValues(layer.values); continue; }
     if (layer.id === "regions" || layer.element === "region") {
       d.regions = asPointValues(layer.values);
       continue;
@@ -327,6 +333,8 @@ export function drawingFromGenericLayers(
 
 export function drawingToGenericLayers(d: Drawing): GenericLayer[] {
   const layers: GenericLayer[] = [];
+  if (Object.keys(d.cages ?? {}).length) layers.push({ id: "cage_regions", element: "region", target: "cell", values: d.cages!, options: { semantic: "cage-region" } });
+  if (Object.keys(d.cornerNumbers ?? {}).length) layers.push({ id: "cage_totals", element: "number", target: "cell", values: d.cornerNumbers!, options: { semantic: "cage-total", placement: "corner" } });
   for (const tool of DRAW_TOOLS) {
     if (tool === "region") {
       if (Object.keys(d.regions).length) {

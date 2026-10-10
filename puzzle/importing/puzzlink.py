@@ -1,6 +1,6 @@
 """Decode a puzz.link / pzpr URL into a :class:`LayerBoard`.
 
-The URL itself is ``pid/w/h/body``. Typed board contents come from a small
+The URL itself is ``pid/[flags/]w/h/body``. Typed board contents come from a small
 Node helper that opens the puzzle with pzprjs and dumps cells, borders and
 outside clues. Python then maps those fields onto our lattices.
 """
@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import quote, unquote, urlsplit
 
 from .board import LayerBoard, edge_key, regions_from_walls
 from .errors import PuzzleImportError
@@ -27,62 +28,93 @@ PUZZLINK_HOSTS = {
     "pzv.jp",
     "www.pzv.jp",
     "pzplus.tck.mn",
-    "puzz.link",
+    "pzprxs.vercel.app",
 }
+
+_PID = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_-]*\Z")
+_SIZE = re.compile(r"[0-9]+\Z")
 
 
 def looks_like_puzzlink(text: str) -> bool:
     raw = (text or "").strip()
     if not raw:
         return False
-    lowered = raw.lower()
-    if any(host in lowered for host in ("puzz.link", "pzv.jp", "pzplus", "pzprxs")):
+    try:
+        parse_puzzlink(raw)
         return True
-    if raw.startswith("http") and "/p?" in raw:
-        return True
-    # Bare ``pid/w/h/body``
-    parts = raw.split("/")
-    return len(parts) >= 3 and parts[1].isdigit() and parts[2].isdigit()
+    except PuzzleImportError:
+        # Recognize malformed links on known hosts so the parser can report
+        # the actual problem rather than a misleading "neither URL" error.
+        try:
+            parsed = urlsplit(raw if "://" in raw or raw.startswith("//") else "//" + raw)
+            return (parsed.hostname or "").lower() in PUZZLINK_HOSTS
+        except ValueError:
+            return False
 
 
 def parse_puzzlink(url: str) -> dict[str, str]:
-    """Return ``pid``, ``rows``, ``cols``, ``body``, ``open`` (argument for pzprjs)."""
+    """Parse a full/mirror URL or bare ``pid/[flags/]w/h/body`` payload.
+
+    Preserve flags and body verbatim after URL decoding: flags can change the
+    puzzle variant or clue encoding, and ``+`` is not a form-encoded space.
+    """
 
     raw = (url or "").strip()
     if not raw:
         raise PuzzleImportError("empty puzz.link URL")
-    parsed = urlsplit(raw)
-    path = unquote(parsed.query or "")
-    if not path:
-        # ``https://puzz.link/p?slither/5/5/abc`` puts the payload in query
-        # without ``=``; urlsplit then keeps it in query. Some mirrors use
-        # ``/p.html?slither/...``. Fragment is unused.
-        if parsed.query:
-            path = unquote(parsed.query)
-        elif "?" in raw:
-            path = unquote(raw.split("?", 1)[1])
-        else:
-            path = raw
-    if path.startswith("p?"):
-        path = path[2:]
-    path = path.split("&", 1)[0].strip()
+    # urlsplit itself removes literal tabs/newlines. Reject these first so a
+    # damaged copied payload cannot silently become a different puzzle.
+    if any(char.isspace() or ord(char) < 32 for char in raw):
+        raise PuzzleImportError("puzz.link URL must not contain internal whitespace")
+    # Browsers often copy a host without the scheme. Normalize only known
+    # hosts; an ordinary bare payload must not become a URL hostname.
+    if raw.split("/", 1)[0].lower() in PUZZLINK_HOSTS:
+        raw = "https://" + raw
+    try:
+        parsed = urlsplit(raw)
+    except ValueError as exc:
+        raise PuzzleImportError("invalid puzz.link URL") from exc
+    if parsed.scheme and parsed.scheme.lower() not in {"http", "https"}:
+        raise PuzzleImportError("puzz.link URLs must use http or https")
+    if parsed.netloc and not parsed.query:
+        raise PuzzleImportError("puzz.link URL is missing its puzzle payload after '?'")
+    encoded = (parsed.query or parsed.path).split("&", 1)[0]
+    if re.search(r"%(?![0-9a-fA-F]{2})", encoded):
+        raise PuzzleImportError("puzz.link URL contains invalid percent encoding")
+    try:
+        path = unquote(encoded, errors="strict")
+    except UnicodeError as exc:
+        raise PuzzleImportError("puzz.link URL contains invalid text encoding") from exc
+    if any(char.isspace() or ord(char) < 32 for char in path):
+        raise PuzzleImportError("puzz.link puzzle payload must not contain whitespace")
     parts = path.split("/")
-    if len(parts) < 3:
+    if len(parts) < 3 or not _PID.fullmatch(parts[0]):
         raise PuzzleImportError(f"not a puzz.link puzzle path: {path!r}")
     pid = parts[0]
+    # pzpr URLs may have a flags segment, including an explicit empty one.
+    size_index = 1 if _SIZE.fullmatch(parts[1]) else 2
+    flags = "" if size_index == 1 else parts[1]
+    if flags and not re.fullmatch(r"[a-zA-Z]+", flags):
+        raise PuzzleImportError(f"invalid puzz.link flags or size: {path!r}")
+    if len(parts) <= size_index + 1 or not all(
+        _SIZE.fullmatch(value) for value in parts[size_index:size_index + 2]
+    ):
+        raise PuzzleImportError(f"puzz.link size is not numeric: {path!r}")
     try:
-        cols = int(parts[1])
-        rows = int(parts[2])
+        cols, rows = (int(value) for value in parts[size_index:size_index + 2])
     except ValueError as exc:
-        raise PuzzleImportError(f"puzz.link size is not numeric: {path!r}") from exc
-    body = "/".join(parts[3:])
+        raise PuzzleImportError("puzz.link dimensions are too large") from exc
+    if rows <= 0 or cols <= 0:
+        raise PuzzleImportError("puzz.link rows and columns must be positive")
+    body = "/".join(parts[size_index + 2:])
     return {
         "pid": pid,
+        "flags": flags,
         "rows": str(rows),
         "cols": str(cols),
         "body": body,
         "open": path,
-        "url": f"https://puzz.link/p?{path}",
+        "url": "https://puzz.link/p?" + quote(path, safe="/+.-_~"),
         "key": resolve_puzzle_key(pid) or canonical_pid(pid),
     }
 
@@ -91,52 +123,22 @@ def decode_puzzlink(url: str) -> LayerBoard:
     meta = parse_puzzlink(url)
     dumped = _run_pzpr_dump(meta["open"])
     board = layerboard_from_pzpr(dumped)
+    if (board.rows, board.cols) != (int(meta["rows"]), int(meta["cols"])):
+        raise PuzzleImportError("pzprjs changed the puzzle dimensions while decoding the URL")
     board.source = meta["url"]
     board.pid = resolve_puzzle_key(dumped.get("pid") or meta["pid"]) or board.pid
     return board
 
 
-def _node_path() -> str:
-    here = Path(__file__).resolve().parent / "node_modules"
-    tmp = Path("/tmp/pzpr-probe/node_modules")
-    for candidate in (here, tmp):
-        if (candidate / "pzpr").is_dir():
-            return str(candidate)
-    return ""
-
-
-def ensure_pzpr() -> None:
-    """Install the ``pzpr`` npm package next to ``pzpr_dump.js`` if missing."""
-
-    dest = Path(__file__).resolve().parent
-    if (dest / "node_modules" / "pzpr").is_dir():
-        return
-    npm = shutil.which("npm")
-    if not npm:
-        return
-    subprocess.run(
-        [npm, "install", "pzpr@latest", "--no-fund", "--no-audit"],
-        cwd=str(dest),
-        check=False,
-        capture_output=True,
-        timeout=120,
-    )
-
-
 def _run_pzpr_dump(open_arg: str) -> dict:
     node = shutil.which("node")
     if not node:
-        raise PuzzleImportError("decoding puzz.link URLs needs Node.js (pzprjs)")
+        raise PuzzleImportError(
+            "decoding puzz.link URLs needs Node.js; install Node.js and run "
+            "'npm --prefix puzzle/importing install' from the project root"
+        )
     if not DUMP_JS.is_file():
         raise PuzzleImportError(f"missing pzpr dump helper {DUMP_JS}")
-    if not _node_path():
-        ensure_pzpr()
-    env = os.environ.copy()
-    node_path = _node_path()
-    if node_path:
-        env["NODE_PATH"] = node_path + (
-            os.pathsep + env["NODE_PATH"] if env.get("NODE_PATH") else ""
-        )
     try:
         proc = subprocess.run(
             [node, str(DUMP_JS), open_arg],
@@ -144,22 +146,32 @@ def _run_pzpr_dump(open_arg: str) -> dict:
             capture_output=True,
             text=True,
             timeout=20,
-            env=env,
+            env=os.environ.copy(),
         )
     except subprocess.TimeoutExpired as exc:
         raise PuzzleImportError("pzprjs timed out opening the puzzle") from exc
+    except OSError as exc:
+        raise PuzzleImportError(f"could not start the pzprjs decoder: {exc}") from exc
     if proc.returncode != 0:
-        err = (proc.stderr or proc.stdout or "pzprjs failed").strip().splitlines()[-1:]
+        err = (proc.stderr or proc.stdout or "pzprjs failed").strip().splitlines()[:1]
         raise PuzzleImportError(err[0] if err else "pzprjs failed")
     try:
-        return json.loads(proc.stdout)
+        dumped = json.loads(proc.stdout)
     except json.JSONDecodeError as exc:
         raise PuzzleImportError("pzprjs dump was not JSON") from exc
+    if not isinstance(dumped, dict):
+        raise PuzzleImportError("pzprjs dump was not a board object")
+    return dumped
 
 
 def layerboard_from_pzpr(dumped: dict) -> LayerBoard:
-    rows = int(dumped["rows"])
-    cols = int(dumped["cols"])
+    try:
+        rows = int(dumped["rows"])
+        cols = int(dumped["cols"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise PuzzleImportError("pzprjs dump is missing valid board dimensions") from exc
+    if rows <= 0 or cols <= 0:
+        raise PuzzleImportError("pzprjs dump has non-positive board dimensions")
     pid = canonical_pid(str(dumped.get("pid") or ""))
     key = resolve_puzzle_key(pid) or pid
     board = LayerBoard(rows=rows, cols=cols, pid=key, tags=[pid] if pid else [])
@@ -201,8 +213,16 @@ def layerboard_from_pzpr(dumped: dict) -> LayerBoard:
             continue
         if qnum_i >= 0:
             mark.number = qnum_i
-        elif qnum_i == -2:
+        elif qnum_i == -2 and key == "shakashaka":
+            # Like Akari, Shakashaka uses -2 for an unnumbered black clue.
             mark.shade = 1
+        elif qnum_i == -2:
+            # Do not assume that an unspecified number denotes a black cell.
+            mark.number_text = "?"
+            board.warnings.append(
+                f"unknown number clue at {row},{col} is preserved as '?'; "
+                "this rule may require a numeric clue before solving"
+            )
         if ques:
             mark.extra["ques"] = ques
 
@@ -238,6 +258,6 @@ def layerboard_from_pzpr(dumped: dict) -> LayerBoard:
         if 0 <= index < length:
             arr[index] = value
 
-    if walls:
+    if walls or dumped.get("hasGivenRooms") is True:
         board.regions = regions_from_walls(rows, cols, walls)
     return board

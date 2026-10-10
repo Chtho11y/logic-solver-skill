@@ -34,13 +34,14 @@
     arrow: "symbol",
     link: "line",
     edgeline: "lineE",
-    diagonal: "line",
-    dot: "lineE",
+    diagonal: "lineE",
+    dot: "symbol",
     region: "lineE",
   };
 
   const SYMBOL_SUB = {
     circle: "circle_M",
+    dot: "circle_M",
     square: "square_M",
     triangle: "triup_M",
     star: "star",
@@ -60,8 +61,8 @@
   const solutions = {};
   let hookedBoard = null;
 
-  let documents = {};
-  let documentColors = {};
+  let documents = Object.create(null);
+  let documentColors = Object.create(null);
   let activeVariable = '__unbound';
   let composing = false;
 
@@ -100,23 +101,7 @@
   }
 
   function loadDocuments(items) {
-    if (!window.pu) return false;
-    composing = true;
-    documents = {};
-    documentColors = {};
-    for (const item of items) {
-      if (!stamp(item.drawing)) { composing = false; return false; }
-      documents[item.id] = pu.pu_q;
-      documentColors[item.id] = pu.pu_q_col;
-    }
-    activeVariable = items[0]?.id || '__unbound';
-    if (!documents[activeVariable]) documents[activeVariable] = emptyQuestion();
-    pu.pu_q = documents[activeVariable];
-    pu.pu_q_col = documentColors[activeVariable] || emptyQuestion(pu.pu_q_col);
-    composing = false;
-    pu.redraw();
-    notify();
-    return true;
+    return updateDocuments(items, items?.[0]?.id || '__unbound', true);
   }
 
   function renameVariable(from, to) {
@@ -158,28 +143,130 @@
   }
 
   function replaceDrawing(id, drawing) {
-    if (!window.pu) return false;
-    const tool = currentTool();
-    if (!resize(drawing.rows, drawing.cols)) return false;
-    const answer = pu.pu_a, answerColors = pu.pu_a_col;
+    return replaceDocuments([{ id, drawing }], id);
+  }
+
+  function replaceDocuments(items, activeId) {
+    return updateDocuments(items, activeId, false);
+  }
+
+  // Keep native Stack/Point prototypes and shared references. DOM/canvas objects
+  // are host resources, not puzzle state, and must not be copied.
+  function copyState(value, copies = new Map()) {
+    if (!value || typeof value !== 'object') return value;
+    if (copies.has(value)) return copies.get(value);
+    if (!Array.isArray(value) && Object.prototype.toString.call(value) !== '[object Object]') return value;
+    const copy = Array.isArray(value) ? [] : Object.create(Object.getPrototypeOf(value));
+    copies.set(value, copy);
+    for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
+      if ('value' in descriptor) descriptor.value = copyState(descriptor.value, copies);
+      Object.defineProperty(copy, key, descriptor);
+    }
+    return copy;
+  }
+
+  function validSize(rows, cols) {
+    return Number.isInteger(rows) && Number.isInteger(cols) && rows >= 1 && cols >= 1 && rows <= 40 && cols <= 40;
+  }
+
+  function updateDocuments(items, activeId, reset, requestedSize) {
+    if (!window.pu || composing || !Array.isArray(items)) return false;
+    const size = requestedSize || items[0]?.drawing || innerSize();
+    const { rows, cols } = size;
+    const ids = new Set();
+    if (!validSize(rows, cols)) return false;
+    for (const item of items) {
+      if (!item || typeof item.id !== 'string' || !item.id || ids.has(item.id) ||
+          !item.drawing || item.drawing.rows !== rows || item.drawing.cols !== cols) return false;
+      ids.add(item.id);
+    }
+    if (activeId !== undefined && (typeof activeId !== 'string' || !activeId)) return false;
+    saveActive();
+    const selected = activeId ?? activeVariable;
+    if (!ids.has(selected) && !(reset ? selected === '__unbound' && !items.length : documents[selected])) return false;
+    const board = pu;
+    const snapshot = {
+      board: Object.getOwnPropertyDescriptors(board), documents, documentColors,
+      activeVariable, revision, lastQuestion, solutions: { ...solutions },
+    };
+    const oldSize = innerSize();
+    const changingSize = oldSize.rows !== rows || oldSize.cols !== cols;
     composing = true;
-    const ok = stamp(drawing);
-    if (ok) { documents[id] = pu.pu_q; documentColors[id] = pu.pu_q_col; activeVariable = id; }
-    pu.pu_a = answer; pu.pu_a_col = answerColors;
-    composing = false;
-    setTool(tool); pu.redraw(); notify();
+    let ok = false;
+    try {
+      if (changingSize) {
+        // Resize works on detached native data. A later stamp/migration failure
+        // can therefore restore the exact old documents, answers and histories.
+        const copies = new Map([[board, board]]);
+        for (const [key, descriptor] of Object.entries(snapshot.board)) {
+          if ('value' in descriptor) board[key] = copyState(descriptor.value, copies);
+        }
+        documents = copyState(documents, copies);
+        documentColors = copyState(documentColors, copies);
+      } else {
+        documents = Object.assign(Object.create(null), documents);
+        documentColors = Object.assign(Object.create(null), documentColors);
+      }
+      board.redraw = function () {};
+      if (changingSize && !resizeOne(rows, cols)) throw new Error('Unable to resize the Penpa board');
+      if (reset) {
+        documents = Object.create(null);
+        documentColors = Object.create(null);
+        board.pu_a = emptyQuestion(board.pu_a);
+        board.pu_a_col = emptyQuestion(board.pu_a_col);
+      }
+      for (const item of items) {
+        board.pu_q = emptyQuestion(board.pu_q);
+        board.pu_q_col = emptyQuestion(board.pu_q_col);
+        if (!stamp(item.drawing, true)) throw new Error('Unable to stamp imported document');
+        documents[item.id] = board.pu_q;
+        documentColors[item.id] = board.pu_q_col;
+      }
+      activeVariable = selected;
+      documents[selected] ||= emptyQuestion(board.pu_q);
+      documentColors[selected] ||= emptyQuestion(board.pu_q_col);
+      board.pu_q = documents[selected];
+      board.pu_q_col = documentColors[selected];
+      Object.keys(solutions).forEach(key => delete solutions[key]);
+      ok = true;
+    } catch (err) {
+      console.error('penpa document transaction', err);
+      for (const key of Reflect.ownKeys(board)) if (!(key in snapshot.board)) delete board[key];
+      Object.defineProperties(board, snapshot.board);
+      documents = snapshot.documents;
+      documentColors = snapshot.documentColors;
+      activeVariable = snapshot.activeVariable;
+      revision = snapshot.revision;
+      lastQuestion = snapshot.lastQuestion;
+      Object.keys(solutions).forEach(key => delete solutions[key]);
+      Object.assign(solutions, snapshot.solutions);
+      // Native resize may already have changed canvas dimensions before failing.
+      if (changingSize && typeof board.canvas_size_setting === 'function') board.canvas_size_setting();
+    } finally {
+      if (snapshot.board.redraw) Object.defineProperty(board, 'redraw', snapshot.board.redraw);
+      else delete board.redraw;
+      composing = false;
+    }
+    board.redraw();
+    if (ok) notify();
     return ok;
   }
 
   function currentTool() {
     const mode = pu.mode[pu.mode.qa].edit_mode;
-    if (mode === 'symbol') return symbolTool([1, pu.mode[pu.mode.qa].symbol[0]]);
+    if (mode === 'symbol') {
+      const tool = symbolTool([1, pu.mode[pu.mode.qa].symbol[0]]);
+      return tool === 'circle' && pu.type?.length === 2 && pu.type.every(t => t === 2 || t === 3) ? 'dot' : tool;
+    }
+    if (mode === 'lineE' && pu.mode[pu.mode.qa].lineE[0] === '2') return 'diagonal';
     return { surface: 'shade', number: 'number', sudoku: 'number', line: 'link', lineE: 'edgeline', wall: 'diagonal', cage: 'region' }[mode] || 'number';
   }
 
-  function symbolTool(entry) {
+  function symbolTool(entry, index) {
     const family = String(entry?.[1] || '').toLowerCase();
     const sid = Number(entry?.[0]);
+    const category = Math.floor(Number(index) / (pu.nx0 * pu.ny0));
+    if ((category === 2 || category === 3) && (family.includes('circle') || family.startsWith('ox'))) return 'dot';
     if (family.includes('circle') || (family.startsWith('ox') && sid <= 2)) return 'circle';
     if (family.includes('square')) return 'square';
     if (family.includes('tri')) return 'triangle';
@@ -195,8 +282,18 @@
 
   function markTool(field, key, value) {
     if (field === 'number') return classifyIndex(key).kind === 'outside' ? 'outside' : 'number';
-    if (field === 'symbol') return symbolTool(value);
+    if (field === 'symbol') return symbolTool(value, key);
+    if (field === 'lineE' && isDiagonalPair(key)) return 'diagonal';
     return { surface: 'shade', line: 'link', lineE: 'edgeline', wall: 'diagonal', killercages: 'region' }[field];
+  }
+
+  function isDiagonalPair(key) {
+    const pair = String(key).split(',').map(Number);
+    if (pair.length !== 2 || !pair.every(Number.isInteger)) return false;
+    const area = pu.nx0 * pu.ny0;
+    if (!pair.every(index => Math.floor(index / area) === 1)) return false;
+    const [a, b] = pair.map(index => index % area);
+    return Math.abs(Math.floor(a / pu.nx0) - Math.floor(b / pu.nx0)) === 1 && Math.abs(a % pu.nx0 - b % pu.nx0) === 1;
   }
 
   function presentation(question, answer) {
@@ -350,16 +447,17 @@
     const symbols = bag("pu_q", "symbol");
     counts.shade = countKeys(surface);
     counts.link = countKeys(line);
-    counts.edgeline = countKeys(lineE);
-    counts.diagonal = countKeys(wall);
+    counts.diagonal = countKeys(wall) + Object.keys(lineE).filter(isDiagonalPair).length;
+    counts.edgeline = countKeys(lineE) - Object.keys(lineE).filter(isDiagonalPair).length;
     for (const index of Object.keys(numbers || {})) {
       if (classifyIndex(index).kind === "outside") counts.outside += 1;
       else counts.number += 1;
     }
-    for (const entry of Object.values(symbols || {})) {
-      const tool = symbolTool(entry);
+    for (const [index, entry] of Object.entries(symbols || {})) {
+      const tool = symbolTool(entry, index);
       if (tool in counts) counts[tool] += 1;
     }
+    counts.number += countKeys(bag("pu_q", "numberS"));
     counts.region = (pu.pu_q.killercages || []).reduce((n, cells) => n + cells.length, 0);
     const mode = (pu.mode && pu.mode[pu.mode.qa] && pu.mode[pu.mode.qa].edit_mode) || "surface";
     return { rows: size.rows, cols: size.cols, counts: counts, mode: mode };
@@ -402,49 +500,45 @@
   }
 
   function resize(rows, cols) {
-    if (!window.pu || !Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1 || rows > 40 || cols > 40) return false;
-    saveActive();
-    const old = innerSize();
-    const bank = Object.entries(documents);
-    const selected = activeVariable;
-    let answer = pu.pu_a, answerColors = pu.pu_a_col;
-    composing = true;
-    clearSolution();
-    for (let i = 0; i < bank.length; i++) {
-      const [id, question] = bank[i];
-      setSize(old.rows, old.cols, true);
-      pu.pu_q = question;
-      pu.pu_q_col = documentColors[id];
-      if (i === 0) { pu.pu_a = answer; pu.pu_a_col = answerColors; }
-      if (!resizeOne(rows, cols)) { composing = false; return false; }
-      if (i === 0) { answer = pu.pu_a; answerColors = pu.pu_a_col; }
-      documents[id] = pu.pu_q;
-      documentColors[id] = pu.pu_q_col;
-    }
-    pu.pu_q = documents[selected];
-    pu.pu_q_col = documentColors[selected];
-    pu.pu_a = answer; pu.pu_a_col = answerColors;
-    composing = false;
-    pu.redraw();
-    notify();
-    return true;
+    return updateDocuments([], undefined, false, { rows, cols });
   }
 
   function resizeOne(rows, cols) {
-    if (!window.pu || pu.gridtype !== "square" || !Number.isInteger(rows) || !Number.isInteger(cols) ||
-        rows < 1 || cols < 1 || rows > 40 || cols > 40) return false;
-    // Use Penpa's own coordinate migration, retaining live/native marks that
-    // are not represented in the solver's limited generic drawing format.
-    clearSolution();
-    for (let step = 0; step < 80; step++) {
-      const size = innerSize();
-      if (size.rows === rows && size.cols === cols) { notify(); return true; }
-      if (size.rows !== rows) pu.resize_bottom(rows > size.rows ? 1 : -1, "white");
-      else pu.resize_right(cols > size.cols ? 1 : -1, "white");
-      const after = innerSize();
-      if (after.rows === size.rows && after.cols === size.cols) return false;
+    if (!window.pu || pu.gridtype !== 'square' || !validSize(rows, cols)) return false;
+    // Each native step migrates the active question and manual answer once.
+    // Apply the same native translator to every other independent document,
+    // including color and undo/redo/replay stacks, without rebuilding boards.
+    const board = pu;
+    const ownTranslator = Object.getOwnPropertyDescriptor(board, 'translate_puzzle_elements');
+    const translate = board.translate_puzzle_elements;
+    board.translate_puzzle_elements = function (translatePoint) {
+      translate.call(this, translatePoint);
+      for (const [id, question] of Object.entries(documents)) {
+        if (question === this.pu_q) continue;
+        const other = {
+          pu_q: question, pu_q_col: documentColors[id],
+          pu_a: emptyQuestion(this.pu_a), pu_a_col: emptyQuestion(this.pu_a_col),
+          cursol: -1, cursolS: -1, freelinecircle_g: [-1, -1],
+          selection: [], conflict_cells: [], solution: null,
+        };
+        translate.call(other, translatePoint);
+      }
+    };
+    try {
+      for (let step = 0; step <= 80; step++) {
+        const size = innerSize();
+        if (size.rows === rows && size.cols === cols) return true;
+        // 'white' resizes the outside margin and leaves innerSize unchanged.
+        if (size.rows !== rows) board.resize_bottom(rows > size.rows ? 1 : -1, 'black');
+        else board.resize_right(cols > size.cols ? 1 : -1, 'black');
+        const after = innerSize();
+        if (after.rows === size.rows && after.cols === size.cols) return false;
+      }
+      return false;
+    } finally {
+      if (ownTranslator) Object.defineProperty(board, 'translate_puzzle_elements', ownTranslator);
+      else delete board.translate_puzzle_elements;
     }
-    return false;
   }
 
   function setSize(rows, cols, quiet) {
@@ -515,16 +609,16 @@
 
   const OURS_DIR_TO_PENPA = { "0": "0", "1": "3", "2": "1", "3": "2" };
 
-  function stamp(drawing) {
-    if (!drawing || !window.pu || typeof create_newboard !== "function") return false;
+  function stamp(drawing, currentBoard = false) {
+    if (!drawing || !window.pu || (!currentBoard && typeof create_newboard !== "function")) return false;
     try {
       const rows = Math.max(1, Math.min(40, Number(drawing.rows) || 10));
       const cols = Math.max(1, Math.min(40, Number(drawing.cols) || 10));
-      if (!setSize(rows, cols, true)) return false;
+      if (!currentBoard && !setSize(rows, cols, true)) return false;
       const pu = window.pu;
       if (!pu || !pu.pu_q) return false;
       const q = pu.pu_q;
-      ["surface", "number", "symbol", "line", "lineE"].forEach(function (field) {
+      ["surface", "number", "numberS", "symbol", "line", "lineE"].forEach(function (field) {
         if (!q[field] || typeof q[field] !== "object" || Array.isArray(q[field])) q[field] = {};
       });
       const marks = drawing.marks || {};
@@ -549,6 +643,28 @@
         q.number[String(cellIndex(pos.r, pos.c))] = [String(pair[1]), 1, "1"];
       });
 
+      Object.entries(drawing.cornerNumbers || {}).forEach(function ([key, value]) {
+        const pos = parseRC(key);
+        if (!pos) return;
+        q.numberS[String(4 * (cellIndex(pos.r, pos.c) + pu.nx0 * pu.ny0))] = [String(value), 1];
+      });
+
+      const cages = new Map();
+      Object.entries(drawing.cages || {}).forEach(function ([key, value]) {
+        const pos = parseRC(key);
+        if (!pos) return;
+        if (!cages.has(value)) cages.set(value, []);
+        cages.get(value).push(cellIndex(pos.r, pos.c));
+      });
+      if (cages.size) {
+        q.killercages = [...cages.values()];
+        for (const cells of q.killercages) {
+          for (const segments of pu.cage_for_selection(cells)) {
+            for (const segment of segments) q.cage[segment] = 10;
+          }
+        }
+      }
+
       Object.entries(marks.arrow || {}).forEach(function (pair) {
         const pos = parseRC(pair[0]);
         if (!pos) return;
@@ -565,6 +681,21 @@
           if (!pos) return;
           q.symbol[String(cellIndex(pos.r, pos.c))] = SYMBOL_STAMP[tool](pair[1]);
         });
+      });
+
+      Object.entries(marks.dot || {}).forEach(function ([key, value]) {
+        const e = parseEdge(key);
+        if (!e || !Number(value)) return;
+        const index = edgeCenterIndex(e);
+        if (index !== null) q.symbol[String(index)] = [Number(value), 'circle_M', 1];
+      });
+
+      Object.entries(marks.diagonal || {}).forEach(function ([key, value]) {
+        const pos = parseRC(key);
+        if (!pos || (Number(value) !== 1 && Number(value) !== 2)) return;
+        const a = cornerIndex(pos.r, pos.c + (Number(value) === 2 ? 1 : 0));
+        const b = cornerIndex(pos.r + 1, pos.c + (Number(value) === 1 ? 1 : 0));
+        q.lineE[Math.min(a, b) + ',' + Math.max(a, b)] = 2;
       });
 
       Object.entries(marks.edgeline || {}).forEach(function (pair) {
@@ -637,6 +768,9 @@
         /* some families are named differently across versions */
       }
     }
+    if (tool === 'dot') pu.type = [2, 3];
+    if (tool === 'diagonal' && typeof pu.submode_check === 'function') pu.submode_check('sub_lineE2');
+    else if ((tool === 'edgeline' || tool === 'region') && typeof pu.submode_check === 'function') pu.submode_check('sub_lineE1');
   }
 
   function setHidden(keys, hide) {
@@ -644,6 +778,17 @@
     installPresentation();
     (keys || []).forEach(key => { if (hide) hidden[key] = true; else delete hidden[key]; });
     pu.redraw();
+  }
+
+  function edgeCenterIndex(e) {
+    const size = innerSize();
+    if (e.r < 0 || e.c < 0 || (e.orient === 'H' ? e.r > size.rows || e.c >= size.cols : e.r >= size.rows || e.c > size.cols)) return null;
+    // Native type 2 sits below a cell; type 3 sits to its right. H/V name
+    // the lattice edge itself, matching lineE and the DSL edge convention.
+    const horizontal = e.orient === 'H';
+    const pr = e.r + (horizontal ? 1 : 2) + (pu.space[0] || 0);
+    const pc = e.c + (horizontal ? 2 : 1) + (pu.space[2] || 0);
+    return (horizontal ? 2 : 3) * pu.nx0 * pu.ny0 + pr * pu.nx0 + pc;
   }
 
   function edgePair(key, link) {
@@ -717,6 +862,7 @@
     },
     loadDocuments,
     replaceDrawing,
+    replaceDocuments,
     getSelection: () => ({ tool: currentTool(), activeVariable }),
     exportDocuments,
     selectVariable,

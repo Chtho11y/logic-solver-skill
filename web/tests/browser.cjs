@@ -61,7 +61,7 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   let browser;
   try {
-    browser = await chromium.launch({ headless: true, ...(process.platform === 'win32' ? { channel: 'msedge' } : {}) });
+    browser = await chromium.launch({ headless: true, ...(process.env.PUZZLE_BROWSER_EXECUTABLE ? { executablePath: process.env.PUZZLE_BROWSER_EXECUTABLE } : process.platform === 'win32' ? { channel: 'msedge' } : {}) });
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     page.setDefaultTimeout(8000);
     const errors = [];
@@ -198,6 +198,8 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await frame.locator('#tb_redo').click();
       assert.equal(await frame.getByLabel('行数', { exact: true }).isVisible(), true);
       await frame.getByLabel('行数', { exact: true }).fill('7');
+      assert.equal(await frame.evaluate(() => pu.ny), 6, 'typing does not resize the board before commit');
+      await frame.getByLabel('行数', { exact: true }).press('Tab');
       await frame.waitForFunction(() => pu.ny === 7);
       assert.equal(await frame.evaluate(() => Object.values(pu.pu_q.number)[0][0]), '1');
       await button('y').click();
@@ -226,8 +228,8 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await button('x').click();
       assert.equal(await frame.getByLabel('导入链接', { exact: true }).isVisible(), true);
       await frame.getByLabel('导入链接', { exact: true }).fill(url);
-      await button('导入到当前变量').click();
-      await frame.getByText(/已导入到 x/).waitFor();
+      await button('导入并自动绑定').click();
+      await frame.getByText(/number → x/).waitFor();
       assert.equal(await frame.evaluate(() => Object.values(pu.pu_q.number)[0][0]), '2');
       await button('y').click();
       assert.equal(await frame.evaluate(() => Object.values(pu.pu_q.number)[0][0]), '2');
@@ -288,6 +290,17 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await editor.press('Escape');
       await editor.fill('import "fill"\nsubset_latin');
       assert.ok(await page.locator('.dsl-highlight .tok-keyword').count());
+      await page.getByRole('button', { name: 'Doc 文档', exact: true }).click();
+      assert.equal(await page.getByRole('heading', { name: 'Puzzle DSL 语法文档', exact: true }).count(), 1);
+      assert.ok(await page.locator('.dsl-markdown table th').count(), 'syntax tables are rendered as real table cells');
+      assert.ok(await page.locator('.dsl-markdown li').count(), 'Markdown lists are readable lists');
+      await page.getByRole('navigation', { name: '语法目录' }).getByRole('button', { name: /完整示例/ }).click();
+      await page.screenshot({ path: path.join(artifacts, 'docs.png') });
+      await page.getByLabel('搜索文档').fill('no-matching-entry-xyz');
+      assert.equal(await page.locator('.dsl-doc-empty').count(), 1);
+      await page.getByLabel('搜索文档').fill('');
+      await page.keyboard.press('Escape');
+      assert.equal(await page.getByRole('dialog', { name: 'DSL 文档' }).count(), 0);
       await page.getByRole('button', { name: 'Doc 文档', exact: true }).click();
       await page.getByRole('button', { name: 'Builtin 函数', exact: true }).click();
       await page.getByLabel('搜索文档').fill('cells');
@@ -373,6 +386,31 @@ test('central workspace and solve lifecycle in the browser', { timeout: 120000 }
       await runSolve();
       assert.ok(await frame.getByText(/满足当前已编码规则；未检查唯一性/).isVisible());
       assert.ok(Object.values(lastSolved.values.n).some(value => Array.isArray(value) && value[0] === -1));
+    });
+
+    await t.test('exact native cage URL imports as independent sparse variables and reaches the solver', async () => {
+      await frame.getByLabel('导入链接', { exact: true }).fill(read('tests/fixtures/imports/killer-cages.penpa.url').trim());
+      await button('导入并自动绑定').click();
+      await frame.getByText(/新增题目线索变量：cage_regions、cage_totals/).waitFor();
+      await captureRender();
+      assert.equal(await frame.evaluate(() => pu.ny), 5);
+      assert.equal(await frame.evaluate(() => pu.nx), 5);
+      await page.locator('.variable-main').filter({ hasText: 'cage_regions' }).click();
+      assert.equal(await frame.evaluate(() => pu.pu_q.killercages.length), 5);
+      assert.equal(await frame.evaluate(() => pu.pu_q.killercages.flat().length), 17);
+      assert.ok(await frame.evaluate(() => Object.keys(pu.pu_q.cage).length));
+      await page.locator('.variable-main').filter({ hasText: 'cage_totals' }).click();
+      assert.equal(await frame.evaluate(() => Object.keys(pu.pu_q.numberS).length), 5);
+      assert.equal(await frame.evaluate(() => Object.keys(pu.pu_q.number).length), 0);
+      await page.getByLabel('规则 DSL', { exact: true }).fill('count(defined(cage_regions)) == 17\ncount(defined(cage_totals)) == 5\ncage_totals[cell(2, 0)] == 100');
+      await runSolve();
+      assert.equal(lastSolved.values.cage_totals['2,0'], 100);
+      assert.equal(Object.keys(lastSolved.values.cage_regions).length, 17);
+      await button('导入并自动绑定').click();
+      await frame.getByText(/已导入到 cage_regions/).waitFor();
+      assert.equal(await page.getByRole('button', { name: '编辑变量 cage_totals', exact: true }).count(), 1);
+      await page.screenshot({ path: path.join(artifacts, 'cage-import.png'), fullPage: true });
+      assert.deepEqual(errors, []);
     });
 
   } finally {

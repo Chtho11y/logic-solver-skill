@@ -2,34 +2,31 @@
 /**
  * Dump a puzz.link / pzprjs board as JSON on stdout.
  *
- * Usage: node pzpr_dump.js '<pid>/<w>/<h>/<body>'
+ * Usage: node pzpr_dump.js '<pid>/[<flags>/]<w>/<h>/<body>'
  *
- * Looks for the `pzpr` module on NODE_PATH, then next to this file, then
- * cwd/node_modules.
+ * Uses the project's installed `pzpr`, or Node's configured module paths.
+ * Decoding never installs or changes dependencies.
  */
 "use strict";
 
-const fs = require("fs");
-const path = require("path");
-const Module = require("module");
-
 function loadPzpr() {
-  const candidates = [];
-  if (process.env.NODE_PATH) {
-    for (const dir of process.env.NODE_PATH.split(path.delimiter)) {
-      if (dir) candidates.push(path.join(dir, "pzpr"));
-    }
+  let resolved;
+  try {
+    resolved = require.resolve("pzpr", { paths: [__dirname, process.cwd()] });
+  } catch (err) {
+    throw new Error(
+      "pzprjs dependency is unavailable; run 'npm --prefix puzzle/importing install' " +
+      "from the project root, then retry the import"
+    );
   }
-  candidates.push(path.join(__dirname, "node_modules", "pzpr"));
-  candidates.push(path.join(process.cwd(), "node_modules", "pzpr"));
-  for (const dir of candidates) {
-    try {
-      return require(dir);
-    } catch (_) {
-      /* keep looking */
-    }
+  try {
+    return require(resolved);
+  } catch (err) {
+    throw new Error(
+      "pzprjs dependency could not load: " + err.message +
+      "; reinstall with 'npm --prefix puzzle/importing install' from the project root"
+    );
   }
-  return require("pzpr");
 }
 
 function openPuzzle(pzpr, src) {
@@ -77,6 +74,10 @@ async function main() {
     process.exit(2);
   }
   const pzpr = loadPzpr();
+  const parsed = pzpr.parser.parseURL(src);
+  if (!parsed.pid || !pzpr.variety(parsed.pid).valid) {
+    throw new Error("installed pzprjs does not support this puzzle type: " + src.split("/")[0]);
+  }
   const puzzle = await openPuzzle(pzpr, src);
   const board = puzzle.board;
   const rows = board.rows;
@@ -136,11 +137,17 @@ async function main() {
     cells,
     borders,
     excells,
+    // A room graph alone is not enough: Shikaku, for example, partitions
+    // answers. An edit-mode border tool identifies pre-drawn room borders.
+    hasGivenRooms: !!(
+      board.roommgr && board.roommgr.enabled &&
+      puzzle.mouse.inputModes.edit.includes("border")
+    ),
   };
   process.stdout.write(JSON.stringify(payload));
 }
 
 main().catch((err) => {
-  process.stderr.write(String(err && err.stack ? err.stack : err) + "\n");
+  process.stderr.write(String(err && err.message ? err.message : err) + "\n");
   process.exit(1);
 });

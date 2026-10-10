@@ -24,6 +24,7 @@ export type PenpaHandle = {
   variableCounts: () => Record<string, number>;
   stamp: (drawing: Drawing) => boolean;
   replaceDrawing: (id: string, drawing: Drawing) => boolean;
+  replaceDocuments: (items: { id: string; drawing: Drawing }[], activeId?: string) => boolean;
   loadDocuments: (items: { id: string; drawing: Drawing }[]) => boolean;
   getSelection: () => { tool: DrawTool; activeVariable: string };
   exportDocuments: () => { id: string; url: string }[];
@@ -44,6 +45,7 @@ type Bridge = {
   variableCounts: () => Record<string, number>;
   stamp: (drawing: Drawing) => boolean;
   replaceDrawing: (id: string, drawing: Drawing) => boolean;
+  replaceDocuments: (items: { id: string; drawing: Drawing }[], activeId?: string) => boolean;
   loadDocuments: (items: { id: string; drawing: Drawing }[]) => boolean;
   getSelection: () => { tool: DrawTool; activeVariable: string };
   exportDocuments: () => { id: string; url: string }[];
@@ -94,6 +96,7 @@ export const PenpaPane = forwardRef<PenpaHandle, PenpaPaneProps>(function PenpaP
     deleteVariable(id) { return bridge()?.deleteVariable(id) ?? false; },
     variableCounts() { return bridge()?.variableCounts?.() ?? {}; },
     replaceDrawing(id, drawing) { return bridge()?.replaceDrawing(id, drawing) ?? false; },
+    replaceDocuments(items, activeId) { return bridge()?.replaceDocuments(items, activeId) ?? false; },
     loadDocuments(items) { return bridge()?.loadDocuments(items) ?? false; },
     getSelection() { return bridge()?.getSelection() ?? { tool: "number", activeVariable: "__unbound" }; },
     exportDocuments() { return bridge()?.exportDocuments() ?? []; },

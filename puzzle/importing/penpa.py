@@ -19,6 +19,7 @@ from typing import Any
 from urllib.parse import unquote, urlsplit
 
 from .board import LayerBoard, regions_from_walls
+from .cages import decode_cages, encode_cages
 from .errors import PuzzleImportError
 from .pids import guess_from_tags
 
@@ -85,7 +86,7 @@ def looks_like_penpa(text: str) -> bool:
     lowered = raw.lower()
     if "penpa" in lowered or "swaroopg92" in lowered:
         return True
-    if "#m=" in lowered or raw.startswith("m=") or "&p=" in raw:
+    if "#m=" in lowered or raw.startswith(("m=", "p=", "#p=")) or "&p=" in raw:
         return True
     return False
 
@@ -99,27 +100,21 @@ def parse_penpa_payload(url: str) -> dict[str, str]:
     parsed = urlsplit(raw)
     fragment = (parsed.fragment or "").lstrip("?")
     query = (parsed.query or "").lstrip("?")
-    candidate = fragment or query
-    if not candidate:
-        candidate = raw.split("#", 1)[1] if "#" in raw else raw
-        candidate = candidate.lstrip("#").lstrip("?")
+    candidates = [query, fragment] if parsed.scheme or parsed.netloc else [raw.lstrip("#?")]
     mode = "edit"
     payload = ""
-    for token in candidate.split("&"):
-        if not token:
-            continue
-        key, sep, value = token.partition("=")
-        if not sep:
-            if not payload:
-                payload = unquote(key)
-            continue
-        key, value = unquote(key), unquote(value)
-        if key == "m":
-            mode = value or mode
-        elif key == "p" and not payload:
-            payload = value
-    if not payload:
-        payload = candidate
+    for candidate in candidates:
+        for token in candidate.split("&"):
+            key, sep, value = token.partition("=")
+            if not sep:
+                continue
+            key, value = unquote(key), unquote(value)
+            if key == "m":
+                mode = value or mode
+            elif key == "p":
+                if payload and payload != value:
+                    raise PuzzleImportError("Penpa URL contains conflicting p= payloads")
+                payload = value
     if not payload:
         raise PuzzleImportError("Penpa URL has no p= payload")
     return {"mode": mode, "p": payload}
@@ -133,11 +128,19 @@ def _inflate(payload: str) -> str:
     if pad:
         data += "=" * pad
     try:
-        raw = b64decode(data)
+        raw = b64decode(data, validate=True)
     except Exception as exc:
         raise PuzzleImportError("Penpa payload is not valid Base64") from exc
     try:
-        return zlib.decompress(raw, -15).decode("utf-8")
+        inflater = zlib.decompressobj(-15)
+        plain = inflater.decompress(raw, 16 * 1024 * 1024 + 1)
+        if len(plain) > 16 * 1024 * 1024 or inflater.unconsumed_tail:
+            raise PuzzleImportError("Penpa payload is too large to import")
+        if not inflater.eof:
+            raise PuzzleImportError("Penpa payload is truncated; paste the complete share link")
+        return plain.decode("utf-8")
+    except PuzzleImportError:
+        raise
     except Exception as exc:
         raise PuzzleImportError("Penpa payload is not zlib-compressed text") from exc
 
@@ -214,14 +217,15 @@ class PenpaGrid:
         if category == 0:
             return self._place_cell(pr, pc)
         if category == 2:
-            # Horizontal edge centre between (pr-1, pc-2) and (pr-1, pc-1)
+            # Native type 2 is the bottom edge midpoint of the indexed cell.
             row = pr - 1 - self.top
             col = pc - 2 - self.left
-            return "edge", ("V", row, col + 1)
+            return "edge", ("H", row, col)
         if category == 3:
+            # Native type 3 is the right edge midpoint of the indexed cell.
             row = pr - 2 - self.top
             col = pc - 1 - self.left
-            return "edge", ("H", row + 1, col)
+            return "edge", ("V", row, col)
         if category == 1:
             # Vertices / corners on the padded lattice.
             row = pr - 1 - self.top
@@ -265,15 +269,18 @@ def decode_penpa(url: str) -> LayerBoard:
     if len(header) < 3:
         raise PuzzleImportError("Penpa header is truncated")
 
-    spaces = _loads_maybe(parts[1] if len(parts) > 1 else "", [0, 0, 0, 0])
-    if not isinstance(spaces, list) or len(spaces) < 4:
-        spaces = [0, 0, 0, 0]
-    top, bottom, left, right = (int(spaces[0]), int(spaces[1]), int(spaces[2]), int(spaces[3]))
-    header_cols = int(header[1])
-    header_rows = int(header[2])
+    spaces = _loads_maybe(parts[1] if len(parts) > 1 else "", None)
+    if not isinstance(spaces, list) or len(spaces) != 4:
+        raise PuzzleImportError("Penpa grid margins are missing or invalid")
+    try:
+        top, bottom, left, right = map(int, spaces)
+        header_cols = int(header[1])
+        header_rows = int(header[2])
+    except (TypeError, ValueError) as exc:
+        raise PuzzleImportError("Penpa grid dimensions and margins must be integers") from exc
     inner_rows = header_rows - top - bottom
     inner_cols = header_cols - left - right
-    if inner_rows <= 0 or inner_cols <= 0:
+    if min(top, bottom, left, right) < 0 or inner_rows <= 0 or inner_cols <= 0 or max(header_rows, header_cols) > 200:
         raise PuzzleImportError("Penpa grid size is invalid")
 
     grid = PenpaGrid(inner_rows, inner_cols, top, bottom, left, right)
@@ -297,9 +304,12 @@ def decode_penpa(url: str) -> LayerBoard:
         if isinstance(raw_tags, list):
             tags = [str(t) for t in raw_tags if t]
 
-    pu_q = _loads_maybe(parts[3] if len(parts) > 3 else "", {})
+    pu_q = _loads_maybe(parts[3] if len(parts) > 3 else "", None)
     if not isinstance(pu_q, dict):
-        pu_q = {}
+        raise PuzzleImportError("Penpa problem data is missing or invalid JSON; paste the complete share link")
+    for field in ("surface", "number", "symbol", "lineE", "line"):
+        if field in pu_q and not isinstance(pu_q[field], dict):
+            raise PuzzleImportError(f"Penpa {field} data must be an object")
 
     board = LayerBoard(
         rows=inner_rows,
@@ -312,11 +322,17 @@ def decode_penpa(url: str) -> LayerBoard:
         raw={"mode": parsed["mode"], "header": header[:11], "spaces": spaces, "pu_q_keys": sorted(pu_q)},
     )
 
-    _decode_surface(board, grid, pu_q.get("surface") or {})
-    _decode_number(board, grid, pu_q.get("number") or {})
-    _decode_symbol(board, grid, pu_q.get("symbol") or {})
-    _decode_line_e(board, grid, pu_q.get("lineE") or {})
-    _decode_line(board, grid, pu_q.get("line") or {})
+    try:
+        _decode_surface(board, grid, pu_q.get("surface") or {})
+        _decode_number(board, grid, pu_q.get("number") or {})
+        _decode_symbol(board, grid, pu_q.get("symbol") or {})
+        _decode_line_e(board, grid, pu_q.get("lineE") or {})
+        _decode_line(board, grid, pu_q.get("line") or {})
+        decode_cages(board, grid, pu_q)
+    except PuzzleImportError:
+        raise
+    except (TypeError, ValueError) as exc:
+        raise PuzzleImportError(f"Invalid Penpa drawing data: {exc}") from exc
 
     walls = {key for key, mark in board.edges.items() if mark.line}
     if walls:
@@ -355,7 +371,7 @@ def decode_penpa(url: str) -> LayerBoard:
     ]
     if leftover:
         board.warnings.append("unmapped Penpa keys: " + ", ".join(sorted(leftover)[:12]))
-    for key in ("thermo", "arrows", "killercages", "cage", "wall", "numberS", "freeline", "freelineE", "polygon", "direction", "squareframe", "special", "nobulbthermo", "deletelineE"):
+    for key in ("thermo", "arrows", "wall", "freeline", "freelineE", "polygon", "direction", "squareframe", "special", "nobulbthermo", "deletelineE"):
         if pu_q.get(key):
             board.warnings.append(f"Penpa {key} is present but not bound to a solver layer")
     return board
@@ -533,6 +549,17 @@ def _decode_line_e(board: LayerBoard, grid: PenpaGrid, data: dict) -> None:
                 continue
             edge = _corners_to_edge(corners[0], corners[1])
             if edge is None:
+                (r1, c1), (r2, c2) = corners
+                if abs(r1 - r2) == 1 and abs(c1 - c2) == 1:
+                    row, col = min(r1, r2), min(c1, c2)
+                    if board.in_bounds(row, col):
+                        diagonal = 1 if (r2 - r1) * (c2 - c1) > 0 else 2
+                        mark = board.cell(row, col)
+                        if mark.diagonal is not None and mark.diagonal != diagonal:
+                            raise PuzzleImportError(f"Both diagonals are drawn at {row},{col}; one diagonal value per cell is supported")
+                        mark.diagonal = diagonal
+                    continue
+                board.warnings.append(f"Unsupported Penpa lineE segment: {key}")
                 continue
             orient, row, col = edge
             board.edge(orient, row, col).line = 1 if int(value) else 1
@@ -643,6 +670,13 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
     for key, mark in board.cells.items():
         row, col = (int(p) for p in key.split(","))
         index = str(grid.cell_index(row, col))
+        if mark.diagonal:
+            if mark.diagonal not in {1, 2}:
+                raise PuzzleImportError(f"Diagonal at {key} must be 1 (TL–BR) or 2 (BL–TR)")
+            area = grid.real_rows * grid.real_cols
+            top_left = area + (row + 1) * grid.real_cols + col + 1
+            a, b = (top_left, top_left + grid.real_cols + 1) if mark.diagonal == 1 else (top_left + grid.real_cols, top_left + 1)
+            pu_q["lineE"][f"{min(a, b)},{max(a, b)}"] = 2
         if mark.shade:
             pu_q["surface"][index] = 4 if mark.shade == 1 else int(mark.shade)
         if mark.arrow is not None:
@@ -659,11 +693,31 @@ def encode_penpa(board: LayerBoard, *, title: str = "", tags: list[str] | None =
             pu_q["symbol"][index] = [1, "star", 1]
         elif mark.cross:
             pu_q["symbol"][index] = [2, "cross", 1]
+        else:
+            for attr, family, fixed in (("square", "square_M", None), ("triangle", "triup_M", None),
+                                        ("tree", "tents", 2), ("tent", "tents", 1),
+                                        ("ship", "battleship", None), ("wave", "water", 1), ("bulb", "sun_moon", 1)):
+                if getattr(mark, attr):
+                    pu_q["symbol"][index] = [fixed or int(getattr(mark, attr)), family, 1]
+                    break
+    pu_q["killercages"], pu_q["cage"] = encode_cages(board, grid)
+    area = grid.real_rows * grid.real_cols
+    for key, value in board.corner_numbers.items():
+        row, col = map(int, key.split(","))
+        pu_q["numberS"][str(4 * (grid.cell_index(row, col) + area))] = [str(value), 1]
     for key, mark in board.edges.items():
-        if not mark.line:
-            continue
         orient, row_s, col_s = key.split(",")
         row, col = int(row_s), int(col_s)
+        if mark.link:
+            a = grid.cell_index(row - 1, col) if orient == "H" else grid.cell_index(row, col - 1)
+            b = grid.cell_index(row, col)
+            pu_q["line"][f"{a},{b}"] = 3
+        if mark.dot:
+            # Inverse of PenpaGrid.decode_index for edge-centre categories.
+            index = (2 * area + (row + 1) * grid.real_cols + col + 2) if orient == "H" else (3 * area + (row + 2) * grid.real_cols + col + 1)
+            pu_q["symbol"][str(index)] = [int(mark.dot), "circle_M", 1]
+        if not mark.line:
+            continue
         if orient == "H":
             a = (row, col)
             b = (row, col + 1)
