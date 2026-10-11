@@ -76,20 +76,26 @@ the ``puzzle`` hint).
     instance = None
     if key:
         spec = load_spec(key)
-        bound = bind_instance(board, spec, puzzle_key=key)
-        warnings.extend(bound.pop("_warnings", []))
-        instance = bound
+        try:
+            bound = bind_instance(board, spec, puzzle_key=key)
+        except PuzzleImportError as exc:
+            # The drawing remains useful even when genre inference cannot
+            # choose between multiple variables or encode a partition input.
+            warnings.append(f"Preset binding needs a variable mapping: {exc}")
+        else:
+            warnings.extend(bound.pop("_warnings", []))
+            instance = bound
     elif guessed:
         warnings.append(f"puzzle {guessed!r} is not implemented; showing generic layers only")
     else:
-        warnings.append("could not infer a puzzle type; select one to bind the imported drawing")
+        warnings.append("No puzzle rule was inferred; imported element bindings do not add puzzle constraints")
 
     return {
         "kind": kind,
         "puzzle": key,
         "instance": instance,
         "layers": board.to_layers_json(),
-        "warnings": warnings,
+        "warnings": list(dict.fromkeys(warnings)),
         "title": board.title,
         "author": board.author,
         "sourceUrl": board.source or url,

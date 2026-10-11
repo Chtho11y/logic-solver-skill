@@ -44,7 +44,7 @@ export function bindDrawing(drawing: Drawing, spec: PuzzleSpec): Instance {
         const arr: Array<number | number[]> = Array.from({ length }, (_, i) => {
           const value = src[String(i)];
           if (value === undefined || value === null || value === -1) return -1;
-          return value;
+          return layer.options?.mode === "list" ? (Array.isArray(value) ? value : [value]).filter(n => n >= 0) : value;
         });
         params[side] = arr;
       }

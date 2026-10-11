@@ -119,7 +119,7 @@ def solve_payload(payload: dict) -> dict[str, Any]:
                 instance.regions = board.regions or {f"{r},{c}": 0 for r in range(board.rows) for c in range(board.cols)}
                 continue
             if name == "__unbound":
-                if board.cells or board.edges or board.outside:
+                if board.cells or board.edges or board.outside or board.cages or board.corner_numbers:
                     raise ValueError("存在未绑定的绘制内容，请先选择变量归属")
                 continue
             variable = spec.var_spec(name)

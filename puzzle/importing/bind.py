@@ -7,6 +7,7 @@ from typing import Any
 from puzzle.spec import REGION_VAR, PuzzleSpec
 
 from .board import LayerBoard
+from .errors import PuzzleImportError
 
 SIDES = ("top", "bottom", "left", "right")
 
@@ -71,12 +72,14 @@ def bind_instance(
                 outside[side] = arr
                 params[side] = arr
             continue
-        if layer.var == REGION_VAR or layer.element == "region":
+        if layer.var == REGION_VAR:
             continue
         if not layer.var:
             continue
         values = _values_for_layer(layer, board, spec, used_numbers_for)
-        if layer.element == "number" and values:
+        if (layer.element == "number" and values and layer.options.get("semantic") != "cage-total"
+                and layer.options.get("importLayer") not in {"cage_totals", "corner_numbers"}
+                and layer.options.get("placement") != "corner"):
             used_numbers_for = layer.var
         if values:
             clues.setdefault(layer.var, {}).update(values)
@@ -119,26 +122,41 @@ def _values_for_layer(
     kind = layer.target
     out: dict[str, int] = {}
 
+    semantic = layer.options.get("semantic")
+    imported = layer.options.get("importLayer")
+    if element == "region":
+        if not var_spec or var_spec.var_type.value != "constant":
+            raise PuzzleImportError(f"Region input {layer.var!r} must bind a constant cell variable or a region-partition variable")
+        if var_spec.kind.value != "cell":
+            raise PuzzleImportError(f"Region input {layer.var!r} must use cell points")
+        return dict(board.cages if semantic == "cage-region" or imported == "cage_regions" else board.regions)
+
     if element == "number":
+        if semantic == "cage-total" or imported in {"cage_totals", "corner_numbers"} or layer.options.get("placement") == "corner":
+            return dict(board.corner_numbers)
         if layer.options.get("mode") == "list":
             from .clues import parse_run_clue
             return {key: parse_run_clue(mark.number_text or str(mark.number))
                     for key, mark in board.cells.items()
                     if mark.number_text or mark.number is not None}
-        if used_numbers_for and used_numbers_for != layer.var:
-            # Second number layer: only keep cells that already have an arrow
-            # (Yajilin) or that have not been consumed. Prefer unused cells.
-            for key, mark in board.cells.items():
-                if mark.number is None:
-                    continue
-                if mark.arrow is None and used_numbers_for:
-                    continue
-                out[key] = int(mark.number)
-            if out:
-                return out
+        if used_numbers_for and used_numbers_for != layer.var and any(mark.number is not None or mark.number_text for mark in board.cells.values()):
+            raise PuzzleImportError(f"Number marks match both {used_numbers_for!r} and {layer.var!r}; import into separate variable documents")
         for key, mark in board.cells.items():
             if mark.number is not None:
                 out[key] = int(mark.number)
+            elif mark.number_text:
+                raise PuzzleImportError(f"Number clue {mark.number_text!r} at {key} is not an integer for {layer.var!r}; use a supported list/text clue layer")
+        return out
+
+    if element == "text":
+        for key, mark in board.cells.items():
+            if mark.number is not None:
+                out[key] = int(mark.number)
+            elif mark.number_text:
+                text = mark.number_text.strip().upper()
+                if len(text) != 1 or not "A" <= text <= "Z":
+                    raise PuzzleImportError(f"Text clue {mark.number_text!r} at {key} must be a single A–Z letter")
+                out[key] = ord(text) - ord("A") + 1
         return out
 
     if element == "circle":

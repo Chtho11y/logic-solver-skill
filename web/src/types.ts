@@ -103,6 +103,8 @@ export interface Instance {
 }
 
 export interface GenericLayer {
+  /** Optional import semantics (e.g. cage totals in cell corners). */
+  options?: Record<string, unknown>;
   id: string;
   element: string;
   target: string;

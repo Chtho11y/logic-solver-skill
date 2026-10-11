@@ -2,13 +2,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { drawingParams, instanceToDrawing } from "./bind";
-import { emptyDrawing, drawingFromGenericLayers, TOOL_BY_ID, type DrawTool, type Drawing } from "./drawing";
+import { emptyDrawing, TOOL_BY_ID, type DrawTool, type Drawing } from "./drawing";
 import { DslEditor } from "./DslEditor";
 import { VariablePanel, type VariableRow } from "./VariablePanel";
+import { planImport, type ImportPlan } from './importPlan';
+import { ImportPreview } from './ImportPreview';
+import { IntegerInput } from './IntegerInput';
 import { VariableEditor } from './VariableEditor';
 import { keywords } from './dslLanguage';
 import { PenpaPane, type PenpaHandle, type PenpaOccupancy } from "./PenpaPane";
-import type { Instance, LayerSpec, PuzzleSpec, SolveResult, SolverBackend, VarSpec } from "./types";
+import type { ImportResult, Instance, LayerSpec, PuzzleSpec, SolveResult, SolverBackend, VarSpec } from "./types";
 
 const identifiers = /#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b[A-Za-z_]\w*\b/g;
 const renameInSource = (source: string, from: string, to: string) => source.replace(identifiers, (token, offset) => token === from && !source.slice(0, offset).trimEnd().endsWith('.') ? to : token);
@@ -51,6 +54,7 @@ export function App() {
   const [activeVariable, setActiveVariable] = useState("__unbound");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pendingImport, setPendingImport] = useState<{ data: ImportResult; plan: ImportPlan; target: string; current: () => boolean } | null>(null);
   const [backends, setBackends] = useState<SolverBackend[]>([]);
   const [backend, setBackend] = useState("auto");
   const [dslSource, setDslSource] = useState("");
@@ -71,6 +75,7 @@ export function App() {
   const revision = useRef(0);
   const boardRevision = useRef<number | null>(null);
   const inFlight = useRef(false);
+  const importInFlight = useRef(false);
   const initialized = useRef(false);
   const specRef = useRef(spec);
   specRef.current = spec;
@@ -116,49 +121,86 @@ export function App() {
   }, [invalidate]);
 
   function loadInstance(nextSpec: PuzzleSpec, instance: Instance) {
+    if (!penpa.current?.loadDocuments(documentsFor(nextSpec, instance))) throw new Error("盘面载入失败，请重试。");
     invalidate();
-    penpa.current?.setHidden(Object.keys(hiddenVariables).map(id => `var:${id}`), false);
+    penpa.current.setHidden(Object.keys(hiddenVariables).map(id => `var:${id}`), false);
     setHiddenVariables({});
-    penpa.current?.setHidden(Object.keys(hiddenParts), false);
+    penpa.current.setHidden(Object.keys(hiddenParts), false);
     setHiddenParts({});
-    penpa.current?.loadDocuments(documentsFor(nextSpec, instance));
     setDrawing({ ...emptyDrawing(instance.rows, instance.cols), puzzle: nextSpec.key, params: structuredClone(instance.params ?? {}), title: instance.title ?? "" });
-    boardRevision.current = penpa.current?.getRevision() ?? null;
+    boardRevision.current = penpa.current.getRevision();
+  }
+  function importSnapshot() {
+    const version = revision.current, board = penpa.current?.getRevision();
+    const selection = penpa.current?.getSelection().activeVariable;
+    return () => version === revision.current && board === penpa.current?.getRevision() && selection === penpa.current?.getSelection().activeVariable;
   }
   async function importPreset() {
-    if (!preset || loading) return;
-    setLoading(true); setNote(""); invalidate();
+    if (!preset || importInFlight.current || !ready) return;
+    importInFlight.current = true;
+    setLoading(true); setNote("");
+    const current = importSnapshot();
     try {
       const data = await api.puzzle(preset);
+      if (!current()) { setNote("工作区已改变，已取消过期的预设载入。请重新导入。"); return; }
       const next = editableSpec(data.puzzle);
+      loadInstance(next, data.sample ?? { puzzle: next.key, rows: next.defaultRows, cols: next.defaultCols, clues: {}, regions: {}, params: {}, title: "" });
       specRef.current = next;
       setSpec(next); setSample(data.sample);
       setDslSource(next.source ?? ""); setOriginalSource(next.source ?? "");
-      loadInstance(next, data.sample ?? { puzzle: next.key, rows: next.defaultRows, cols: next.defaultCols, clues: {}, regions: {}, params: {}, title: "" });
+      setAdding(false); setEditingVariable(null);
       const first = next.layers.find(l => l.role === "input");
-      if (first) penpa.current?.setTool(first.element === "outside" ? "number" : first.element as DrawTool);
+      if (first) penpa.current?.setTool(first.element === "outside" ? "number" : first.element === "region" ? "edgeline" : first.element as DrawTool);
       setNote(`已导入 ${next.zh || next.en} 预设；可以继续新增变量和修改规则。`);
     } catch (e) { setNote(String(e)); }
-    finally { setLoading(false); }
+    finally { importInFlight.current = false; setLoading(false); }
   }
 
   async function importLink(e: React.FormEvent) {
     e.preventDefault();
-    if (!url.trim() || loading) return;
-    setLoading(true); invalidate();
+    if (!url.trim() || importInFlight.current || !ready) return;
+    importInFlight.current = true;
+    setLoading(true); setNote("");
     const target = penpa.current?.getSelection().activeVariable ?? activeVariable;
+    const current = importSnapshot();
     try {
       const data = await api.importUrl(url.trim());
       if (data.error) throw new Error(data.error);
-      if (!penpa.current?.replaceDrawing(target, drawingFromGenericLayers(data.layers, data.rows, data.cols))) throw new Error("链接导入失败");
-      setNote(`已导入到 ${target === "__unbound" ? "未绑定画布" : target}${data.warnings.length ? ` · ${data.warnings.join("；")}` : ""}`);
+      if (!current()) { setNote("工作区已改变，已取消过期的链接导入。请重新导入。"); return; }
+      const plan = planImport(spec, data, target, dslSource);
+      if (plan.review.length) { setPendingImport({ data, plan, target, current }); return; }
+      applyImport(data, plan, target);
     } catch (e) { setNote(String(e)); }
-    finally { setLoading(false); }
+    finally { importInFlight.current = false; setLoading(false); }
+  }
+
+  function applyImport(data: ImportResult, plan: ImportPlan, target: string) {
+    const active = plan.documents.some(doc => doc.id === target) ? target : plan.documents[0].id;
+    if (!penpa.current?.replaceDocuments(plan.documents, active)) throw new Error("链接导入失败，当前工作区未改变。");
+    specRef.current = plan.spec; setSpec(plan.spec);
+    invalidate();
+    const importedIds = plan.documents.map(doc => doc.id);
+    penpa.current.setHidden(importedIds.flatMap(id => [`var:${id}`, `in:${id}`]), false);
+    setHiddenVariables(prev => ({ ...prev, ...Object.fromEntries(importedIds.map(id => [id, false])) }));
+    setHiddenParts(prev => ({ ...prev, ...Object.fromEntries(importedIds.map(id => [`in:${id}`, false])) }));
+    setDrawing(prev => ({ ...prev, rows: data.rows, cols: data.cols, title: data.title || prev.title, ...(data.instance && data.puzzle === spec.key ? { puzzle: spec.key, params: structuredClone(data.instance.params) } : {}) }));
+    const firstLayer = plan.spec.layers.find(layer => layer.var === active || active === '__outside' && layer.target === 'outside');
+    penpa.current.setTool(active === '__regions' || firstLayer?.element === 'region' ? 'edgeline' : active === '__outside' ? 'number' : firstLayer?.element as DrawTool ?? 'number');
+    setActiveVariable(active);
+    boardRevision.current = penpa.current.getRevision();
+    setNote(`已导入到 ${plan.bindings.join('；')}${plan.created.length ? `。新增题目线索变量：${plan.created.join('、')}；需在 DSL 中引用它们才能约束答案。` : ''}${data.warnings.length ? ` · ${data.warnings.join('；')}` : ''}`);
+  }
+  function confirmImport() {
+    if (!pendingImport) return;
+    if (!pendingImport.current()) { setNote("工作区已改变，已取消过期的链接导入。请重新导入。"); setPendingImport(null); return; }
+    try { applyImport(pendingImport.data, pendingImport.plan, pendingImport.target); }
+    catch (error) { setNote(String(error)); }
+    setPendingImport(null);
   }
 
   function addVariable(e: React.FormEvent) {
     e.preventDefault();
-    if (!/^[A-Za-z_][A-Za-z_0-9]*$/.test(name) || name.startsWith("__") || spec.variables.some(v => v.name === name)) { setNote("变量名须为唯一的英文标识符，不能以 __ 开头。"); return; }
+    if (!/^[A-Za-z_][A-Za-z_0-9]*$/.test(name) || name.startsWith("__") || keywords.includes(name) || spec.variables.some(v => v.name === name)) { setNote("变量名须为唯一的非保留英文标识符，不能以 __ 开头。"); return; }
     if (!Number.isSafeInteger(minimum) || !Number.isSafeInteger(maximum) || minimum > maximum) { setNote("请填写有效的整数值域。"); return; }
     const element = varType === "cc" ? "region" : (penpa.current?.getSelection().tool ?? activeTool);
     const target = ["link", "edgeline", "dot"].includes(element) ? "edge" : "cell";
@@ -196,7 +238,7 @@ export function App() {
   }
 
   async function solve() {
-    if (inFlight.current || loading || !ready) return;
+    if (inFlight.current || importInFlight.current || !ready) return;
     invalidate(); inFlight.current = true; setBusy(true); setNote("");
     const version = revision.current;
     const board = penpa.current?.getRevision();
@@ -222,7 +264,7 @@ export function App() {
   const parameters = Object.entries(drawingParams(drawing, spec)).filter(([key, value]) => !["rows", "cols"].includes(key) && typeof value === "number");
   const controls = <>
     <div className="studio-group">
-      <select aria-label="预设" value={preset} onChange={e => setPreset(e.target.value)}>
+      <select aria-label="预设" disabled={loading} value={preset} onChange={e => setPreset(e.target.value)}>
         <option value="">选择预设…</option>
         {puzzles.map(p => <option key={p.key} value={p.key}>{p.zh || p.en} · {p.key}{p.partial ? " · 部分实现" : ""}</option>)}
       </select>
@@ -232,11 +274,11 @@ export function App() {
       <button className="solve" title="求解（Ctrl+Enter）" disabled={!ready || busy || loading || !backends.some(b => b.name === backend && b.available)} onClick={solve}>{busy ? "求解中…" : "求解"}</button>
     </div>
     <div className="studio-secondary">
-      <form className="studio-settings" onSubmit={importLink} onKeyDown={e => e.stopPropagation()}><input aria-label="导入链接" placeholder="Penpa+ / puzz.link" value={url} onChange={e => setUrl(e.target.value)} /><button disabled={loading || !url.trim()}>导入到当前变量</button></form>
+      <form className="studio-settings" onSubmit={importLink} onKeyDown={e => e.stopPropagation()}><input aria-label="导入链接" placeholder="Penpa+ / puzz.link" value={url} onChange={e => setUrl(e.target.value)} /><button title="按绘制元素自动绑定变量；无法唯一匹配时新建题目线索变量" disabled={loading || !ready || !url.trim()}>{loading ? "导入中…" : "导入并自动绑定"}</button></form>
       <div className="studio-settings" aria-label="尺寸与参数" onKeyDown={e => e.stopPropagation()}>
-        <label>行 <input aria-label="行数" type="number" min={1} max={40} value={drawing.rows} onChange={e => { if (penpa.current?.resize(+e.target.value, drawing.cols)) invalidate(); }} /></label>
-        <label>列 <input aria-label="列数" type="number" min={1} max={40} value={drawing.cols} onChange={e => { if (penpa.current?.resize(drawing.rows, +e.target.value)) invalidate(); }} /></label>
-        {parameters.map(([key, value]) => <label key={key}>{key} <input aria-label={`参数 ${key}`} type="number" value={Number(value)} onChange={e => { if (e.target.value && Number.isSafeInteger(+e.target.value)) { setDrawing(prev => ({ ...prev, puzzle: spec.key, params: { ...prev.params, [key]: +e.target.value } })); invalidate(); } }} /></label>)}
+        <label>行 <IntegerInput label="行数" min={1} max={40} value={drawing.rows} onCommit={rows => { if (penpa.current?.resize(rows, drawing.cols)) { setDrawing(prev => ({ ...prev, rows })); invalidate(); } }} /></label>
+        <label>列 <IntegerInput label="列数" min={1} max={40} value={drawing.cols} onCommit={cols => { if (penpa.current?.resize(drawing.rows, cols)) { setDrawing(prev => ({ ...prev, cols })); invalidate(); } }} /></label>
+        {parameters.map(([key, value]) => <label key={key}>{key} <IntegerInput label={`参数 ${key}`} value={Number(value)} onCommit={value => { setDrawing(prev => ({ ...prev, puzzle: spec.key, params: { ...prev.params, [key]: value } })); invalidate(); }} /></label>)}
         <label>后端 <select aria-label="求解后端" value={backend} onChange={e => { setBackend(e.target.value); invalidate(); }}>{backends.map(b => <option key={b.name} value={b.name} disabled={!b.available}>{b.label}</option>)}</select></label>
       </div>
     </div>
@@ -294,6 +336,7 @@ export function App() {
     }} />
     <main className="penpa-ui" aria-label="Penpa 棋盘工作区"><PenpaPane ref={penpa} onOccupancy={onOccupancy} controls={controls} variableControls={variableControls} /></main>
     <DslEditor variables={spec.variables.map(v => v.name)} source={dslSource} original={originalSource} errorLine={result?.errorLine} errorMessage={result?.status === "error" ? result.message : ""} onChange={text => { setDslSource(text); invalidate(); }} onSolve={solve} />
+    {pendingImport && <ImportPreview plan={pendingImport.plan} onConfirm={confirmImport} onCancel={() => { setPendingImport(null); setNote("已取消链接导入；当前工作区未改变。"); }} />}
     {editingVariable && spec.variables.find(v => v.name === editingVariable) && <VariableEditor key={editingVariable} variable={spec.variables.find(v => v.name === editingVariable)!} onSave={saveVariable} onDelete={removeVariable} onClose={() => setEditingVariable(null)} />}
   </div></div>;
 }

@@ -35,7 +35,7 @@ python -m tools.status --check
 - `solve` 验证随附样例 SAT；目前没有样例的题型会跳过。
 - `verify.py` 验证样例编译、SAT 和启发式线索影响；失败返回非零退出码。`sample-checked` 不是“完整实现”。
 - 答案回归位于 `tests/cases/`；非唯一案例不做固定答案比对，仍检查给定答案被约束接受。
-- 前端单元测试覆盖实例参数往返和跨题型隔离。
+- 前端单元测试覆盖实例参数往返、跨题型隔离、导入变量绑定、文档渲染和多文档事务。
 
 浏览器集成测试：安装 Playwright 并准备浏览器后运行 `npm --prefix web run test:browser`。
 Windows 使用已安装的 Edge，其他平台使用 Playwright Chromium。可通过 `PUZZLE_PLAYWRIGHT`
